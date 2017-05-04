@@ -1,1 +1,1 @@
-export { fetchService } from './fetchServices';
+export { doFetch, setApiRoot } from './fetchService';

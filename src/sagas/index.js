@@ -1,2 +1,2 @@
-import { fetchSaga } from './fetchSagas'
-export default { fetchSaga }
+import { fetch } from './fetchSagas'
+export default { fetch }
