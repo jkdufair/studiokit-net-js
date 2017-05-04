@@ -22,11 +22,11 @@
  		didFail = false;
  		tryCount++
  		try {
-			// Indicate fetch action has begun
- 			yield put(createAction(action.noStore ? actions.FETCH_REQUEST_TRANSIENT : actions.FETCH_REQUEST, { modelName: action.modelName }))
+ 			// Indicate fetch action has begun
+ 			yield put(createAction(action.noStore ? actions.TRANSIENT_FETCH_REQUESTED : actions.FETCH_REQUESTED, { modelName: action.modelName }))
 
-			// Get fetch parameters from global fetch dictionary using the modelName passed in to locate them
-			// Combine parameters from global dictionary with any passed in - locals override dictionary
+ 			// Get fetch parameters from global fetch dictionary using the modelName passed in to locate them
+ 			// Combine parameters from global dictionary with any passed in - locals override dictionary
  			const baseConfig = models[action.modelName];
  			// Avoiding pulling in a lib to do deep copy here. Hand crafted. Locally owned.
  			// If body is string, pass it directly (to handle content-type: x-www-form-urlencoded)
@@ -38,9 +38,9 @@
  				fetchConfig.body = Object.assign({}, baseConfig.body, action.body)
  			}
  			const result = yield call(doFetch, fetchConfig)
- 			yield put(createAction(action.noStore ? actions.FETCH_RESULT_TRANSIENT : actions.FETCH_RESULT, { data: result, modelName: action.modelName }))
+ 			yield put(createAction(action.noStore ? actions.TRANSIENT_FETCH_RESULT_RECEIVED : actions.FETCH_RESULT_RECEIVED, { data: result, modelName: action.modelName }))
  		} catch (error) {
- 			yield put(createAction(action.noStore ? actions.FETCH_FAIL_TRANSIENT : actions.FETCH_FAIL, { model: action.modelName }))
+ 			yield put(createAction(action.noStore ? actions.TRANSIENT_FETCH_FAILED : actions.FETCH_FAILED, { model: action.modelName }))
  			didFail = true
  			lastError = error
  			logger.log('fetchData fail')
@@ -50,8 +50,8 @@
  	} while (tryCount < tryLimit && didFail)
 
  	// Handle retry failure
-	if (tryCount === tryLimit && didFail) {
- 		yield put(createAction(actions.FETCH_RETRY_FAIL, { model: action.modelName }))
+ 	if (tryCount === tryLimit && didFail) {
+ 		yield put(createAction(actions.FETCH_RETRY_FAILED, { model: action.modelName }))
  		logger.log('fetchData retry fail')
  		logger.log(lastError)
  	}
@@ -68,7 +68,7 @@
  			yield call(delay, config.period)
  		}
  	} finally {
- 		put(actions.FETCH_DATA_CANCELLED)
+ 		put(actions.PERIODIC_TERMINATION_SUCCEEDED)
  	}
  }
 
@@ -80,7 +80,7 @@
  		throw new Error('\'taskId\' config parameter is required for fetchDataRecurring')
  	}
  	const bgSyncTask = yield fork(fetchDataLoop, config)
- 	yield take(action => action.type === actions.FETCH_DATA_CANCEL && action.taskId === config.taskId)
+ 	yield take(action => action.type === actions.PERIODIC_TERMINATION_REQUESTED && action.taskId === config.taskId)
  	yield cancel(bgSyncTask)
  }
 
@@ -96,7 +96,7 @@
  	logger = loggerParam
  	models = modelsParam
 
- 	yield takeEvery(actions.FETCH_DATA, fetchOnce)
- 	yield takeEvery(actions.FETCH_DATA_RECURRING, fetchDataRecurring)
- 	yield takeLatest(actions.FETCH_DATA_LATEST, fetchLatest)
+ 	yield takeEvery(actions.DATA_REQUESTED, fetchOnce)
+ 	yield takeEvery(actions.PERIODIC_DATA_REQUESTED, fetchDataRecurring)
+ 	yield takeLatest(actions.DATA_REQUESTED_USE_LATEST, fetchLatest)
  }
