@@ -27,7 +27,6 @@ export function* doFetch(config) {
 		})
 		return response ? yield call(() => response.json()) : {}
 	} catch (error) {
-		//TODO: log this
 		throw error
 	}
 }

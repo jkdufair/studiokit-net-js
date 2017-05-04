@@ -9,7 +9,7 @@ export default function fetchReducer(state = {}, action) {
 					hasError: false
 				}
 			})
-		case actions.STORE_FETCH_RESULT:
+		case actions.FETCH_RESULT:
 			return Object.assign({}, state, {
 				[`${action.modelName}`]: {
 					data: action.data,
