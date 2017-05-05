@@ -3,7 +3,7 @@
  import { doFetch, setApiRoot } from '../services'
  import actions, { createAction } from '../actions'
 
- let logger, models
+ let logger, models, oauthToken
 
  function* fetchData(action) {
  	// Validate
@@ -30,12 +30,21 @@
  			const baseConfig = models[action.modelName];
  			// Avoiding pulling in a lib to do deep copy here. Hand crafted. Locally owned.
  			// If body is string, pass it directly (to handle content-type: x-www-form-urlencoded)
- 			const headers = Object.assign({}, baseConfig.headers, action.headers)
+			let authHeaders = {};
+			if (oauthToken) {
+				authHeaders['Authorization'] = `Bearer ${oauthToken.access_token}`
+			}
+ 			const headers = Object.assign({}, baseConfig.headers, action.headers, authHeaders)
  			const fetchConfig = Object.assign({}, baseConfig, {
  				headers: headers
  			})
  			if (action.body || baseConfig.body) {
- 				fetchConfig.body = Object.assign({}, baseConfig.body, action.body)
+ 				// If the body is a string, we are assuming it's an application/x-www-form-urlencoded
+ 				if (typeof(action.body) === 'string') {
+ 					fetchConfig.body = action.body
+ 				} else {
+ 					fetchConfig.body = Object.assign({}, baseConfig.body, action.body)
+ 				}
  			}
  			const result = yield call(doFetch, fetchConfig)
  			yield put(createAction(action.noStore ? actions.TRANSIENT_FETCH_RESULT_RECEIVED : actions.FETCH_RESULT_RECEIVED, { data: result, modelName: action.modelName }))
@@ -88,6 +97,10 @@
  	yield call(fetchData, config)
  }
 
+ function* interceptOauthToken(action) {
+ 	oauthToken = action.oauthToken
+ }
+
  export function* fetch(modelsParam, apiRootParam, loggerParam = { log: (error) => { console.log(error) } }) {
  	if (!modelsParam) {
  		throw new Error('\'modelsParam\' is required for fetchSaga')
@@ -99,4 +112,7 @@
  	yield takeEvery(actions.DATA_REQUESTED, fetchOnce)
  	yield takeEvery(actions.PERIODIC_DATA_REQUESTED, fetchDataRecurring)
  	yield takeLatest(actions.DATA_REQUESTED_USE_LATEST, fetchLatest)
+ 	// Hard coded so as not to take a dependency on another module for an action name
+ 	// Sorry, refactoring friend
+ 	yield takeLatest('auth/LOGIN_SUCCEEDED', interceptOauthToken)
  }
