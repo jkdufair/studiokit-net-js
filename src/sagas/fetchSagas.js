@@ -1,5 +1,5 @@
  import { delay } from 'redux-saga'
- import { call, cancel, fork, put, take, takeEvery, takeLatest } from 'redux-saga/effects'
+ import { call, cancel, fork, put, race, take, takeEvery, takeLatest } from 'redux-saga/effects'
  import { doFetch, setApiRoot } from '../services'
  import actions, { createAction } from '../actions'
 
@@ -27,7 +27,11 @@
 
  			// Get fetch parameters from global fetch dictionary using the modelName passed in to locate them
  			// Combine parameters from global dictionary with any passed in - locals override dictionary
- 			const baseConfig = models[action.modelName];
+ 			const baseConfig = Object.byString(models, action.modelName);
+
+			if (!baseConfig) {
+				throw new Error(`Cannot find \'${action.modelName}\' model in model dictionary`)
+			}
  			// Avoiding pulling in a lib to do deep copy here. Hand crafted. Locally owned.
  			// If body is string, pass it directly (to handle content-type: x-www-form-urlencoded)
 			let authHeaders = {};
@@ -46,10 +50,19 @@
  					fetchConfig.body = Object.assign({}, baseConfig.body, action.body)
  				}
  			}
- 			const result = yield call(doFetch, fetchConfig)
- 			yield put(createAction(action.noStore ? actions.TRANSIENT_FETCH_RESULT_RECEIVED : actions.FETCH_RESULT_RECEIVED, { data: result, modelName: action.modelName }))
+			const { fetchResult } = yield race({
+				fetchResult: call(doFetch, fetchConfig),
+				timedOut: call(delay, action.timeLimit ? action.timeLimit : 3000)
+			})
+			if (fetchResult) {
+ 				yield put(createAction(action.noStore ? actions.TRANSIENT_FETCH_RESULT_RECEIVED :
+				 actions.FETCH_RESULT_RECEIVED, { data: fetchResult, modelName: action.modelName }))
+			} else {
+				throw new Error('fetch timed out')
+			}
+
  		} catch (error) {
- 			yield put(createAction(action.noStore ? actions.TRANSIENT_FETCH_FAILED : actions.FETCH_FAILED, { model: action.modelName }))
+ 			yield put(createAction(action.noStore ? actions.TRANSIENT_FETCH_FAILED : actions.FETCH_FAILED, { modelName: action.modelName }))
  			didFail = true
  			lastError = error
  			logger.log('fetchData fail')
@@ -60,7 +73,7 @@
 
  	// Handle retry failure
  	if (tryCount === tryLimit && didFail) {
- 		yield put(createAction(actions.FETCH_RETRY_FAILED, { model: action.modelName }))
+ 		yield put(createAction(actions.FETCH_RETRY_FAILED, { modelName: action.modelName }))
  		logger.log('fetchData retry fail')
  		logger.log(lastError)
  	}

@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "scripts": {
     "build": "babel src -d lib",
-		"build:watch": "babel src --watch -d lib",
+    "build:watch": "babel src --watch -d lib",
     "test": "mocha --require babel-polyfill --require isomorphic-fetch --compilers js:babel-core/register 'src/**/__tests__/*'",
     "test:watch": "mocha -w --require babel-polyfill --require isomorphic-fetch --compilers js:babel-core/register 'src/**/__tests__/*'"
   },
@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "babel-plugin-transform-runtime": "^6.23.0",
+    "immutable-js": "^0.3.1-6",
     "redux-saga": "^0.15.1"
   }
 }
