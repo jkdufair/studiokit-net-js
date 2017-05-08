@@ -51,19 +51,22 @@
  				}
  			}
 			fetchConfig.queryParams = Object.assign({}, baseConfig.queryParams, action.queryParams)
-			const { fetchResult } = yield race({
+			const { fetchResult, timedOut } = yield race({
 				fetchResult: call(doFetch, fetchConfig),
 				timedOut: call(delay, action.timeLimit ? action.timeLimit : 3000)
 			})
-			if (fetchResult) {
+			if (fetchResult && !(fetchResult.title && fetchResult.title === 'Error')) {
  				yield put(createAction(action.noStore ? actions.TRANSIENT_FETCH_RESULT_RECEIVED :
 				 actions.FETCH_RESULT_RECEIVED, { data: fetchResult, modelName: action.modelName }))
 			} else {
-				throw new Error('fetch timed out')
+				if (timedOut) {
+					yield put(createAction(actions.FETCH_TIMED_OUT))
+				} else {
+					yield put(createAction(actions.FETCH_TRY_FAILED, {modelName: action.modelName, errorData: fetchResult}))
+					throw new Error()
+				}
 			}
-
  		} catch (error) {
- 			yield put(createAction(action.noStore ? actions.TRANSIENT_FETCH_FAILED : actions.FETCH_FAILED, { modelName: action.modelName }))
  			didFail = true
  			lastError = error
  			logger.log('fetchData fail')
@@ -74,7 +77,7 @@
 
  	// Handle retry failure
  	if (tryCount === tryLimit && didFail) {
- 		yield put(createAction(actions.FETCH_RETRY_FAILED, { modelName: action.modelName }))
+ 		yield put(createAction(actions.FETCH_FAILED, { modelName: action.modelName }))
  		logger.log('fetchData retry fail')
  		logger.log(lastError)
  	}
@@ -128,5 +131,6 @@
  	yield takeLatest(actions.DATA_REQUESTED_USE_LATEST, fetchLatest)
  	// Hard coded so as not to take a dependency on another module for an action name
  	// Sorry, refactoring friend
- 	yield takeLatest('auth/LOGIN_SUCCEEDED', interceptOauthToken)
+ 	yield takeLatest('auth/GET_TOKEN_SUCCEEDED', interceptOauthToken)
+ 	yield takeLatest('auth/TOKEN_REFRESH_SUCCEEDED', interceptOauthToken)	 
  }
