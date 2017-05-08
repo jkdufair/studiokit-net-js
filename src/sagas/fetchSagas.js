@@ -50,6 +50,7 @@
  					fetchConfig.body = Object.assign({}, baseConfig.body, action.body)
  				}
  			}
+			fetchConfig.queryParams = Object.assign({}, baseConfig.queryParams, action.queryParams)
 			const { fetchResult } = yield race({
 				fetchResult: call(doFetch, fetchConfig),
 				timedOut: call(delay, action.timeLimit ? action.timeLimit : 3000)
