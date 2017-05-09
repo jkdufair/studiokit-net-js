@@ -83,8 +83,8 @@
  	}
  }
 
- function* fetchOnce(config) {
- 	yield call(fetchData, config)
+ function* fetchOnce(action) {
+ 	yield call(fetchData, action)
  }
 
  function* fetchDataLoop(config) {
