@@ -19,18 +19,27 @@ export default function fetchReducer(state = {}, action) {
 		case actions.FETCH_REQUESTED:
 			leafNode.isFetching = true
 			leafNode.hasError = false
-			return Object.assign({}, state, newObject)
+			leafNode.timedOut = false
+			return Object.assign({}, fromJS(state).deleteIn('fetchedAt').toJS(), newObject)
 
 		case actions.FETCH_RESULT_RECEIVED:
 			leafNode.data = action.data
 			leafNode.isFetching = false
 			leafNode.hasError = false
+			leafNode.timedOut = false
 			leafNode.fetchedAt = new Date()
 			return Object.assign({}, state, newObject)
 
 		case actions.FETCH_FAILED:
 			leafNode.isFetching = false
 			leafNode.hasError = true
+			leafNode.timedOut = false
+			return Object.assign({}, state, newObject)
+
+		case actions.FETCH_TIMED_OUT:
+			leafNode.isFetching = false
+			leafNode.hasError = true
+			leafNode.timedOut = true
 			return Object.assign({}, state, newObject)
 
 		case actions.KEY_REMOVAL_REQUESTED:

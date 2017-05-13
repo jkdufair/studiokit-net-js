@@ -60,7 +60,7 @@
 				 actions.FETCH_RESULT_RECEIVED, { data: fetchResult, modelName: action.modelName }))
 			} else {
 				if (timedOut) {
-					yield put(createAction(actions.FETCH_TIMED_OUT))
+					yield put(createAction(actions.FETCH_TIMED_OUT, {modelName: action.modelName}))
 				} else {
 					yield put(createAction(actions.FETCH_TRY_FAILED, {modelName: action.modelName, errorData: fetchResult}))
 					throw new Error()
