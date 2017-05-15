@@ -1,6 +1,6 @@
 {
   "name": "studiokit-net-js",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "scripts": {
     "build": "babel src -d lib",
     "build:watch": "babel src --watch -d lib",
