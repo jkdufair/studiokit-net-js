@@ -1,12 +1,13 @@
-import actions from '../actions'
+import actions from './actions'
 import { fromJS } from 'immutable'
+import byString from './utilities'
 
 var createNestedObject = function(base, modelName) {
 	const names = modelName.split('.')
 	for (var i = 0; i < names.length; i++) {
-		base = base[names[i]] = base[names[i]] || {};
+		base = base[names[i]] = base[names[i]] || {}
 	}
-};
+}
 
 export default function fetchReducer(state = {}, action) {
 	if (!action.modelName) {
@@ -14,13 +15,17 @@ export default function fetchReducer(state = {}, action) {
 	}
 	const newObject = {}
 	createNestedObject(newObject, action.modelName)
-	let leafNode = Object.byString(newObject, action.modelName)
+	let leafNode = byString(newObject, action.modelName)
 	switch (action.type) {
 		case actions.FETCH_REQUESTED:
 			leafNode.isFetching = true
 			leafNode.hasError = false
 			leafNode.timedOut = false
-			return Object.assign({}, fromJS(state).deleteIn('fetchedAt').toJS(), newObject)
+			return Object.assign(
+				{},
+				fromJS(state).deleteIn('fetchedAt').toJS(),
+				newObject
+			)
 
 		case actions.FETCH_RESULT_RECEIVED:
 			leafNode.data = action.data
