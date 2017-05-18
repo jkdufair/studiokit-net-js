@@ -1,21 +1,38 @@
+// @flow
+
 import actions from './actions'
 import { fromJS } from 'immutable'
 import byString from './utilities'
 
-var createNestedObject = function(base, modelName) {
+import type { Action } from 'redux'
+
+type FetchState = {}
+
+type ModelState = {
+	isFetching: boolean,
+	hasError: boolean,
+	timedOut: boolean,
+	data?: Object,
+	fetchedAt?: Date
+}
+
+var createNestedObject = function(base: Object, modelName: string) {
 	const names = modelName.split('.')
 	for (var i = 0; i < names.length; i++) {
 		base = base[names[i]] = base[names[i]] || {}
 	}
 }
 
-export default function fetchReducer(state = {}, action) {
+export default function fetchReducer(state: FetchState = {}, action: Action) {
 	if (!action.modelName) {
 		return state
 	}
+	const modelName: string = action.modelName
+
 	const newObject = {}
-	createNestedObject(newObject, action.modelName)
-	let leafNode = byString(newObject, action.modelName)
+	createNestedObject(newObject, modelName)
+	let leafNode: ModelState = byString(newObject, modelName)
+
 	switch (action.type) {
 		case actions.FETCH_REQUESTED:
 			leafNode.isFetching = true
@@ -48,7 +65,7 @@ export default function fetchReducer(state = {}, action) {
 			return Object.assign({}, state, newObject)
 
 		case actions.KEY_REMOVAL_REQUESTED:
-			return fromJS(state).deleteIn(action.modelName.split('.')).toJS()
+			return fromJS(state).deleteIn(modelName.split('.')).toJS()
 
 		default:
 			return state

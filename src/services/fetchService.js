@@ -1,4 +1,9 @@
+// @flow
+
 import { call } from 'redux-saga/effects'
+
+import type { FetchConfig } from '../types'
+import type { Effect } from 'redux-saga'
 
 let apiRoot
 
@@ -22,11 +27,11 @@ function constructPath(config) {
 	return path
 }
 
-export function setApiRoot(uri) {
+export function setApiRoot(uri: string) {
 	apiRoot = uri
 }
 
-export function* doFetch(config) {
+export function* doFetch(config: FetchConfig): Generator<Effect, void, void> {
 	if (!config.path) {
 		throw new Error("'config.path' is required for fetchService")
 	}
@@ -50,7 +55,7 @@ export function* doFetch(config) {
 			headers: headers,
 			body
 		})
-		return response ? yield call(() => response.json()) : {}
+		return response ? yield call(() => response.json()) : yield call(() => null)
 	} catch (error) {
 		throw error
 	}

@@ -1,3 +1,5 @@
+// @flow
+
 import { delay } from 'redux-saga'
 import {
 	call,
@@ -13,9 +15,12 @@ import { doFetch, setApiRoot } from './services/fetchService'
 import actions, { createAction } from './actions'
 import byString from './utilities'
 
-let logger, models, oauthToken
+import type { Action } from 'redux'
+import type { Effect } from 'redux-saga'
 
-function* fetchData(action) {
+let logger, models: Object, oauthToken
+
+function* fetchData(action: Action) {
 	// Validate
 	if (!action.modelName) {
 		throw new Error("'modelName' config parameter is required for fetchData")
@@ -25,7 +30,7 @@ function* fetchData(action) {
 	const tryLimit = action.noRetry ? 0 : 4
 	let tryCount = 0
 	let didFail
-	let lastError
+	let lastError: string = ''
 
 	// Run retry loop
 	do {
@@ -131,7 +136,7 @@ function* fetchData(action) {
 	}
 }
 
-function* fetchOnce(action) {
+function* fetchOnce(action: Action) {
 	yield call(fetchData, action)
 }
 
@@ -170,19 +175,21 @@ function* fetchLatest(config) {
 	yield call(fetchData, config)
 }
 
-function* interceptOauthToken(action) {
+function* interceptOauthToken(action: Action) {
 	oauthToken = action.oauthToken
 }
 
-export default function* fetchSaga(
-	modelsParam,
-	apiRootParam,
-	loggerParam = {
-		log: error => {
-			console.log(error)
-		}
+const consoleLogger = {
+	log: (error: string) => {
+		console.log(error)
 	}
-) {
+}
+
+export default function* fetchSaga(
+	modelsParam: Object,
+	apiRootParam: string,
+	loggerParam: { log: (error: string) => void }
+): Generator<Effect, void, void> {
 	if (!modelsParam) {
 		throw new Error("'modelsParam' is required for fetchSaga")
 	}

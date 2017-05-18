@@ -1,4 +1,6 @@
-const byString = function(o, s) {
+// @flow
+
+const byString = function(o: Object, s: string): Object {
 	s = s.replace(/\[(\w+)\]/g, '.$1') // convert indexes to properties
 	s = s.replace(/^\./, '') // strip a leading dot
 	var a = s.split('.')
@@ -7,7 +9,7 @@ const byString = function(o, s) {
 		if (k in o) {
 			o = o[k]
 		} else {
-			return
+			return o
 		}
 	}
 	return o
