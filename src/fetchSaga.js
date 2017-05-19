@@ -201,7 +201,7 @@ const consoleLogger = {
 export default function* fetchSaga(
 	modelsParam: Object,
 	apiRootParam: string,
-	loggerParam: { log: (error: string) => void }
+	loggerParam: { log: (error: string) => void } = consoleLogger
 ): Generator<*, *, *> {
 	if (!modelsParam) {
 		throw new Error("'modelsParam' is required for fetchSaga")
