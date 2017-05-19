@@ -2,8 +2,15 @@
 
 import { call } from 'redux-saga/effects'
 
-import type { FetchConfig } from '../types'
 import type { Effect } from 'redux-saga'
+
+type FetchConfig = {
+	queryParams: Object,
+	path: string,
+	method: string,
+	headers: Object,
+	body: Object
+}
 
 let apiRoot
 

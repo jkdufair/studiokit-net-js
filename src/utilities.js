@@ -1,5 +1,12 @@
 // @flow
 
+/**
+ * Given an object, return the value at the string represented by dot-separated s
+ * 
+ * @param {Object} o - The javascript object
+ * @param {string} s - The dot-separated path (i.e. 'foo.bar.baz')
+ * @returns {Object} The value at the referenced path
+ */
 const byString = function(o: Object, s: string): Object {
 	s = s.replace(/\[(\w+)\]/g, '.$1') // convert indexes to properties
 	s = s.replace(/^\./, '') // strip a leading dot

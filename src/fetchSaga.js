@@ -15,12 +15,25 @@ import { doFetch, setApiRoot } from './services/fetchService'
 import actions, { createAction } from './actions'
 import byString from './utilities'
 
-import type { Action } from 'redux'
-import type { Effect } from 'redux-saga'
+type OAuthToken = {
+	access_token: string
+}
 
-let logger, models: Object, oauthToken
+type FetchAction = {
+	modelName: string,
+	headers?: Object,
+	queryParams?: Object,
+	noStore?: boolean
+}
 
-function* fetchData(action: Action) {
+type TokenSuccessAction = {
+	oauthToken: OAuthToken
+}
+
+let logger, models: Object
+let oauthToken: OAuthToken
+
+function* fetchData(action: FetchAction) {
 	// Validate
 	if (!action.modelName) {
 		throw new Error("'modelName' config parameter is required for fetchData")
@@ -136,7 +149,7 @@ function* fetchData(action: Action) {
 	}
 }
 
-function* fetchOnce(action: Action) {
+function* fetchOnce(action: FetchAction) {
 	yield call(fetchData, action)
 }
 
@@ -175,7 +188,7 @@ function* fetchLatest(config) {
 	yield call(fetchData, config)
 }
 
-function* interceptOauthToken(action: Action) {
+function* interceptOauthToken(action: TokenSuccessAction) {
 	oauthToken = action.oauthToken
 }
 
@@ -189,7 +202,7 @@ export default function* fetchSaga(
 	modelsParam: Object,
 	apiRootParam: string,
 	loggerParam: { log: (error: string) => void }
-): Generator<Effect, void, void> {
+): Generator<*, *, *> {
 	if (!modelsParam) {
 		throw new Error("'modelsParam' is required for fetchSaga")
 	}
