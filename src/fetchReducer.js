@@ -38,11 +38,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			leafNode.isFetching = true
 			leafNode.hasError = false
 			leafNode.timedOut = false
-			return Object.assign(
-				{},
-				fromJS(state).deleteIn('fetchedAt').toJS(),
-				newObject
-			)
+			return fromJS(state).deleteIn('fetchedAt').mergeDeep(newObject).toJS()
 
 		case actions.FETCH_RESULT_RECEIVED:
 			leafNode.data = action.data
@@ -50,19 +46,19 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			leafNode.hasError = false
 			leafNode.timedOut = false
 			leafNode.fetchedAt = new Date()
-			return Object.assign({}, state, newObject)
+			return fromJS(state).mergeDeep(newObject).toJS()
 
 		case actions.FETCH_FAILED:
 			leafNode.isFetching = false
 			leafNode.hasError = true
 			leafNode.timedOut = false
-			return Object.assign({}, state, newObject)
+			return fromJS(state).mergeDeep(newObject).toJS()
 
 		case actions.FETCH_TIMED_OUT:
 			leafNode.isFetching = false
 			leafNode.hasError = true
 			leafNode.timedOut = true
-			return Object.assign({}, state, newObject)
+			return fromJS(state).mergeDeep(newObject).toJS()
 
 		case actions.KEY_REMOVAL_REQUESTED:
 			return fromJS(state).deleteIn(modelName.split('.')).toJS()
