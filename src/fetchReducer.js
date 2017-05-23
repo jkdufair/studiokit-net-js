@@ -29,16 +29,16 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 	}
 	const modelName: string = action.modelName
 
-	const newObject = {}
-	createNestedObject(newObject, modelName)
-	let leafNode: ModelState = byString(newObject, modelName)
+	const newState = {}
+	createNestedObject(newState, modelName)
+	let leafNode: ModelState = byString(newState, modelName)
 
 	switch (action.type) {
 		case actions.FETCH_REQUESTED:
 			leafNode.isFetching = true
 			leafNode.hasError = false
 			leafNode.timedOut = false
-			return fromJS(state).deleteIn('fetchedAt').mergeDeep(newObject).toJS()
+			return fromJS(state).mergeDeep(newState).toJS()
 
 		case actions.FETCH_RESULT_RECEIVED:
 			leafNode.data = action.data
@@ -46,19 +46,21 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			leafNode.hasError = false
 			leafNode.timedOut = false
 			leafNode.fetchedAt = new Date()
-			return fromJS(state).mergeDeep(newObject).toJS()
+			let path = modelName.split('.')
+			path.push('data')
+			return fromJS(state).deleteIn(path).mergeDeep(newState).toJS()
 
 		case actions.FETCH_FAILED:
 			leafNode.isFetching = false
 			leafNode.hasError = true
 			leafNode.timedOut = false
-			return fromJS(state).mergeDeep(newObject).toJS()
+			return fromJS(state).mergeDeep(newState).toJS()
 
 		case actions.FETCH_TIMED_OUT:
 			leafNode.isFetching = false
 			leafNode.hasError = true
 			leafNode.timedOut = true
-			return fromJS(state).mergeDeep(newObject).toJS()
+			return fromJS(state).mergeDeep(newState).toJS()
 
 		case actions.KEY_REMOVAL_REQUESTED:
 			return fromJS(state).deleteIn(modelName.split('.')).toJS()
