@@ -7,6 +7,7 @@ import {
 	fork,
 	put,
 	race,
+	select,
 	take,
 	takeEvery,
 	takeLatest
@@ -97,6 +98,20 @@ function* fetchData(action: FetchAction) {
 				baseConfig.queryParams,
 				action.queryParams
 			)
+
+			// substitute parameterized query path references with values from store
+			// TODO: validate the path exists in the store
+			if (/{{.+}}/.test(fetchConfig.path)) {
+				// have to get reference to the whole store here
+				// since there is no yield in an arrow fn
+				const store = yield select(store => store)
+				fetchConfig.path = fetchConfig.path.replace(
+					/{{(.+?)}}/,
+					(_, backref) => {
+						return byString(store, backref)
+					}
+				)
+			}
 			const { fetchResult, timedOut } = yield race({
 				fetchResult: call(doFetch, fetchConfig),
 				timedOut: call(delay, action.timeLimit ? action.timeLimit : 3000)
