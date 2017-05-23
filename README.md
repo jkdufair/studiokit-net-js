@@ -1,10 +1,352 @@
-# How to use this template
+# StudioKit Net Library
 
-This template is a starting point for a studiokit library to encapsulate and provide business logic via an NPM package.
+A library for declarative, configurable data (API) access with built-in retry, timeout, periodic refresh, and concurrency handling.
 
-## How to create
+For *in-vivo* examples of how to use this library, see the [example react app](https://github.com/purdue-tlt/example-react-app) and the [example react native app](https://github.com/purdue-tlt/example-react-native-app)
 
-### Development
+# Installation
+
+## Install this library and redux-saga as a dependency
+1. `yarn add studiokit-net`
+1. `yarn add redux-saga` (which depends on `redux` itself)
+1. Create a `reducers.js` module that includes the reducer from this library, i.e.
+	```
+	import { combineReducers } from 'redux'
+	import { reducers as netReducers } from 'studiokit-net-js'
+
+	export default combineReducers({
+		models: netReducers.fetchReducer
+	})
+	```
+1. Create an `apis.js` module specifying any apis you will call in your application, i.e.
+	```
+	const apis = {
+		publicData: {
+			path: 'https://httpbin.org/get',
+			queryParams: {
+				foo: 'bar'
+			}
+		}
+	}
+
+	export default apis
+	```
+1. Create a `rootSaga.js` module that includes the fetchSaga from this library, i.e.
+	```
+	import { all } from 'redux-saga/effects'
+	import { sagas as netSagas } from 'studiokit-net-js'
+	import apis from '../../apis'
+
+	export default function* rootSaga() {
+		yield all({
+			fetchSaga: netSagas.fetchSaga(
+				apis,
+				'https://yourapp.com'
+			)
+		})
+	}
+	```
+1. Wire up your store in your app (perhaps in `index.js`) with the above, i.e.
+	```
+	import createSagaMiddleware from 'redux-saga'
+	import { createStore, applyMiddleware } from 'redux'
+	import reducer from './redux/reducers'
+	import rootSaga from './redux/sagas/rootSaga'
+
+	const sagaMiddleware = createSagaMiddleware()
+	const store = createStore(
+		reducer,
+		applyMiddleware(sagaMiddleware)
+	)
+	sagaMiddleware.run(rootSaga)
+
+	```
+
+# Usage
+Once you have the above steps completed, you can dispatch actions to the store and the data will be fetched and populated in the redux store, i.e.
+
+```
+import { dispatchAction } from '../services/actionService'
+import { actions as netActions } from 'studiokit-net-js'
+.
+.
+.
+store.dispatch({ type: netActions.DATA_REQUESTED, modelName: 'publicData' })
+```
+Once the data is fetched, it will live in the redux store at the models.publicData key, i.e.
+```
+models: {
+	publicData: {
+		isFetching: false,
+		hasError: false,
+		timedOut: false,
+		data: { foo: 'bar', baz: ['quux', 'fluux']},
+		fetchedAt: "2017-05-23T20:38:11.103Z"
+	}
+}
+```
+
+# API
+Actions are dispatched using the following keys in the action object for configuring the request
+```
+type FetchAction = {
+	modelName: string,
+	headers?: Object,
+	queryParams?: Object,
+	noStore?: boolean,
+	period?: number,
+	taskId?: string,
+	noRetry?: boolean,
+	timeLimit: number
+}
+```
+- `modelName` refers to the path to the fetch configuration key found in `apis.js`
+- `headers` is an optional object used as key/value pairs to populate the request headers
+- `queryParams` is an optional object used as key/value pairs to populate the query parameters
+- `noStore` is an optional boolean that, if true, indicates the request should be made without storing the response in the redux store
+- `period` is an optional number of milliseconds after which a request should repeat when dispatching a recurring fetch
+- `taskId` is a string that must be passed to a recurring fetch for future cancellation
+- `noRetry` will prevent the use of the default logarithmic backoff retry strategy
+- `timeLimit` is an optional number that will specify the timeout for a single attempt at a request. Defaults to 3000ms
+
+The following actions can be dispatched
+- `DATA_REQUESTED`: This will fetch the data specified at the `modelName` key of the action
+- `PERIODIC_DATA_REQUESTED`: This will fetch the data specified at the `modelName` key at an interval specified by the `period` key in the action. This also requires you to generate and pass a `taskId` key for subsequent cancellation
+- `PERIODIC_TERMINATION_REQUESTED`: This will cause the periodic fetch identified by `taskId` to be cancelled
+- `DATA_REQUESTED_USE_LATEST`: This will fetch data specified at the `modelName` key, using only the latest result in time if multiple requests are dispatched at the same time (i.e. others are started with the same `modelName` before some are completed)
+
+## Examples
+
+Given the following `apis.js`
+```
+{
+	basicData: {
+		path: 'https://httpbin.org/get'
+	},
+	futurama: {
+		path: 'https://www.planetexpress.com/api/goodNewsEveryone',
+		queryParams: {
+			doctor: 'zoidberg'
+		}
+	},
+	theOffice: {
+		path: 'https://dundermifflin.com/api/paper'
+		headers: {
+			'Content-Type': 'x-beet-farmer'
+		}
+	},
+	aGrouping: {
+		apiOne: {
+			path: '/api/one'
+		},
+		apiTwo: {
+			path: '/api/two/{{models.futurama.data.zoidberg}}'
+		}
+	},
+	basicPost: {
+		path: '/api/createSomeThing'
+		method: 'POST'
+	},
+	basicPostTwo: {
+		path: '/api/createSomeKnownThing'
+		method: 'POST',
+		body: { person: 'Fry' }
+	}
+}
+```
+
+#
+
+Basic fetch:
+
+*dispatch*
+```
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'basicData'
+})
+```
+*request generated* 
+```
+GET https://httpbin.org/get
+``` 
+*resulting redux*
+```
+{
+	models: {
+		basicData: {
+			isFetching: false,
+			hasError: false,
+			timedOut: false,
+			data: {...}
+			fetchedAt: '2017-05-23T20:38:11.103Z'
+		}
+	}
+}
+```
+
+#
+
+Nested model:
+
+*dispatch*
+```
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'aGrouping.apiOne'
+})
+```
+*request generated* 
+```
+GET https://myapp.com/api/one
+``` 
+*resulting redux*
+```
+{
+	models: {
+		aGrouping: {
+			apiOne: {
+				isFetching: false,
+				hasError: false,
+				timedOut: false,
+				data: {...}
+				fetchedAt: '2017-05-23T20:38:11.103Z'
+			}
+		}
+	}
+}
+```
+
+#
+
+Add headers:
+
+*dispatch*
+```
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'basicData',
+	headers: {'Accept-Charset': 'utf-8'}
+})
+```
+*request generated*
+```
+Accept-Charset: utf-8
+GET https://httpbin.org/get
+```
+*resulting redux*
+
+Same as basic fetch above, with possibly different data, depending on response relative to additional header
+
+**Note**: Headers specified in the action will be merged with headers specified in `apis.js` with the headers in the action taking precedence
+
+#
+
+Add query params:
+
+*dispatch*
+```
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'basicData',
+	queryParams: {robot: 'bender'}
+})
+```
+*request generated*
+```
+GET https://httpbin.org/get?robot=bender
+```
+*resulting redux*
+
+Same as basic fetch above, with possibly different data, depending on response relative to new query params
+
+**Note**: Query parameters specified in the action will be merged with query parameters specified in `apis.js` with the query params in the action taking precedence
+
+#
+
+Periodic fetch:
+*dispatch*
+```
+store.dispatch({
+	type: netActions.PERIODIC_DATA_REQUESTED,
+	modelName: 'basicData',
+	period: 1000,
+	taskId: 'something-random'
+})
+```
+*request generated*
+```
+GET https://httpbin.org/get
+```
+*resulting redux*
+
+Same as basic fetch above, but refreshing every 1000ms, replacing the `data` key in redux with new data and updating the `fetchedAt` key
+
+#
+
+Cancel periodic fetch:
+*dispatch*
+```
+store.dispatch({
+	type: netActions.PERIODIC_TERMINATION_REQUESTED,
+	modelName: 'basicData',
+	taskId: 'something-random'
+})
+```
+*request generated*
+
+None
+
+*resulting redux*
+
+Same as basic fetch above with `data` and `fetchedAt` reflecting the most recent fetch before the cancellation request
+
+#
+
+No store:
+*dispatch*
+```
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'basicData',
+	noStore: true
+})
+```
+*request generated*
+```
+GET https://httpbin.org/get
+```
+*resulting redux*
+
+No change to the redux store. Your application can create its own sagas and use `take` and friends in `redux-saga`, however, to watch for responses and cause side-effects
+
+#
+
+Post:
+*dispatch*
+```
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'basicPost',
+	body: {
+		ruleOne: "Don't talk about Fight Club",
+		ruleTwo: "Don't talk about Fight Club"
+	}
+})
+```
+*request generated*
+```
+Content-Type: application/json
+POST https://myapp.com/api/createSomeThing
+{ruleOne: "Don't talk about Fight Club",ruleTwo: "Don't talk about Fight Club"}
+```
+*resulting redux*
+
+Same as basic fetch above, with the `data` key containing the response data from the `POST` request
+
+#
+
+## Development
 
 During development of this library, you can clone this project and use
 
@@ -12,13 +354,13 @@ During development of this library, you can clone this project and use
 
 to make the module available to another project's `node_modules` on the same computer without having to publish to a repo and pull to the other project. In the other folder, you can use
 
-`yarn link studiokit-foo-js`
+`yarn link studiokit-net-js`
 
 to add `studiokit-foo-js` to the consuming project's `node_modules`
 
 ### Build
 
-Because this is a module, you'll need to transpile the source to ES5 since the consuming project won't transpile anything in `node_modules`
+Because this is a module, the source has to be transpiled to ES5 since the consuming project won't transpile anything in `node_modules`
 
 `yarn build`
 
@@ -30,74 +372,8 @@ During development, you can run
 
 and babel will rebuild the `/lib` folder when any file in `/src` changes.
 
+When you commit, a commit hook will automatically regenerate `/lib`
+
 ### Deploy
 
-Deployment will likely be via Git unless we build our own npm repo. Example
-
-`yarn add git@sprinklesthecat.ics.purdue.edu:studiokit-js/studiokit-foo-js.git#master`
-
-## How to use
-
-Your consuming application will need to implement a store and tie in the saga middleware, i.e.
-
-```
-import createSagaMiddleware from 'redux-saga'
-import reducer from './reducers'
-import rootSaga from './sagas'
-import createSagaMiddleware from 'redux-saga'
-import { createStore,	applyMiddleware } from 'redux'
-
-const sagaMiddleware = createSagaMiddleware()
-const store = createStore(
-	reducer, composeWithDevTools(
-		applyMiddleware(sagaMiddleware)
-	))
-
-sagaMiddleware.run(rootSaga)
-```
-
-`reducer` would be a module, i.e.
-
-```
-import { combineReducers } from 'redux'
-import { reducers } from 'studiokit-template-js'
-
-export default combineReducers({
-	foo: reducers.foo
-})
-```
-
-and `rootSaga` would be a composition of other sagas, i.e.
-
-```
-import { all } from 'redux-saga/effects'
-import { sagas } from 'studiokit-foo-js'
-
-export default function* rootSaga() {
-	yield all({
-		fooSaga: sagas.fooSaga()
-	})
-}
-```
-
-## What it includes
-
-#### Structure
-
-The top-level `index.js` exports all modules in `sagas`, `reducers`, and `actions`. Each of those folders should export functions via their `index.js`, referencing modules in sibling files. `services` is not intended to be exported out of the module.
-
-#### Sagas
-
-The implementations of logic and flow via `redux-saga` [sagas](https://redux-saga.js.org/).
-
-#### Actions
-
-Standard redux actions plus an action creator function
-
-#### Reducers
-
-Standard redux reducers
-
-#### Services
-
-Functions to provide side effects, computation, I/O, etc.
+This packaged is deployed via the npm repository. Until we add commit hooks for deployment, it must be published via `yarn publish`

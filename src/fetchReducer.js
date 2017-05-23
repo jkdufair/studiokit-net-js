@@ -16,6 +16,25 @@ type ModelState = {
 	fetchedAt?: Date
 }
 
+/**
+ * Given an object, add keys matching the path in modelName.
+ * Matching keys will be overwritten
+ * 
+ * 'foo.bar.baz' generates
+ * {
+ * 	foo: {
+ * 		bar: {
+ * 			baz: {
+ * 			}
+ * 		}
+ * 	}
+ * }
+ * 
+ * This function mutates the object. Immutablility coming!
+ * 
+ * @param {Object} base - An existing object
+ * @param {string} modelName - The period-separated path to the model, i.e. 'foo.bar.baz'
+ */
 var createNestedObject = function(base: Object, modelName: string) {
 	const names = modelName.split('.')
 	for (var i = 0; i < names.length; i++) {
@@ -23,6 +42,17 @@ var createNestedObject = function(base: Object, modelName: string) {
 	}
 }
 
+/**
+ * Reducer for fetching. Fetching state updated with every action. Data updated on result received.
+ * Data and fetchedDate NOT deleted on failed request. All data at key removed on KEY_REMOVAL_REQUESTED
+ * All actions require a modelName key to function with this reducer
+ * 
+ * 
+ * @export
+ * @param {FetchState} [state={}] - The state of the models. Initially empty
+ * @param {Action} action - The action upon which we dispatch
+ * @returns 
+ */
 export default function fetchReducer(state: FetchState = {}, action: Action) {
 	if (!action.modelName) {
 		return state
@@ -31,6 +61,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 
 	const newState = {}
 	createNestedObject(newState, modelName)
+	// leafNode is a reference to the model at the (potentially) nested path referenced by modelName
 	let leafNode: ModelState = byString(newState, modelName)
 
 	switch (action.type) {
@@ -46,6 +77,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			leafNode.hasError = false
 			leafNode.timedOut = false
 			leafNode.fetchedAt = new Date()
+			// Do not delete and re-add the data. Just replace it when this action is received
 			let path = modelName.split('.')
 			path.push('data')
 			return fromJS(state).deleteIn(path).mergeDeep(newState).toJS()
