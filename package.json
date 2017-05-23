@@ -10,6 +10,7 @@
 	},
 	"description": "Network/API functions for Studio apps at Purdue",
 	"main": "lib/index.js",
+	"repository": "purdue-tlt/studiokit-net-js",
 	"author": "Jason Dufair <jase@purdue.edu>",
 	"license": "MIT",
 	"devDependencies": {
