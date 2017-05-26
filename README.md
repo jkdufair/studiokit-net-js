@@ -2,7 +2,12 @@
 
 A library for declarative, configurable data (API) access with built-in retry, timeout, periodic refresh, and concurrency handling.
 
-For *in-vivo* examples of how to use this library, see the [example react app](https://github.com/purdue-tlt/example-react-app) and the [example react native app](https://github.com/purdue-tlt/example-react-native-app)
+1. [Installation](#installation)
+1. [Usage](#usage)
+1. [API](#api)
+1. [Development](#development)
+
+For *in-vivo* examples of how to use this library, see the [example react app](https://github.com/purdue-tlt/example-react-app-js) and the [example react native app](https://github.com/purdue-tlt/example-react-native-app)
 
 # Installation
 
