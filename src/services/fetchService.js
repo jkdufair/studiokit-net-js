@@ -43,6 +43,10 @@ export function setApiRoot(uri: string) {
 	apiRoot = uri
 }
 
+export function getApiRoot() {
+	return apiRoot
+}
+
 /**
  * The function that actually sends the HTTP request and returns the response, handling errors.
  * Requests default to using GET method. Content-Type defaults to 'application/json'. Body is sent
