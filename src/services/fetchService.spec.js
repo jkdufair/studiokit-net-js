@@ -1,4 +1,4 @@
-import { setApiRoot, getApiRoot, __RewireAPI__ as FetchServiceRewireAPI } from '../fetchService'
+import { setApiRoot, getApiRoot, __RewireAPI__ as FetchServiceRewireAPI } from './fetchService'
 
 describe('Path construction', () => {
 	const constructPath = FetchServiceRewireAPI.__get__('constructPath')

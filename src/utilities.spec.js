@@ -1,4 +1,4 @@
-import byString from '../utilities'
+import byString from './utilities'
 
 describe('Utilities', () => {
 	test('Should locate an object by key', () => {
