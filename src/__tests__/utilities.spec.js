@@ -10,15 +10,8 @@ describe('Utilities', () => {
 
 	it('Should return the entire object if the path is not found', () => {
 		const srcObj = { foo: { bar: { baz: 'quux' } } }
-		const obj = byString(srcObj, 'none.of.these')
-		expect(obj).to.deep.equal(srcObj)
-	})
-
-	it('Should return the entire object if the path is not found and the object is modified', () => {
-		let srcObj = { foo: { bar: { baz: 'quux' } } }
-		const obj = byString(srcObj, 'none.of.these')
-		srcObj = { helter: 'skelter' }
-		expect(obj).to.deep.equal({ foo: { bar: { baz: 'quux' } } })
+		const f = () => byString(srcObj, 'none.of.these')
+		expect(f).to.throw(Error, /Key .+ not found in object/)
 	})
 
 	it('Should return the correct object even with a leading dot', () => {

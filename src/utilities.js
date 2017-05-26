@@ -16,7 +16,7 @@ const byString = function(o: Object, s: string): Object {
 		if (k in o) {
 			o = o[k]
 		} else {
-			return o
+			throw new Error(`Key '${s}' not found in object`)
 		}
 	}
 	return o
