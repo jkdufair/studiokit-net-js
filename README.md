@@ -155,7 +155,7 @@ Given the following `apis.js`
 	}
 }
 ```
-
+You can make the following types of requests:  
 [Basic Fetch](#basic-fetch)  
 [Nested Model](#nested-model)  
 [Add Headers](#add-headers)  
@@ -164,6 +164,7 @@ Given the following `apis.js`
 [Cancel Periodic Fetch](#cancel-periodic-fetch)  
 [No Store](#no-store)  
 [Post](#post)
+
 #
 
 ### Basic fetch:
