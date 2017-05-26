@@ -10,7 +10,7 @@ For *in-vivo* examples of how to use this library, see the [example react app](h
 1. `yarn add studiokit-net`
 1. `yarn add redux-saga` (which depends on `redux` itself)
 1. Create a `reducers.js` module that includes the reducer from this library, i.e.
-	```
+	```js
 	import { combineReducers } from 'redux'
 	import { reducers as netReducers } from 'studiokit-net-js'
 
@@ -19,7 +19,7 @@ For *in-vivo* examples of how to use this library, see the [example react app](h
 	})
 	```
 1. Create an `apis.js` module specifying any apis you will call in your application, i.e.
-	```
+	```js
 	const apis = {
 		publicData: {
 			path: 'https://httpbin.org/get',
@@ -32,7 +32,7 @@ For *in-vivo* examples of how to use this library, see the [example react app](h
 	export default apis
 	```
 1. Create a `rootSaga.js` module that includes the fetchSaga from this library, i.e.
-	```
+	```js
 	import { all } from 'redux-saga/effects'
 	import { sagas as netSagas } from 'studiokit-net-js'
 	import apis from '../../apis'
@@ -47,7 +47,7 @@ For *in-vivo* examples of how to use this library, see the [example react app](h
 	}
 	```
 1. Wire up your store in your app (perhaps in `index.js`) with the above, i.e.
-	```
+	```js
 	import createSagaMiddleware from 'redux-saga'
 	import { createStore, applyMiddleware } from 'redux'
 	import reducer from './redux/reducers'
@@ -65,7 +65,7 @@ For *in-vivo* examples of how to use this library, see the [example react app](h
 # Usage
 Once you have the above steps completed, you can dispatch actions to the store and the data will be fetched and populated in the redux store, i.e.
 
-```
+```js
 import { dispatchAction } from '../services/actionService'
 import { actions as netActions } from 'studiokit-net-js'
 .
@@ -74,7 +74,7 @@ import { actions as netActions } from 'studiokit-net-js'
 store.dispatch({ type: netActions.DATA_REQUESTED, modelName: 'publicData' })
 ```
 Once the data is fetched, it will live in the redux store at the models.publicData key, i.e.
-```
+```js
 models: {
 	publicData: {
 		isFetching: false,
@@ -88,7 +88,7 @@ models: {
 
 # API
 Actions are dispatched using the following keys in the action object for configuring the request
-```
+```ts
 type FetchAction = {
 	modelName: string,
 	headers?: Object,
@@ -100,6 +100,7 @@ type FetchAction = {
 	timeLimit: number
 }
 ```
+
 - `modelName` refers to the path to the fetch configuration key found in `apis.js`
 - `headers` is an optional object used as key/value pairs to populate the request headers
 - `queryParams` is an optional object used as key/value pairs to populate the query parameters
@@ -118,7 +119,7 @@ The following actions can be dispatched
 ## Examples
 
 Given the following `apis.js`
-```
+```js
 {
 	basicData: {
 		path: 'https://httpbin.org/get'
@@ -155,23 +156,31 @@ Given the following `apis.js`
 }
 ```
 
+[Basic Fetch](#basic-fetch)  
+[Nested Model](#nested-model)  
+[Add Headers](#add-headers)  
+[Add Query Params](#add-query-params)  
+[Periodic Fetch](#periodic-fetch)  
+[Cancel Periodic Fetch](#cancel-periodic-fetch)  
+[No Store](#no-store)  
+[Post](#post)
 #
 
-Basic fetch:
+### Basic fetch:
 
 *dispatch*
-```
+```js
 store.dispatch({
 	type: netActions.DATA_REQUESTED,
 	modelName: 'basicData'
 })
 ```
 *request generated* 
-```
+```http
 GET https://httpbin.org/get
 ``` 
 *resulting redux*
-```
+```js
 {
 	models: {
 		basicData: {
@@ -187,21 +196,21 @@ GET https://httpbin.org/get
 
 #
 
-Nested model:
+### Nested model:
 
 *dispatch*
-```
+```js
 store.dispatch({
 	type: netActions.DATA_REQUESTED,
 	modelName: 'aGrouping.apiOne'
 })
 ```
 *request generated* 
-```
+```http
 GET https://myapp.com/api/one
 ``` 
 *resulting redux*
-```
+```js
 {
 	models: {
 		aGrouping: {
@@ -219,10 +228,10 @@ GET https://myapp.com/api/one
 
 #
 
-Add headers:
+### Add headers:
 
 *dispatch*
-```
+```js
 store.dispatch({
 	type: netActions.DATA_REQUESTED,
 	modelName: 'basicData',
@@ -230,7 +239,7 @@ store.dispatch({
 })
 ```
 *request generated*
-```
+```http
 Accept-Charset: utf-8
 GET https://httpbin.org/get
 ```
@@ -242,10 +251,10 @@ Same as basic fetch above, with possibly different data, depending on response r
 
 #
 
-Add query params:
+### Add query params:
 
 *dispatch*
-```
+```js
 store.dispatch({
 	type: netActions.DATA_REQUESTED,
 	modelName: 'basicData',
@@ -253,7 +262,7 @@ store.dispatch({
 })
 ```
 *request generated*
-```
+```http
 GET https://httpbin.org/get?robot=bender
 ```
 *resulting redux*
@@ -264,9 +273,9 @@ Same as basic fetch above, with possibly different data, depending on response r
 
 #
 
-Periodic fetch:
+### Periodic fetch:
 *dispatch*
-```
+```js
 store.dispatch({
 	type: netActions.PERIODIC_DATA_REQUESTED,
 	modelName: 'basicData',
@@ -275,7 +284,7 @@ store.dispatch({
 })
 ```
 *request generated*
-```
+```http
 GET https://httpbin.org/get
 ```
 *resulting redux*
@@ -284,9 +293,9 @@ Same as basic fetch above, but refreshing every 1000ms, replacing the `data` key
 
 #
 
-Cancel periodic fetch:
+### Cancel periodic fetch:
 *dispatch*
-```
+```js
 store.dispatch({
 	type: netActions.PERIODIC_TERMINATION_REQUESTED,
 	modelName: 'basicData',
@@ -303,9 +312,9 @@ Same as basic fetch above with `data` and `fetchedAt` reflecting the most recent
 
 #
 
-No store:
+### No store:
 *dispatch*
-```
+```js
 store.dispatch({
 	type: netActions.DATA_REQUESTED,
 	modelName: 'basicData',
@@ -313,7 +322,7 @@ store.dispatch({
 })
 ```
 *request generated*
-```
+```http
 GET https://httpbin.org/get
 ```
 *resulting redux*
@@ -322,9 +331,9 @@ No change to the redux store. Your application can create its own sagas and use 
 
 #
 
-Post:
+### Post:
 *dispatch*
-```
+```js
 store.dispatch({
 	type: netActions.DATA_REQUESTED,
 	modelName: 'basicPost',
@@ -335,7 +344,7 @@ store.dispatch({
 })
 ```
 *request generated*
-```
+```http
 Content-Type: application/json
 POST https://myapp.com/api/createSomeThing
 {ruleOne: "Don't talk about Fight Club",ruleTwo: "Don't talk about Fight Club"}
