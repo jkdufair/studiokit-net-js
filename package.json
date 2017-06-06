@@ -2,8 +2,8 @@
 	"name": "studiokit-net-js",
 	"version": "0.0.13",
 	"scripts": {
-		"build": "babel src -d lib",
-		"build:watch": "babel src --watch -d lib",
+		"build": "babel src -d lib --ignore '**/*.spec.js'",
+		"build:watch": "babel src --watch -d lib --ignore '**/*.spec.js'",
 		"test": "jest",
 		"test:watch": "jest --watch",
 		"coverage": "jest --coverage",
