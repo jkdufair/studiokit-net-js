@@ -1,8 +1,7 @@
 // @flow
 
 import actions from './actions'
-import { fromJS } from 'immutable'
-import byString from './utilities'
+import _ from 'lodash'
 
 import type { Action } from 'redux'
 
@@ -14,32 +13,6 @@ type ModelState = {
 	timedOut: boolean,
 	data?: Object,
 	fetchedAt?: Date
-}
-
-/**
- * Given an object, add keys matching the path in modelName.
- * Matching keys will be overwritten
- * 
- * 'foo.bar.baz' generates
- * {
- * 	foo: {
- * 		bar: {
- * 			baz: {
- * 			}
- * 		}
- * 	}
- * }
- * 
- * This function mutates the object. Immutablility coming!
- * 
- * @param {Object} base - An existing object
- * @param {string} modelName - The period-separated path to the model, i.e. 'foo.bar.baz'
- */
-var createNestedObject = function(base: Object, modelName: string) {
-	const names = modelName.split('.')
-	for (var i = 0; i < names.length; i++) {
-		base = base[names[i]] = base[names[i]] || {}
-	}
 }
 
 /**
@@ -58,18 +31,16 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 		return state
 	}
 	const modelName: string = action.modelName
-
-	const newState = {}
-	createNestedObject(newState, modelName)
+	const newState = _.set({}, modelName, {})
 	// leafNode is a reference to the model at the (potentially) nested path referenced by modelName
-	let leafNode: ModelState = byString(newState, modelName)
+	let leafNode: ModelState = _.get(newState, modelName)
 
 	switch (action.type) {
 		case actions.FETCH_REQUESTED:
 			leafNode.isFetching = true
 			leafNode.hasError = false
 			leafNode.timedOut = false
-			return fromJS(state).mergeDeep(newState).toJS()
+			return _.merge({}, state, newState)
 
 		case actions.FETCH_RESULT_RECEIVED:
 			leafNode.data = action.data
@@ -78,24 +49,22 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			leafNode.timedOut = false
 			leafNode.fetchedAt = new Date()
 			// Do not delete and re-add the data. Just replace it when this action is received
-			let path = modelName.split('.')
-			path.push('data')
-			return fromJS(state).deleteIn(path).mergeDeep(newState).toJS()
+			return _.merge({}, state, newState)
 
 		case actions.FETCH_FAILED:
 			leafNode.isFetching = false
 			leafNode.hasError = true
 			leafNode.timedOut = false
-			return fromJS(state).mergeDeep(newState).toJS()
+			return _.merge({}, state, newState)
 
 		case actions.FETCH_TIMED_OUT:
 			leafNode.isFetching = false
 			leafNode.hasError = true
 			leafNode.timedOut = true
-			return fromJS(state).mergeDeep(newState).toJS()
+			return _.merge({}, state, newState)
 
 		case actions.KEY_REMOVAL_REQUESTED:
-			return fromJS(state).deleteIn(modelName.split('.')).toJS()
+			return _.omit(state, modelName)
 
 		default:
 			return state
