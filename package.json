@@ -45,5 +45,11 @@
 			"post-checkout": [],
 			"post-merge": []
 		}
+	},
+	"jest": {
+		"testPathIgnorePatterns": [
+			"/node_modules/",
+			"<rootDir>/lib/"
+		]
 	}
 }
