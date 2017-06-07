@@ -165,8 +165,8 @@ function* fetchData(action: FetchAction) {
 		} catch (error) {
 			didFail = true
 			lastError = error
-			logger.log('fetchData fail')
-			logger.log(error)
+			logger('fetchData fail')
+			logger(error)
 			yield call(delay, 2 ^ (tryCount * 100)) // 100, 200, 400...
 		}
 	} while (tryCount < tryLimit && didFail)
@@ -174,8 +174,8 @@ function* fetchData(action: FetchAction) {
 	// Handle retry failure
 	if (tryCount === tryLimit && didFail) {
 		yield put(createAction(actions.FETCH_FAILED, { modelName: action.modelName }))
-		logger.log('fetchData retry fail')
-		logger.log(lastError)
+		logger('fetchData retry fail')
+		logger(lastError)
 	}
 }
 
