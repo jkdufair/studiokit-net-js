@@ -48,8 +48,10 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			leafNode.hasError = false
 			leafNode.timedOut = false
 			leafNode.fetchedAt = new Date()
+			let path = modelName.split('.')
+			path.push('data')
 			// Do not delete and re-add the data. Just replace it when this action is received
-			return _.merge({}, state, newState)
+			return _.merge({}, _.omit(state, path), newState)
 
 		case actions.FETCH_FAILED:
 			leafNode.isFetching = false
