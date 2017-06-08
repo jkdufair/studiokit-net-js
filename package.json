@@ -4,9 +4,9 @@
 	"scripts": {
 		"build": "babel src -d lib --ignore '**/*.spec.js'",
 		"build:watch": "babel src --watch -d lib --ignore '**/*.spec.js'",
-		"test": "jest",
-		"test:watch": "jest --watch",
-		"coverage": "jest --coverage",
+		"test": "BABEL_ENV=test jest",
+		"test:watch": "BABEL_ENV=test jest --watch",
+		"coverage": "BABEL_ENV=test jest --coverage",
 		"commit": "commit-wizard"
 	},
 	"description": "Network/API functions for Studio apps at Purdue",

@@ -2,9 +2,15 @@
 	"presets": [
 		"env"
 	],
+	"env": {
+		"test": {
+			"plugins": [
+				"rewire"
+			]
+		}
+	},
 	"plugins": [
 		"transform-flow-strip-types",
-		"rewire",
 		[
 			"transform-runtime",
 			{
