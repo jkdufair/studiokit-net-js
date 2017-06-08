@@ -74,14 +74,10 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 	const body = headers['Content-Type'].includes('application/x-www-form-urlencoded')
 		? config.body
 		: JSON.stringify(config.body)
-	try {
-		const response = yield call(fetch, constructPath(config), {
-			method: method,
-			headers: headers,
-			body
-		})
-		return response ? yield call(() => response.json()) : yield call(() => null)
-	} catch (error) {
-		throw error
-	}
+	const response = yield call(fetch, constructPath(config), {
+		method: method,
+		headers: headers,
+		body
+	})
+	return response ? yield call(() => response.json()) : yield call(() => null)
 }

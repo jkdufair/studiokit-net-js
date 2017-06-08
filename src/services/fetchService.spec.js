@@ -1,4 +1,9 @@
-import { setApiRoot, getApiRoot, __RewireAPI__ as FetchServiceRewireAPI } from './fetchService'
+import {
+	setApiRoot,
+	getApiRoot,
+	doFetch,
+	__RewireAPI__ as FetchServiceRewireAPI
+} from './fetchService'
 
 describe('Path construction', () => {
 	const constructPath = FetchServiceRewireAPI.__get__('constructPath')
@@ -45,5 +50,99 @@ describe('Path construction', () => {
 		const path = constructPath({ path: '/api/foo' })
 		expect(path).toEqual('http://abc.xyz/api/foo')
 		setApiRoot(existingApiRoot)
+	})
+})
+
+describe('doFetch', () => {
+	test('Require config.path', () => {
+		expect(() => {
+			const gen = doFetch()
+			gen.next()
+		}).toThrow(/Cannot read property 'path' of undefined/)
+	})
+
+	test('Require config.path 2', () => {
+		expect(() => {
+			const gen = doFetch({})
+			gen.next()
+		}).toThrow(/'config.path' is required/)
+	})
+
+	test('Basic GET', () => {
+		const _fetch = global.fetch
+		global.fetch = jest.fn(() => {})
+		const gen = doFetch({ path: 'http://www.google.com' })
+		const response = gen.next()
+		expect(response.value.CALL.args).toEqual([
+			'http://www.google.com',
+			{
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json; charset=utf-8'
+				}
+			}
+		])
+		global.fetch = _fetch
+	})
+
+	test('Basic POST w/ headers', () => {
+		const _fetch = global.fetch
+		global.fetch = jest.fn(() => {})
+		const gen = doFetch({ path: 'http://www.google.com', method: 'POST', body: { foo: 'bar' } })
+		const response = gen.next()
+		expect(response.value.CALL.args).toEqual([
+			'http://www.google.com',
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json; charset=utf-8'
+				},
+				body: JSON.stringify({ foo: 'bar' })
+			}
+		])
+		global.fetch = _fetch
+	})
+
+	test('Basic GET w/ headers & form urlencoded', () => {
+		const _fetch = global.fetch
+		global.fetch = jest.fn(() => {})
+		const gen = doFetch({
+			path: 'http://www.google.com',
+			method: 'POST',
+			body: 'foo=bar&baz=quux',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+		})
+		const response = gen.next()
+		expect(response.value.CALL.args).toEqual([
+			'http://www.google.com',
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded'
+				},
+				body: 'foo=bar&baz=quux'
+			}
+		])
+		global.fetch = _fetch
+	})
+
+	test('Basic GET test empty response from server', () => {
+		const _fetch = global.fetch
+		global.fetch = jest.fn(() => {})
+		const gen = doFetch({ path: 'http://www.google.com' })
+		const response = gen.next()
+		const response2 = gen.next()
+		expect(response2.value.CALL.fn()).toEqual(null)
+		global.fetch = _fetch
+	})
+
+	test('Basic GET test non-empty response from server', () => {
+		const _fetch = global.fetch
+		global.fetch = jest.fn(() => {})
+		const gen = doFetch({ path: 'http://www.google.com' })
+		const response = gen.next()
+		const response2 = gen.next({ json: () => ({ foo: 'bar' }) })
+		expect(response2.value.CALL.fn()).toEqual({ foo: 'bar' })
+		global.fetch = _fetch
 	})
 })
