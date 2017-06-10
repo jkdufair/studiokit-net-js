@@ -70,7 +70,7 @@ let oauthToken: OAuthToken
  */
 function* fetchData(action: FetchAction) {
 	// Validate
-	if (!action.modelName) {
+	if (!action || !action.modelName) {
 		throw new Error("'modelName' config parameter is required for fetchData")
 	}
 
@@ -80,55 +80,55 @@ function* fetchData(action: FetchAction) {
 	let didFail
 	let lastError: string = ''
 
+	// Get fetch parameters from global fetch dictionary using the modelName passed in to locate them
+	// Combine parameters from global dictionary with any passed in - locals override dictionary
+	const baseConfig = _.get(models, action.modelName)
+
+	if (!baseConfig) {
+		throw new Error(`Cannot find \'${action.modelName}\' model in model dictionary`)
+	}
+	// Avoiding pulling in a lib to do deep copy here. Hand crafted. Locally owned.
+	// If body is string, pass it directly (to handle content-type: x-www-form-urlencoded)
+	let authHeaders = {}
+	if (oauthToken) {
+		authHeaders['Authorization'] = `Bearer ${oauthToken.access_token}`
+	}
+	const headers = Object.assign({}, baseConfig.headers, action.headers, authHeaders)
+	const fetchConfig = Object.assign({}, baseConfig, {
+		headers: headers
+	})
+	if (action.body || baseConfig.body) {
+		// If the body is a string, we are assuming it's an application/x-www-form-urlencoded
+		if (typeof action.body === 'string') {
+			fetchConfig.body = action.body
+		} else {
+			fetchConfig.body = Object.assign({}, baseConfig.body, action.body)
+		}
+	}
+	fetchConfig.queryParams = Object.assign({}, baseConfig.queryParams, action.queryParams)
+
+	// substitute parameterized query path references with values from store
+	// TODO: validate the path exists in the store
+	if (/{{.+}}/.test(fetchConfig.path)) {
+		// have to get reference to the whole store here
+		// since there is no yield in an arrow fn
+		const store = yield select(store => store)
+		fetchConfig.path = fetchConfig.path.replace(/{{(.+?)}}/, (matches, backref) => {
+			return _.get(store, backref)
+		})
+	}
+
 	// Run retry loop
 	do {
 		didFail = false
 		tryCount++
-		try {
-			// Indicate fetch action has begun
-			yield put(
-				createAction(action.noStore ? actions.TRANSIENT_FETCH_REQUESTED : actions.FETCH_REQUESTED, {
-					modelName: action.modelName
-				})
-			)
-
-			// Get fetch parameters from global fetch dictionary using the modelName passed in to locate them
-			// Combine parameters from global dictionary with any passed in - locals override dictionary
-			const baseConfig = _.get(models, action.modelName)
-
-			if (!baseConfig) {
-				throw new Error(`Cannot find \'${action.modelName}\' model in model dictionary`)
-			}
-			// Avoiding pulling in a lib to do deep copy here. Hand crafted. Locally owned.
-			// If body is string, pass it directly (to handle content-type: x-www-form-urlencoded)
-			let authHeaders = {}
-			if (oauthToken) {
-				authHeaders['Authorization'] = `Bearer ${oauthToken.access_token}`
-			}
-			const headers = Object.assign({}, baseConfig.headers, action.headers, authHeaders)
-			const fetchConfig = Object.assign({}, baseConfig, {
-				headers: headers
+		// Indicate fetch action has begun
+		yield put(
+			createAction(action.noStore ? actions.TRANSIENT_FETCH_REQUESTED : actions.FETCH_REQUESTED, {
+				modelName: action.modelName
 			})
-			if (action.body || baseConfig.body) {
-				// If the body is a string, we are assuming it's an application/x-www-form-urlencoded
-				if (typeof action.body === 'string') {
-					fetchConfig.body = action.body
-				} else {
-					fetchConfig.body = Object.assign({}, baseConfig.body, action.body)
-				}
-			}
-			fetchConfig.queryParams = Object.assign({}, baseConfig.queryParams, action.queryParams)
-
-			// substitute parameterized query path references with values from store
-			// TODO: validate the path exists in the store
-			if (/{{.+}}/.test(fetchConfig.path)) {
-				// have to get reference to the whole store here
-				// since there is no yield in an arrow fn
-				const store = yield select(store => store)
-				fetchConfig.path = fetchConfig.path.replace(/{{(.+?)}}/, (_, backref) => {
-					return _.get(store, backref)
-				})
-			}
+		)
+		try {
 			const { fetchResult, timedOut } = yield race({
 				fetchResult: call(doFetch, fetchConfig),
 				timedOut: call(delay, action.timeLimit ? action.timeLimit : 3000)
@@ -152,6 +152,7 @@ function* fetchData(action: FetchAction) {
 							modelName: action.modelName
 						})
 					)
+					throw new Error()
 				} else {
 					yield put(
 						createAction(actions.FETCH_TRY_FAILED, {
@@ -201,7 +202,7 @@ function* fetchDataLoop(action: FetchAction) {
 			yield call(delay, action.period)
 		}
 	} finally {
-		put(actions.PERIODIC_TERMINATION_SUCCEEDED)
+		yield put(actions.PERIODIC_TERMINATION_SUCCEEDED)
 	}
 }
 
@@ -212,27 +213,19 @@ function* fetchDataLoop(action: FetchAction) {
  * @param {FetchAction} action - An action with the request configuration 
  */
 function* fetchDataRecurring(action: FetchAction) {
-	if (!action.period) {
+	if (!action || !action.period) {
 		throw new Error("'period' config parameter is required for fetchDataRecurring")
 	}
-	if (!action.taskId) {
+	if (!action || !action.taskId) {
 		throw new Error("'taskId' config parameter is required for fetchDataRecurring")
 	}
 	const bgSyncTask = yield fork(fetchDataLoop, action)
 	yield take(
-		action =>
-			action.type === actions.PERIODIC_TERMINATION_REQUESTED && action.taskId === action.taskId
+		incomingAction =>
+			incomingAction.type === actions.PERIODIC_TERMINATION_REQUESTED &&
+			incomingAction.taskId === action.taskId
 	)
 	yield cancel(bgSyncTask)
-}
-
-/**
- * Call the fetchData saga, ensuring that any concurrent requests are handled and only the last one is acted on
- * 
- * @param {FetchAction} action - An action with the request configuration 
- */
-function* fetchLatest(action: FetchAction) {
-	yield call(fetchData, action)
 }
 
 /**
@@ -242,7 +235,7 @@ function* fetchLatest(action: FetchAction) {
  * 
  * @param {TokenSuccessAction} action - The action containing the oAuth token
  */
-function* interceptOauthToken(action: TokenSuccessAction) {
+function interceptOauthToken(action: TokenSuccessAction) {
 	oauthToken = action.oauthToken
 }
 
@@ -299,7 +292,7 @@ export default function* fetchSaga(
 
 	yield takeEvery(actions.DATA_REQUESTED, fetchOnce)
 	yield takeEvery(actions.PERIODIC_DATA_REQUESTED, fetchDataRecurring)
-	yield takeLatest(actions.DATA_REQUESTED_USE_LATEST, fetchLatest)
+	yield takeLatest(actions.DATA_REQUESTED_USE_LATEST, fetchOnce)
 
 	// Hard coded so as not to take a dependency on another module for an action name
 	// Sorry, refactoring friend
