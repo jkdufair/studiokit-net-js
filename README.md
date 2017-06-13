@@ -1,3 +1,5 @@
+[![Coverage Status](https://coveralls.io/repos/github/purdue-tlt/studiokit-net-js/badge.svg?branch=master)](https://coveralls.io/github/purdue-tlt/studiokit-net-js?branch=master)
+
 # StudioKit Net Library
 
 A library for declarative, configurable data (API) access with built-in retry, timeout, periodic refresh, and concurrency handling.
