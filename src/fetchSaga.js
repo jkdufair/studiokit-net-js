@@ -88,7 +88,7 @@ function* fetchData(action: FetchAction) {
 		throw new Error(`Cannot find \'${action.modelName}\' model in model dictionary`)
 	}
 	// Avoiding pulling in a lib to do deep copy here. Hand crafted. Locally owned.
-	// If body is string, pass it directly (to handle content-type: x-www-form-urlencoded)
+	// If body is string, pass it directly (to handle contenttype: x-www-form-urlencoded)
 	let authHeaders = {}
 	if (oauthToken) {
 		authHeaders['Authorization'] = `Bearer ${oauthToken.access_token}`
@@ -112,7 +112,7 @@ function* fetchData(action: FetchAction) {
 	if (/{{.+}}/.test(fetchConfig.path)) {
 		// have to get reference to the whole store here
 		// since there is no yield in an arrow fn
-		const store = yield select(store => store)
+		const store = yield select(state => state)
 		fetchConfig.path = fetchConfig.path.replace(/{{(.+?)}}/, (matches, backref) => {
 			return _.get(store, backref)
 		})
@@ -202,8 +202,15 @@ function* fetchDataLoop(action: FetchAction) {
 			yield call(delay, action.period)
 		}
 	} finally {
-		yield put(actions.PERIODIC_TERMINATION_SUCCEEDED)
+		yield put(createAction(actions.PERIODIC_TERMINATION_SUCCEEDED, action))
 	}
+}
+
+function matchesTerminationAction(incomingAction, fetchAction) {
+	return (
+		incomingAction.type === actions.PERIODIC_TERMINATION_REQUESTED &&
+		incomingAction.taskId === fetchAction.taskId
+	)
 }
 
 /**
@@ -220,11 +227,7 @@ function* fetchDataRecurring(action: FetchAction) {
 		throw new Error("'taskId' config parameter is required for fetchDataRecurring")
 	}
 	const bgSyncTask = yield fork(fetchDataLoop, action)
-	yield take(
-		incomingAction =>
-			incomingAction.type === actions.PERIODIC_TERMINATION_REQUESTED &&
-			incomingAction.taskId === action.taskId
-	)
+	yield take(incomingAction => matchesTerminationAction(incomingAction, action))
 	yield cancel(bgSyncTask)
 }
 
@@ -288,6 +291,7 @@ export default function* fetchSaga(
 	}
 	setApiRoot(apiRootParam)
 	logger = loggerParam
+	logger(`logger set to ${logger.name}`)
 	models = modelsParam
 
 	yield takeEvery(actions.DATA_REQUESTED, fetchOnce)
