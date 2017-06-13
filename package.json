@@ -7,6 +7,7 @@
 		"test": "BABEL_ENV=test jest",
 		"test:watch": "BABEL_ENV=test jest --watch",
 		"coverage": "BABEL_ENV=test jest --coverage",
+		"coveralls": "BABEL_ENV=test jest --coverage && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
 		"commit": "commit-wizard"
 	},
 	"description": "Network/API functions for Studio apps at Purdue",
@@ -18,6 +19,7 @@
 		"babel-cli": "^6.24.1",
 		"babel-plugin-rewire": "^1.1.0",
 		"babel-plugin-transform-flow-strip-types": "^6.22.0",
+		"coveralls": "^2.13.1",
 		"eslint": "^3.19.0",
 		"eslint-plugin-redux-saga": "^0.3.0",
 		"fetch-mock": "^5.10.0",
