@@ -33,6 +33,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 	const path: Array<string> = action.modelName.split('.')
 	const newValue = {}
 	newValue.data = _.get(_.union(['data'], path), state)
+	newValue.fetchedAt = _.get(_.union(['fetchedAt'], path), state)
 
 	switch (action.type) {
 		case actions.FETCH_REQUESTED:

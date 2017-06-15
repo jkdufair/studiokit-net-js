@@ -43,14 +43,17 @@ describe('fetchReducer', () => {
 			})
 		})
 
-		test('should preserve data key while fetching', () => {
+		test('should preserve data and fetchedAt key while fetching', () => {
+			const fetchedDate = new Date()
+
 			const state = fetchReducer(
 				{
 					test: {
 						data: { foo: 'bar' },
 						isFetching: false,
 						hasError: false,
-						timedOut: false
+						timedOut: false,
+						fetchedAt: fetchedDate
 					}
 				},
 				{ type: actions.FETCH_REQUESTED, modelName: 'test' }
@@ -60,7 +63,8 @@ describe('fetchReducer', () => {
 					data: { foo: 'bar' },
 					isFetching: true,
 					hasError: false,
-					timedOut: false
+					timedOut: false,
+					fetchedAt: fetchedDate
 				}
 			})
 		})
