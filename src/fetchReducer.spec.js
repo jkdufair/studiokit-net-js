@@ -35,11 +35,11 @@ describe('fetchReducer', () => {
 
 		test('nested level replace state', () => {
 			const state = fetchReducer(
-				{ user: 'bar' },
+				{ user: { foo: 'bar' } },
 				{ type: actions.FETCH_REQUESTED, modelName: 'user.test' }
 			)
 			expect(state).toEqual({
-				user: { test: { isFetching: true, hasError: false, timedOut: false } }
+				user: { foo: 'bar', test: { isFetching: true, hasError: false, timedOut: false } }
 			})
 		})
 	})
@@ -94,7 +94,7 @@ describe('fetchReducer', () => {
 			})
 		})
 
-		test('nested level merge new key', () => {
+		test('nested add sibling key', () => {
 			const fetchedAtDate = new Date()
 			const _Date = Date
 			global.Date = jest.fn(() => fetchedAtDate)
@@ -125,7 +125,11 @@ describe('fetchReducer', () => {
 			const _Date = Date
 			global.Date = jest.fn(() => fetchedAtDate)
 			const state = fetchReducer(
-				{ user: 'bar' },
+				{
+					user: {
+						test: { key: 'oldValue' }
+					}
+				},
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
@@ -134,6 +138,36 @@ describe('fetchReducer', () => {
 			)
 			expect(state).toEqual({
 				user: {
+					test: {
+						isFetching: false,
+						hasError: false,
+						timedOut: false,
+						fetchedAt: fetchedAtDate,
+						data: { key: 'value' }
+					}
+				}
+			})
+		})
+
+		test('nested level merge existing key', () => {
+			const fetchedAtDate = new Date()
+			const _Date = Date
+			global.Date = jest.fn(() => fetchedAtDate)
+			const state = fetchReducer(
+				{
+					user: {
+						existingKey: { foo: 'bar' }
+					}
+				},
+				{
+					type: actions.FETCH_RESULT_RECEIVED,
+					modelName: 'user.test',
+					data: { key: 'value' }
+				}
+			)
+			expect(state).toEqual({
+				user: {
+					existingKey: { foo: 'bar' },
 					test: {
 						isFetching: false,
 						hasError: false,
@@ -210,11 +244,11 @@ describe('fetchReducer', () => {
 
 		test('nested level replace state', () => {
 			const state = fetchReducer(
-				{ user: 'bar' },
+				{ user: { foo: 'bar' } },
 				{ type: actions.FETCH_FAILED, modelName: 'user.test' }
 			)
 			expect(state).toEqual({
-				user: { test: { isFetching: false, hasError: true, timedOut: false } }
+				user: { foo: 'bar', test: { isFetching: false, hasError: true, timedOut: false } }
 			})
 		})
 	})
@@ -247,11 +281,11 @@ describe('fetchReducer', () => {
 
 		test('nested level replace state', () => {
 			const state = fetchReducer(
-				{ user: 'bar' },
+				{ user: { foo: 'bar' } },
 				{ type: actions.FETCH_TIMED_OUT, modelName: 'user.test' }
 			)
 			expect(state).toEqual({
-				user: { test: { isFetching: false, hasError: true, timedOut: true } }
+				user: { foo: 'bar', test: { isFetching: false, hasError: true, timedOut: true } }
 			})
 		})
 	})
@@ -259,7 +293,7 @@ describe('fetchReducer', () => {
 	describe('KEY_REMOVAL_REQUESTED', () => {
 		test('remove key', () => {
 			const state = fetchReducer(
-				{ test: 'foo' },
+				{ test: { foo: 'bar' } },
 				{ type: actions.KEY_REMOVAL_REQUESTED, modelName: 'test' }
 			)
 			expect(state).toEqual({})
