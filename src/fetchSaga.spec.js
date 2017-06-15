@@ -3,6 +3,7 @@ import { delay } from 'redux-saga'
 import {
 	call,
 	cancel,
+	cancelled,
 	take,
 	takeEvery,
 	takeLatest,
@@ -239,7 +240,7 @@ describe('fetchData', () => {
 		)
 	})
 
-	test('should dispatch when all retries have failed', () => {
+	test('should dispatch FETCH_FAILED when all retries have failed', () => {
 		const gen = fetchData({ modelName: 'test' })
 		for (let i = 0; i <= 3; i++) {
 			gen.next()
@@ -255,6 +256,24 @@ describe('fetchData', () => {
 			gen.next()
 		}
 		expect(gen.next().value).toEqual(put(createAction(actions.FETCH_FAILED, { modelName: 'test' })))
+		expect(gen.next().done).toEqual(true)
+	})
+
+	test('should not dispatch FETCH_FAILED when all retries were timeouts', () => {
+		const gen = fetchData({ modelName: 'test' })
+		for (let i = 0; i <= 3; i++) {
+			gen.next()
+			gen.next()
+			expect(gen.next({ timedOut: true }).value).toEqual(
+				put(
+					createAction(actions.FETCH_TIMED_OUT, {
+						modelName: 'test'
+					})
+				)
+			)
+			gen.next()
+		}
+
 		expect(gen.next().done).toEqual(true)
 	})
 })
@@ -276,11 +295,12 @@ describe('fetchDataLoop', () => {
 		expect(gen.next().value).toEqual(call(fetchData, { modelName: 'foo', period: 1000 }))
 		expect(gen.next().value).toEqual(call(delay, 1000))
 
-		expect(gen.return().value).toEqual(
+		expect(gen.return().value).toEqual(cancelled())
+
+		expect(gen.next(true).value).toEqual(
 			put(
 				createAction(actions.PERIODIC_TERMINATION_SUCCEEDED, {
-					modelName: 'foo',
-					period: 1000
+					modelName: 'foo'
 				})
 			)
 		)

@@ -4,6 +4,7 @@ import { delay } from 'redux-saga'
 import {
 	call,
 	cancel,
+	cancelled,
 	fork,
 	put,
 	race,
@@ -74,12 +75,6 @@ function* fetchData(action: FetchAction) {
 		throw new Error("'modelName' config parameter is required for fetchData")
 	}
 
-	// Configure retry
-	const tryLimit = action.noRetry ? 0 : 4
-	let tryCount = 0
-	let didFail
-	let lastError: string = ''
-
 	// Get fetch parameters from global fetch dictionary using the modelName passed in to locate them
 	// Combine parameters from global dictionary with any passed in - locals override dictionary
 	const baseConfig = _.get(models, action.modelName)
@@ -118,9 +113,18 @@ function* fetchData(action: FetchAction) {
 		})
 	}
 
+	// Configure retry
+	const tryLimit = action.noRetry ? 0 : 4
+	let tryCount = 0
+	let didFail
+	let didTimeOut
+	let lastError: string = ''
+
 	// Run retry loop
 	do {
 		didFail = false
+		didTimeOut = false
+
 		tryCount++
 		// Indicate fetch action has begun
 		yield put(
@@ -152,6 +156,7 @@ function* fetchData(action: FetchAction) {
 							modelName: action.modelName
 						})
 					)
+					didTimeOut = true
 					throw new Error()
 				} else {
 					yield put(
@@ -174,7 +179,9 @@ function* fetchData(action: FetchAction) {
 
 	// Handle retry failure
 	if (tryCount === tryLimit && didFail) {
-		yield put(createAction(actions.FETCH_FAILED, { modelName: action.modelName }))
+		if (!didTimeOut) {
+			yield put(createAction(actions.FETCH_FAILED, { modelName: action.modelName }))
+		}
 		logger('fetchData retry fail')
 		logger(lastError)
 	}
@@ -202,7 +209,11 @@ function* fetchDataLoop(action: FetchAction) {
 			yield call(delay, action.period)
 		}
 	} finally {
-		yield put(createAction(actions.PERIODIC_TERMINATION_SUCCEEDED, action))
+		if (yield cancelled()) {
+			yield put(
+				createAction(actions.PERIODIC_TERMINATION_SUCCEEDED, { modelName: action.modelName })
+			)
+		}
 	}
 }
 

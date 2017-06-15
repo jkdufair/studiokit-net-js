@@ -1,6 +1,6 @@
 {
 	"name": "studiokit-net-js",
-	"version": "1.0.1",
+	"version": "1.0.5",
 	"scripts": {
 		"build": "babel src -d lib --ignore '**/*.spec.js'",
 		"build:watch": "babel src --watch -d lib --ignore '**/*.spec.js'",

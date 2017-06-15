@@ -42,6 +42,32 @@ describe('fetchReducer', () => {
 				user: { foo: 'bar', test: { isFetching: true, hasError: false, timedOut: false } }
 			})
 		})
+
+		test('should preserve data and fetchedAt key while fetching', () => {
+			const fetchedDate = new Date()
+
+			const state = fetchReducer(
+				{
+					test: {
+						data: { foo: 'bar' },
+						isFetching: false,
+						hasError: false,
+						timedOut: false,
+						fetchedAt: fetchedDate
+					}
+				},
+				{ type: actions.FETCH_REQUESTED, modelName: 'test' }
+			)
+			expect(state).toEqual({
+				test: {
+					data: { foo: 'bar' },
+					isFetching: true,
+					hasError: false,
+					timedOut: false,
+					fetchedAt: fetchedDate
+				}
+			})
+		})
 	})
 
 	describe('FETCH_RESULT_RECEIVED', () => {
