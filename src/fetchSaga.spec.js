@@ -3,6 +3,7 @@ import { delay } from 'redux-saga'
 import {
 	call,
 	cancel,
+	cancelled,
 	take,
 	takeEvery,
 	takeLatest,
@@ -272,6 +273,7 @@ describe('fetchData', () => {
 			)
 			gen.next()
 		}
+
 		expect(gen.next().done).toEqual(true)
 	})
 })
@@ -293,11 +295,12 @@ describe('fetchDataLoop', () => {
 		expect(gen.next().value).toEqual(call(fetchData, { modelName: 'foo', period: 1000 }))
 		expect(gen.next().value).toEqual(call(delay, 1000))
 
-		expect(gen.return().value).toEqual(
+		expect(gen.return().value).toEqual(cancelled())
+
+		expect(gen.next(true).value).toEqual(
 			put(
 				createAction(actions.PERIODIC_TERMINATION_SUCCEEDED, {
-					modelName: 'foo',
-					period: 1000
+					modelName: 'foo'
 				})
 			)
 		)

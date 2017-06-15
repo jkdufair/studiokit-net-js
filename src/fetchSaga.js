@@ -4,6 +4,7 @@ import { delay } from 'redux-saga'
 import {
 	call,
 	cancel,
+	cancelled,
 	fork,
 	put,
 	race,
@@ -208,7 +209,11 @@ function* fetchDataLoop(action: FetchAction) {
 			yield call(delay, action.period)
 		}
 	} finally {
-		yield put(createAction(actions.PERIODIC_TERMINATION_SUCCEEDED, action))
+		if (yield cancelled()) {
+			yield put(
+				createAction(actions.PERIODIC_TERMINATION_SUCCEEDED, { modelName: action.modelName })
+			)
+		}
 	}
 }
 
