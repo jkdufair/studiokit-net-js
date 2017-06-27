@@ -251,6 +251,7 @@ function* fetchDataRecurring(action: FetchAction) {
  */
 function interceptOauthToken(action: TokenSuccessAction) {
 	oauthToken = action.oauthToken
+	logger(`Token intercepted`)
 }
 
 /**
@@ -259,7 +260,7 @@ function interceptOauthToken(action: TokenSuccessAction) {
  * @param {string} message - The message to log
  */
 const consoleLogger = (message: string) => {
-	console.log(message)
+	console.debug(message)
 }
 
 /**
