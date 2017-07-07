@@ -1,6 +1,6 @@
 {
 	"name": "studiokit-net-js",
-	"version": "1.0.5",
+	"version": "1.0.7",
 	"scripts": {
 		"build": "babel src -d lib --ignore '**/*.spec.js'",
 		"build:watch": "babel src --watch -d lib --ignore '**/*.spec.js'",
@@ -39,9 +39,7 @@
 	"config": {
 		"pre-git": {
 			"commit-msg": "simple",
-			"pre-commit": [
-				"yarn babel -- src -d lib"
-			],
+			"pre-commit": ["yarn babel -- src -d lib"],
 			"pre-push": [],
 			"post-commit": [],
 			"post-checkout": [],
@@ -49,9 +47,6 @@
 		}
 	},
 	"jest": {
-		"testPathIgnorePatterns": [
-			"/node_modules/",
-			"<rootDir>/lib/"
-		]
+		"testPathIgnorePatterns": ["/node_modules/", "<rootDir>/lib/"]
 	}
 }

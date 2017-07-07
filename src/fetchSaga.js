@@ -49,19 +49,12 @@ type FetchAction = {
 	taskId?: string
 }
 
-/**
- * oauthToken - The object representing an oAuth token
- * 
- */
-type TokenSuccessAction = {
-	oauthToken: OAuthToken
-}
-
 type LoggerFunction = string => void
+type TokenAccessFunction = void => ?OAuthToken
 
 let logger: LoggerFunction
 let models: Object
-let oauthToken: OAuthToken
+let tokenAccessFunction: TokenAccessFunction
 
 /**
  * Construct a request based on the provided action, make a request with a configurable retry,
@@ -82,13 +75,7 @@ function* fetchData(action: FetchAction) {
 	if (!baseConfig) {
 		throw new Error(`Cannot find \'${action.modelName}\' model in model dictionary`)
 	}
-	// Avoiding pulling in a lib to do deep copy here. Hand crafted. Locally owned.
-	// If body is string, pass it directly (to handle contenttype: x-www-form-urlencoded)
-	let authHeaders = {}
-	if (oauthToken) {
-		authHeaders['Authorization'] = `Bearer ${oauthToken.access_token}`
-	}
-	const headers = Object.assign({}, baseConfig.headers, action.headers, authHeaders)
+	const headers = Object.assign({}, baseConfig.headers, action.headers)
 	const fetchConfig = Object.assign({}, baseConfig, {
 		headers: headers
 	})
@@ -133,6 +120,10 @@ function* fetchData(action: FetchAction) {
 			})
 		)
 		try {
+			const oauthToken = tokenAccessFunction()
+			if (oauthToken && oauthToken.access_token) {
+				fetchConfig.headers['Authorization'] = `Bearer ${oauthToken.access_token}`
+			}
 			const { fetchResult, timedOut } = yield race({
 				fetchResult: call(doFetch, fetchConfig),
 				timedOut: call(delay, action.timeLimit ? action.timeLimit : 3000)
@@ -243,23 +234,16 @@ function* fetchDataRecurring(action: FetchAction) {
 }
 
 /**
- * Function to save an oAuth token when it is receieved via a token success action
- * Token is stored and sent in all subsequent requests via Authorization headers.
- * The oAuth token is stored in memory but not in redux.
- * 
- * @param {TokenSuccessAction} action - The action containing the oAuth token
- */
-function interceptOauthToken(action: TokenSuccessAction) {
-	oauthToken = action.oauthToken
-}
-
-/**
  * A default logger function that logs to the console. Used if no other logger is provided
  * 
  * @param {string} message - The message to log
  */
 const consoleLogger = (message: string) => {
-	console.log(message)
+	console.debug(message)
+}
+
+const tokenAccess = () => {
+	return undefined
 }
 
 /**
@@ -295,6 +279,7 @@ const consoleLogger = (message: string) => {
 export default function* fetchSaga(
 	modelsParam: Object,
 	apiRootParam: string,
+	tokenAccessParam: TokenAccessFunction = tokenAccess,
 	loggerParam: LoggerFunction = consoleLogger
 ): Generator<*, *, *> {
 	if (!modelsParam) {
@@ -304,13 +289,9 @@ export default function* fetchSaga(
 	logger = loggerParam
 	logger(`logger set to ${logger.name}`)
 	models = modelsParam
+	tokenAccessFunction = tokenAccessParam
 
 	yield takeEvery(actions.DATA_REQUESTED, fetchOnce)
 	yield takeEvery(actions.PERIODIC_DATA_REQUESTED, fetchDataRecurring)
 	yield takeLatest(actions.DATA_REQUESTED_USE_LATEST, fetchOnce)
-
-	// Hard coded so as not to take a dependency on another module for an action name
-	// Sorry, refactoring friend
-	yield takeLatest('auth/GET_TOKEN_SUCCEEDED', interceptOauthToken)
-	yield takeLatest('auth/TOKEN_REFRESH_SUCCEEDED', interceptOauthToken)
 }
