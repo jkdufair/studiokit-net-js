@@ -51,10 +51,12 @@ type FetchAction = {
 
 type LoggerFunction = string => void
 type TokenAccessFunction = void => ?OAuthToken
+type ErrorFunction = void => void
 
 let logger: LoggerFunction
 let models: Object
 let tokenAccessFunction: TokenAccessFunction
+let errorFunction: ErrorFunction
 
 /**
  * Construct a request based on the provided action, make a request with a configurable retry,
@@ -160,6 +162,10 @@ function* fetchData(action: FetchAction) {
 				}
 			}
 		} catch (error) {
+			// HERE I THINK WE'D PERFORM THE PASSED FUNCTION FOR HANDLING ERRORS
+			if (errorFunction) {
+				errorFunction()
+			}
 			didFail = true
 			lastError = error
 			logger('fetchData fail')
@@ -280,6 +286,7 @@ export default function* fetchSaga(
 	modelsParam: Object,
 	apiRootParam: string,
 	tokenAccessParam: TokenAccessFunction = tokenAccess,
+	errorParam: ErrorAccessFunction = errorFunction,
 	loggerParam: LoggerFunction = consoleLogger
 ): Generator<*, *, *> {
 	if (!modelsParam) {
@@ -289,6 +296,7 @@ export default function* fetchSaga(
 	logger = loggerParam
 	logger(`logger set to ${logger.name}`)
 	models = modelsParam
+	errorFunction = errorParam
 	tokenAccessFunction = tokenAccessParam
 
 	yield takeEvery(actions.DATA_REQUESTED, fetchOnce)
