@@ -167,7 +167,6 @@ function* fetchData(action: FetchAction) {
 						modelName: action.modelName,
 						errorData: fetchResult
 					}
-
 					throw new Error(JSON.stringify(errorObject))
 				}
 			}
