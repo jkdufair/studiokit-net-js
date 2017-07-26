@@ -150,7 +150,11 @@ function* fetchData(action: FetchAction) {
 						})
 					)
 					didTimeOut = true
-					throw new Error(fetchResult)
+					let errorObject = {
+						type: actions.FETCH_TIMED_OUT,
+						modelName: action.modelName
+					}
+					throw new Error(JSON.stringify(errorObject))
 				} else {
 					yield put(
 						createAction(actions.FETCH_TRY_FAILED, {
@@ -158,13 +162,19 @@ function* fetchData(action: FetchAction) {
 							errorData: fetchResult
 						})
 					)
-					throw new Error(fetchResult)
+					let errorObject = {
+						type: actions.FETCH_TRY_FAILED,
+						modelName: action.modelName,
+						errorData: fetchResult
+					}
+
+					throw new Error(JSON.stringify(errorObject))
 				}
 			}
 		} catch (error) {
 			// HERE I THINK WE'D PERFORM THE PASSED FUNCTION FOR HANDLING ERRORS
 			if (errorFunction) {
-				errorFunction(error)
+				
 			}
 			didFail = true
 			lastError = error
