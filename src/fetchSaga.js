@@ -171,6 +171,7 @@ function* fetchData(action: FetchAction) {
 				}
 			}
 		} catch (error) {
+			// HERE I THINK WE'D PERFORM THE PASSED FUNCTION FOR HANDLING ERRORS
 			if (errorFunction) {
 				errorFunction(error.message)
 			}
@@ -256,6 +257,14 @@ const consoleLogger = (message: string) => {
 	console.debug(message)
 }
 
+/**
+ * A default error function that that does nothing. Used if no other error function is provided
+ * 
+ * @param {string} error - The error that occured
+ */
+const errorDefault = (error: string) => {
+}
+
 const tokenAccess = () => {
 	return undefined
 }
@@ -288,7 +297,7 @@ const tokenAccess = () => {
  * @export
  * @param {Object} modelsParam - An object indicating the APIs available in a application with which to make requests
  * @param {string} apiRootParam - A url to which partial URLs are appended (i.e.) 'https://myapp.com'
- * @param {ErrorFunction} errorParam  - A function to perform on errors
+ * @param {ErrorFunction} [errorParam=errorDefault]  - A function to perform on errors
  * @param {LoggerFunction} [loggerParam=consoleLogger] - A function that accepts a string and logs it real good
  */
 export default function* fetchSaga(
