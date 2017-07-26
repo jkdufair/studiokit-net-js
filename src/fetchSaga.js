@@ -171,7 +171,6 @@ function* fetchData(action: FetchAction) {
 				}
 			}
 		} catch (error) {
-			// HERE I THINK WE'D PERFORM THE PASSED FUNCTION FOR HANDLING ERRORS
 			if (errorFunction) {
 				errorFunction(error.message)
 			}
