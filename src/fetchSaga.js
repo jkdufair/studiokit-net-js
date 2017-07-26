@@ -280,14 +280,14 @@ const tokenAccess = () => {
  * @export
  * @param {Object} modelsParam - An object indicating the APIs available in a application with which to make requests
  * @param {string} apiRootParam - A url to which partial URLs are appended (i.e.) 'https://myapp.com'
- * @param {ErrorFunction} [errorParam=errorPerform]- A function to perform on errors'
+ * @param {ErrorFunction} errorParam - A function to perform on errors'
  * @param {LoggerFunction} [loggerParam=consoleLogger] - A function that accepts a string and logs it real good
  */
 export default function* fetchSaga(
 	modelsParam: Object,
 	apiRootParam: string,
 	tokenAccessParam: TokenAccessFunction = tokenAccess,
-	errorParam: ErrorAccessFunction = errorPerform,
+	errorParam: ErrorAccessFunction,
 	loggerParam: LoggerFunction = consoleLogger
 ): Generator<*, *, *> {
 	if (!modelsParam) {
