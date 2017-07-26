@@ -51,7 +51,7 @@ type FetchAction = {
 
 type LoggerFunction = string => void
 type TokenAccessFunction = void => ?OAuthToken
-type ErrorFunction = void => void
+type ErrorFunction = string => void
 
 let logger: LoggerFunction
 let models: Object
@@ -248,6 +248,14 @@ const consoleLogger = (message: string) => {
 	console.debug(message)
 }
 
+/**
+ * A default error function that that does nothing. Used if no other error function is provided
+ * 
+ * @param {string} error - The error that occured
+ */
+const errorDefault = (error: string) => {
+}
+
 const tokenAccess = () => {
 	return undefined
 }
@@ -280,14 +288,14 @@ const tokenAccess = () => {
  * @export
  * @param {Object} modelsParam - An object indicating the APIs available in a application with which to make requests
  * @param {string} apiRootParam - A url to which partial URLs are appended (i.e.) 'https://myapp.com'
- * @param {ErrorFunction} errorParam - A function to perform on errors'
+ * @param {ErrorFunction} [errorParam=errorDefault]  - A function to perform on errors'
  * @param {LoggerFunction} [loggerParam=consoleLogger] - A function that accepts a string and logs it real good
  */
 export default function* fetchSaga(
 	modelsParam: Object,
 	apiRootParam: string,
 	tokenAccessParam: TokenAccessFunction = tokenAccess,
-	errorParam: ErrorAccessFunction,
+	errorParam: ErrorFunction,
 	loggerParam: LoggerFunction = consoleLogger
 ): Generator<*, *, *> {
 	if (!modelsParam) {
