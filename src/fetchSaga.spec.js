@@ -25,7 +25,7 @@ const fetchDataRecurring = FetchSagaRewireAPI.__get__('fetchDataRecurring')
 const fetchDataLoop = FetchSagaRewireAPI.__get__('fetchDataLoop')
 
 let consoleOutput
-const _browserConsoleLog = console.debug
+const _consoleLog = console.debug
 
 beforeAll(() => {
 	console.debug = jest.fn(message => {
@@ -34,7 +34,7 @@ beforeAll(() => {
 })
 
 afterAll(() => {
-	console.debug = _browserConsoleLog
+	console.debug = _consoleLog
 })
 
 describe('fetchData', () => {

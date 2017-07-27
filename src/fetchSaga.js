@@ -288,7 +288,7 @@ const tokenAccess = () => {
  * @export
  * @param {Object} modelsParam - An object indicating the APIs available in a application with which to make requests
  * @param {string} apiRootParam - A url to which partial URLs are appended (i.e.) 'https://myapp.com'
- * @param (TokenAccessFunction) [tokenAccessParam=tokenAccess] - function that returns an optional OAuth token
+ * @param {TokenAccessFunction} [tokenAccessParam=tokenAccess] - function that returns an optional OAuth token
  * @param {ErrorFunction} errorParam  - A function to perform on errors
  * @param {LoggerFunction} [loggerParam=consoleLogger] - A function that accepts a string and logs it real good
  */
