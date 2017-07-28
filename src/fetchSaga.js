@@ -128,7 +128,7 @@ function* fetchData(action: FetchAction) {
 			}
 			const { fetchResult, timedOut } = yield race({
 				fetchResult: call(doFetch, fetchConfig),
-				timedOut: call(delay, action.timeLimit ? action.timeLimit : 3000)
+				timedOut: call(delay, action.timeLimit ? action.timeLimit : 30000)
 			})
 			if (fetchResult && !(fetchResult.title && fetchResult.title === 'Error')) {
 				yield put(
