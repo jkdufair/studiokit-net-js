@@ -23,19 +23,18 @@ const fetchOnce = FetchSagaRewireAPI.__get__('fetchOnce')
 const matchesTerminationAction = FetchSagaRewireAPI.__get__('matchesTerminationAction')
 const fetchDataRecurring = FetchSagaRewireAPI.__get__('fetchDataRecurring')
 const fetchDataLoop = FetchSagaRewireAPI.__get__('fetchDataLoop')
-const interceptOauthToken = FetchSagaRewireAPI.__get__('interceptOauthToken')
 
 let consoleOutput
-const _consoleLog = console.log
+const _consoleLog = console.debug
 
 beforeAll(() => {
-	console.log = jest.fn(message => {
+	console.debug = jest.fn(message => {
 		consoleOutput = message
 	})
 })
 
 afterAll(() => {
-	console.log = _consoleLog
+	console.debug = _consoleLog
 })
 
 describe('fetchData', () => {
@@ -46,6 +45,7 @@ describe('fetchData', () => {
 		}).toThrow(/'modelName' config parameter is required/)
 	})
 
+	const getOauthToken = () => {return { access_token: 'some-access-token' }}
 	let fetchSagaGen
 	beforeEach(() => {
 		fetchSagaGen = fetchSaga(
@@ -66,6 +66,7 @@ describe('fetchData', () => {
 				}
 			},
 			'http://google.com',
+			getOauthToken,
 			() => {} // no need for error logging here
 		)
 		fetchSagaGen.next()
@@ -94,7 +95,6 @@ describe('fetchData', () => {
 	})
 
 	test('should add oauth token to header if it exists', () => {
-		interceptOauthToken({ oauthToken: { access_token: 'some-access-token' } })
 		const gen = fetchData({ modelName: 'test' })
 		gen.next()
 		expect(gen.next().value).toEqual(
@@ -104,10 +104,9 @@ describe('fetchData', () => {
 					headers: { Authorization: 'Bearer some-access-token' },
 					queryParams: {}
 				}),
-				timedOut: call(delay, 3000)
+				timedOut: call(delay, 30000)
 			})
 		)
-		interceptOauthToken({ oauthToken: undefined })
 	})
 
 	test('should execute basic fetch', () => {
@@ -142,11 +141,11 @@ describe('fetchData', () => {
 			race({
 				fetchResult: call(doFetch, {
 					path: 'http://news.ycombinator.com',
-					headers: {},
+					headers: { Authorization: 'Bearer some-access-token' },
 					queryParams: {},
 					body: 'body'
 				}),
-				timedOut: call(delay, 3000)
+				timedOut: call(delay, 30000)
 			})
 		)
 	})
@@ -158,14 +157,14 @@ describe('fetchData', () => {
 			race({
 				fetchResult: call(doFetch, {
 					path: 'http://news.ycombinator.com',
-					headers: {},
+					headers: { Authorization: 'Bearer some-access-token' },
 					queryParams: {},
 					body: {
 						foo: 'bar',
 						baz: 'quux'
 					}
 				}),
-				timedOut: call(delay, 3000)
+				timedOut: call(delay, 30000)
 			})
 		)
 	})
@@ -178,10 +177,10 @@ describe('fetchData', () => {
 			race({
 				fetchResult: call(doFetch, {
 					path: 'http://baz',
-					headers: {},
+					headers: { Authorization: 'Bearer some-access-token' },
 					queryParams: {}
 				}),
-				timedOut: call(delay, 3000)
+				timedOut: call(delay, 30000)
 			})
 		)
 	})
@@ -217,7 +216,7 @@ describe('fetchData', () => {
 			race({
 				fetchResult: call(doFetch, {
 					path: 'http://www.google.com',
-					headers: {},
+					headers: { Authorization: 'Bearer some-access-token' },
 					queryParams: {}
 				}),
 				timedOut: call(delay, 1000)
@@ -389,11 +388,6 @@ describe('fetchSaga', () => {
 		expect(gen.next().value).toEqual(takeEvery(actions.DATA_REQUESTED, fetchOnce))
 		expect(gen.next().value).toEqual(takeEvery(actions.PERIODIC_DATA_REQUESTED, fetchDataRecurring))
 		expect(gen.next().value).toEqual(takeLatest(actions.DATA_REQUESTED_USE_LATEST, fetchOnce))
-
-		expect(gen.next().value).toEqual(takeLatest('auth/GET_TOKEN_SUCCEEDED', interceptOauthToken))
-		expect(gen.next().value).toEqual(
-			takeLatest('auth/TOKEN_REFRESH_SUCCEEDED', interceptOauthToken)
-		)
 	})
 
 	test('should use default logger', () => {
