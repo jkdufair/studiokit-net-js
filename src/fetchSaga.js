@@ -51,10 +51,12 @@ type FetchAction = {
 
 type LoggerFunction = string => void
 type TokenAccessFunction = void => ?OAuthToken
+type ErrorFunction = string => void
 
 let logger: LoggerFunction
 let models: Object
 let tokenAccessFunction: TokenAccessFunction
+let errorFunction: ErrorFunction
 
 /**
  * Construct a request based on the provided action, make a request with a configurable retry,
@@ -126,7 +128,7 @@ function* fetchData(action: FetchAction) {
 			}
 			const { fetchResult, timedOut } = yield race({
 				fetchResult: call(doFetch, fetchConfig),
-				timedOut: call(delay, action.timeLimit ? action.timeLimit : 3000)
+				timedOut: call(delay, action.timeLimit ? action.timeLimit : 30000)
 			})
 			if (fetchResult && !(fetchResult.title && fetchResult.title === 'Error')) {
 				yield put(
@@ -148,7 +150,11 @@ function* fetchData(action: FetchAction) {
 						})
 					)
 					didTimeOut = true
-					throw new Error()
+					let errorObject = {
+						type: actions.FETCH_TIMED_OUT,
+						modelName: action.modelName
+					}
+					throw new Error(JSON.stringify(errorObject))
 				} else {
 					yield put(
 						createAction(actions.FETCH_TRY_FAILED, {
@@ -156,10 +162,18 @@ function* fetchData(action: FetchAction) {
 							errorData: fetchResult
 						})
 					)
-					throw new Error()
+					let errorObject = {
+						type: actions.FETCH_TRY_FAILED,
+						modelName: action.modelName,
+						errorData: fetchResult
+					}
+					throw new Error(JSON.stringify(errorObject))
 				}
 			}
 		} catch (error) {
+			if (errorFunction) {
+				errorFunction(error.message)
+			}
 			didFail = true
 			lastError = error
 			logger('fetchData fail')
@@ -274,12 +288,15 @@ const tokenAccess = () => {
  * @export
  * @param {Object} modelsParam - An object indicating the APIs available in a application with which to make requests
  * @param {string} apiRootParam - A url to which partial URLs are appended (i.e.) 'https://myapp.com'
+ * @param {TokenAccessFunction} [tokenAccessParam=tokenAccess] - function that returns an optional OAuth token
+ * @param {ErrorFunction} errorParam  - A function to perform on errors
  * @param {LoggerFunction} [loggerParam=consoleLogger] - A function that accepts a string and logs it real good
  */
 export default function* fetchSaga(
 	modelsParam: Object,
 	apiRootParam: string,
 	tokenAccessParam: TokenAccessFunction = tokenAccess,
+	errorParam: ErrorFunction,
 	loggerParam: LoggerFunction = consoleLogger
 ): Generator<*, *, *> {
 	if (!modelsParam) {
@@ -289,6 +306,7 @@ export default function* fetchSaga(
 	logger = loggerParam
 	logger(`logger set to ${logger.name}`)
 	models = modelsParam
+	errorFunction = errorParam
 	tokenAccessFunction = tokenAccessParam
 
 	yield takeEvery(actions.DATA_REQUESTED, fetchOnce)
