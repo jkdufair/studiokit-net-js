@@ -104,7 +104,7 @@ describe('fetchData', () => {
 					headers: { Authorization: 'Bearer some-access-token' },
 					queryParams: {}
 				}),
-				timedOut: call(delay, 3000)
+				timedOut: call(delay, 30000)
 			})
 		)
 	})
@@ -145,7 +145,7 @@ describe('fetchData', () => {
 					queryParams: {},
 					body: 'body'
 				}),
-				timedOut: call(delay, 3000)
+				timedOut: call(delay, 30000)
 			})
 		)
 	})
@@ -164,7 +164,7 @@ describe('fetchData', () => {
 						baz: 'quux'
 					}
 				}),
-				timedOut: call(delay, 3000)
+				timedOut: call(delay, 30000)
 			})
 		)
 	})
@@ -180,7 +180,7 @@ describe('fetchData', () => {
 					headers: { Authorization: 'Bearer some-access-token' },
 					queryParams: {}
 				}),
-				timedOut: call(delay, 3000)
+				timedOut: call(delay, 30000)
 			})
 		)
 	})
