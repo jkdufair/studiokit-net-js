@@ -174,9 +174,8 @@ function* fetchData(action: FetchAction) {
 		} catch (error) {
 			let errorObject = JSON.parse(error.message)
 			let fetchResult = errorObject.errorData
-			console.log('error is ' + error.message)
 
-			// Don't log 401 errors
+			// Don't do anything with 401 errors
 			if (errorFunction && fetchResult.code != 401) {
 				errorFunction(error.message)
 			}
