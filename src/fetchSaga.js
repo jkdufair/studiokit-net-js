@@ -152,7 +152,8 @@ function* fetchData(action: FetchAction) {
 					didTimeOut = true
 					let errorObject = {
 						type: actions.FETCH_TIMED_OUT,
-						modelName: action.modelName
+						modelName: action.modelName,
+						errorData: fetchResult
 					}
 					throw new Error(JSON.stringify(errorObject))
 				} else {
