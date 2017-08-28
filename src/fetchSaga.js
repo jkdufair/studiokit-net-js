@@ -176,7 +176,8 @@ function* fetchData(action: FetchAction) {
 			let fetchResult = errorObject.errorData
 
 			// Don't do anything with 401 errors
-			if (errorFunction && fetchResult.code != 401) {
+			// And some errors don't have fetch results associated with them
+			if (errorFunction && (fetchResult ? fetchResult.code != 401 : true)) {
 				errorFunction(error.message)
 			}
 			didFail = true
