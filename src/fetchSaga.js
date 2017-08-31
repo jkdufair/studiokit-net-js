@@ -44,6 +44,7 @@ type FetchAction = {
 	modelName: string,
 	headers?: Object,
 	queryParams?: Object,
+	noAuth?: boolean,
 	noStore?: boolean,
 	period?: number,
 	taskId?: string
@@ -122,9 +123,11 @@ function* fetchData(action: FetchAction) {
 			})
 		)
 		try {
-			const oauthToken = tokenAccessFunction()
-			if (oauthToken && oauthToken.access_token) {
-				fetchConfig.headers['Authorization'] = `Bearer ${oauthToken.access_token}`
+			if (!action.noAuth) {
+				const oauthToken = yield call(tokenAccessFunction)
+				if (oauthToken && oauthToken.access_token) {
+					fetchConfig.headers['Authorization'] = `Bearer ${oauthToken.access_token}`
+				}
 			}
 			const { fetchResult, timedOut } = yield race({
 				fetchResult: call(doFetch, fetchConfig),
