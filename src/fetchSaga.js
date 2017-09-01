@@ -122,7 +122,7 @@ function* fetchData(action: FetchAction) {
 			})
 		)
 		try {
-			const oauthToken = tokenAccessFunction()
+			const oauthToken = yield call(tokenAccessFunction, action.modelName)
 			if (oauthToken && oauthToken.access_token) {
 				fetchConfig.headers['Authorization'] = `Bearer ${oauthToken.access_token}`
 			}
