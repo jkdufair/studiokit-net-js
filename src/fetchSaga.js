@@ -152,7 +152,8 @@ function* fetchData(action: FetchAction) {
 					didTimeOut = true
 					let errorObject = {
 						type: actions.FETCH_TIMED_OUT,
-						modelName: action.modelName
+						modelName: action.modelName,
+						errorData: fetchResult
 					}
 					throw new Error(JSON.stringify(errorObject))
 				} else {
@@ -171,7 +172,12 @@ function* fetchData(action: FetchAction) {
 				}
 			}
 		} catch (error) {
-			if (errorFunction) {
+			let errorObject = JSON.parse(error.message)
+			let fetchResult = errorObject.errorData
+
+			// Don't do anything with 401 errors
+			// And some errors don't have fetch results associated with them
+			if (errorFunction && (fetchResult ? fetchResult.code != 401 : true)) {
 				errorFunction(error.message)
 			}
 			didFail = true
