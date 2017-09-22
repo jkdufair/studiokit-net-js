@@ -11,7 +11,10 @@
 		"coveralls": "npm run coverage && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
 		"build": "babel src -d lib",
 		"build:watch": "babel src --watch -d lib",
-		"precommit": "lint-staged"
+		"precommit": "lint-staged",
+		"pretest": "npm run build",
+		"prepush": "npm run test",
+		"prepublish": "npm run test"
 	},
 	"description": "Network/API functions for Studio apps at Purdue",
 	"main": "lib/index.js",
