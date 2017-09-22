@@ -99,6 +99,7 @@ describe('fetchData', () => {
 	test('should add oauth token to header if it exists', () => {
 		const gen = fetchData({ modelName: 'test' })
 		gen.next()
+		gen.next()
 		expect(gen.next().value).toEqual(
 			race({
 				fetchResult: call(doFetch, {
@@ -115,6 +116,7 @@ describe('fetchData', () => {
 		const gen = fetchData({ modelName: 'test' })
 		gen.next()
 		gen.next()
+		gen.next()
 		expect(gen.next({ fetchResult: { foo: 'bar' } }).value).toEqual(
 			put(createAction(actions.FETCH_RESULT_RECEIVED, { data: { foo: 'bar' }, modelName: 'test' }))
 		)
@@ -123,6 +125,7 @@ describe('fetchData', () => {
 
 	test('should execute basic transient fetch', () => {
 		const gen = fetchData({ modelName: 'test', noStore: true })
+		gen.next()
 		gen.next()
 		gen.next()
 		expect(gen.next({ fetchResult: { foo: 'bar' } }).value).toEqual(
@@ -139,6 +142,7 @@ describe('fetchData', () => {
 	test('should replace baseConfig body as string if body is string', () => {
 		const gen = fetchData({ modelName: 'test2', body: 'body' })
 		gen.next()
+		gen.next()
 		expect(gen.next().value).toEqual(
 			race({
 				fetchResult: call(doFetch, {
@@ -154,6 +158,7 @@ describe('fetchData', () => {
 
 	test('should merge body as JSON if body is JSON', () => {
 		const gen = fetchData({ modelName: 'test3', body: { baz: 'quux' } })
+		gen.next()
 		gen.next()
 		expect(gen.next().value).toEqual(
 			race({
@@ -175,6 +180,7 @@ describe('fetchData', () => {
 		const gen = fetchData({ modelName: 'test4' })
 		gen.next()
 		gen.next({ testServer: 'baz' })
+		gen.next()
 		expect(gen.next().value).toEqual(
 			race({
 				fetchResult: call(doFetch, {
@@ -191,6 +197,7 @@ describe('fetchData', () => {
 		const gen = fetchData({ modelName: 'test' })
 		gen.next()
 		gen.next()
+		gen.next()
 		expect(gen.next({ timedOut: true }).value).toEqual(
 			put(createAction(actions.FETCH_TIMED_OUT, { modelName: 'test' }))
 		)
@@ -204,6 +211,7 @@ describe('fetchData', () => {
 		const gen = fetchData({ modelName: 'test', noRetry: true })
 		gen.next()
 		gen.next()
+		gen.next()
 		expect(gen.next({ timedOut: true }).value).toEqual(
 			put(createAction(actions.FETCH_TIMED_OUT, { modelName: 'test' }))
 		)
@@ -213,6 +221,7 @@ describe('fetchData', () => {
 
 	test('should time out to a configurable value', () => {
 		const gen = fetchData({ modelName: 'test', timeLimit: 1000 })
+		gen.next()
 		gen.next()
 		expect(gen.next().value).toEqual(
 			race({
@@ -230,6 +239,7 @@ describe('fetchData', () => {
 		const gen = fetchData({ modelName: 'test' })
 		gen.next()
 		gen.next()
+		gen.next()
 		expect(gen.next({ fetchResult: { title: 'Error' } }).value).toEqual(
 			put(
 				createAction(actions.FETCH_TRY_FAILED, { modelName: 'test', errorData: { title: 'Error' } })
@@ -244,6 +254,7 @@ describe('fetchData', () => {
 	test('should dispatch FETCH_FAILED when all retries have failed', () => {
 		const gen = fetchData({ modelName: 'test' })
 		for (let i = 0; i <= 3; i++) {
+			gen.next()
 			gen.next()
 			gen.next()
 			expect(gen.next({ fetchResult: { title: 'Error' } }).value).toEqual(
@@ -263,6 +274,7 @@ describe('fetchData', () => {
 	test('should not dispatch FETCH_FAILED when all retries were timeouts', () => {
 		const gen = fetchData({ modelName: 'test' })
 		for (let i = 0; i <= 3; i++) {
+			gen.next()
 			gen.next()
 			gen.next()
 			expect(gen.next({ timedOut: true }).value).toEqual(
