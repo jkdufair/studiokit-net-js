@@ -1,4 +1,4 @@
-import actions, { createAction } from './actions'
+import actions, { createAction } from '../lib/actions'
 import { delay } from 'redux-saga'
 import {
 	call,
@@ -13,9 +13,9 @@ import {
 	select
 } from 'redux-saga/effects'
 import { createMockTask } from 'redux-saga/utils'
-import { doFetch } from './services/fetchService'
-import fetchSaga, { __RewireAPI__ as FetchSagaRewireAPI } from './fetchSaga'
-import { returnEntireStore } from './fetchReducer'
+import { doFetch } from '../lib/services/fetchService'
+import fetchSaga, { __RewireAPI__ as FetchSagaRewireAPI } from '../lib/fetchSaga'
+import { returnEntireStore } from '../lib/fetchReducer'
 
 // TODO: retry
 const fetchData = FetchSagaRewireAPI.__get__('fetchData')
@@ -45,7 +45,9 @@ describe('fetchData', () => {
 		}).toThrow(/'modelName' config parameter is required/)
 	})
 
-	const getOauthToken = () => {return { access_token: 'some-access-token' }}
+	const getOauthToken = () => {
+		return { access_token: 'some-access-token' }
+	}
 	let fetchSagaGen
 	beforeEach(() => {
 		fetchSagaGen = fetchSaga(
