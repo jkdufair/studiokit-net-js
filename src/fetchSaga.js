@@ -91,6 +91,7 @@ function* fetchData(action: FetchAction) {
 		}
 	}
 	fetchConfig.queryParams = Object.assign({}, baseConfig.queryParams, action.queryParams)
+	fetchConfig.routeParams = Object.assign({}, baseConfig.routeParams, action.routeParams)
 
 	let isUrlValid = true;
 
