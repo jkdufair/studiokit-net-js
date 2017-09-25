@@ -46,7 +46,8 @@ type FetchAction = {
 	queryParams?: Object,
 	noStore?: boolean,
 	period?: number,
-	taskId?: string
+	taskId?: string,
+	routeParams?: Object
 }
 
 type LoggerFunction = string => void
@@ -91,6 +92,8 @@ function* fetchData(action: FetchAction) {
 	}
 	fetchConfig.queryParams = Object.assign({}, baseConfig.queryParams, action.queryParams)
 
+	let isUrlValid = true;
+
 	// substitute parameterized query path references with values from store
 	// TODO: validate the path exists in the store
 	if (/{{.+}}/.test(fetchConfig.path)) {
@@ -98,8 +101,35 @@ function* fetchData(action: FetchAction) {
 		// since there is no yield in an arrow fn
 		const store = yield select(state => state)
 		fetchConfig.path = fetchConfig.path.replace(/{{(.+?)}}/, (matches, backref) => {
-			return _.get(store, backref)
+			const value = _.get(store, backref)
+			
+			if (value === undefined || value === null) {
+				isUrlValid = false
+			}
+			return value
 		})
+	}
+
+	// substitute any route parameters. EX. /api/group/{:groupId}
+	if (/{:.+}/.test(fetchConfig.path)) {
+		fetchConfig.path = fetchConfig.path.replace(/{:(.+?)}/, (matches, backref) => {
+			const value = fetchConfig.routeParams[backref]
+			
+			if (value === undefined || value === null) {
+				isUrlValid = false
+			}
+			return value
+		})
+	}
+
+	if (!isUrlValid) {
+		yield put(
+			createAction(actions.FETCH_TRY_FAILED, {
+				modelName: action.modelName,
+				errorData: 'Invalid URL'
+			})
+		)
+		return
 	}
 
 	// Configure retry
