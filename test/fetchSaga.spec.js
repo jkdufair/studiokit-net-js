@@ -68,26 +68,25 @@ describe('fetchData', () => {
 				}
 			},
 			'http://google.com',
-			getOauthToken,
+			getOauthToken, // this won't get called directly
 			() => {} // no need for error logging here
 		)
 		fetchSagaGen.next()
 	})
 
-	// NOTE: first yield PUTs FETCH_REQUESTED
-	// second yield is the RACE that does the fetch or times out
-	//(unless there is a parameterized path which has one yield before these two)
+	// NOTE: Keep in mind that if you pass a value to gen.next(), that is the value
+	// that used to evaluate the previous `yield` call
 	test('should throw when action.modelName is not found in models', () => {
 		const gen = fetchData({ modelName: 'foo' })
 		expect(() => {
-			gen.next()
-			gen.next()
+			const startGenerator = gen.next()
 		}).toThrow(/Cannot find 'foo' model in model dictionary/)
 	})
 
 	test('should emit FETCH_REQUESTED', () => {
 		const gen = fetchData({ modelName: 'test' })
-		expect(gen.next().value).toEqual(
+		const startGenerator = gen.next()
+		expect(startGenerator.value).toEqual(
 			put(
 				createAction(actions.FETCH_REQUESTED, {
 					modelName: 'test'
@@ -98,9 +97,10 @@ describe('fetchData', () => {
 
 	test('should add oauth token to header if it exists', () => {
 		const gen = fetchData({ modelName: 'test' })
-		gen.next()
-		gen.next()
-		expect(gen.next().value).toEqual(
+		const putFetchRequestEffect = gen.next()
+		const tokenAccessCall = gen.next()
+		const raceEffect = gen.next(getOauthToken())
+		expect(raceEffect.value).toEqual(
 			race({
 				fetchResult: call(doFetch, {
 					path: 'http://www.google.com',
@@ -114,10 +114,11 @@ describe('fetchData', () => {
 
 	test('should execute basic fetch', () => {
 		const gen = fetchData({ modelName: 'test' })
-		gen.next()
-		gen.next()
-		gen.next()
-		expect(gen.next({ fetchResult: { foo: 'bar' } }).value).toEqual(
+		const putFetchRequestEffect = gen.next()
+		const tokenAccessCall = gen.next()
+		const raceEffect = gen.next()
+		const resultReceivedEffect = gen.next({ fetchResult: { foo: 'bar' } })
+		expect(resultReceivedEffect.value).toEqual(
 			put(createAction(actions.FETCH_RESULT_RECEIVED, { data: { foo: 'bar' }, modelName: 'test' }))
 		)
 		expect(gen.next().done).toEqual(true)
@@ -125,10 +126,11 @@ describe('fetchData', () => {
 
 	test('should execute basic transient fetch', () => {
 		const gen = fetchData({ modelName: 'test', noStore: true })
-		gen.next()
-		gen.next()
-		gen.next()
-		expect(gen.next({ fetchResult: { foo: 'bar' } }).value).toEqual(
+		const putFetchRequestEffect = gen.next()
+		const tokenAccessCall = gen.next()
+		const raceEffect = gen.next(getOauthToken())
+		const resultReceivedEffect = gen.next({ fetchResult: { foo: 'bar' } })
+		expect(resultReceivedEffect.value).toEqual(
 			put(
 				createAction(actions.TRANSIENT_FETCH_RESULT_RECEIVED, {
 					data: { foo: 'bar' },
@@ -141,9 +143,10 @@ describe('fetchData', () => {
 
 	test('should replace baseConfig body as string if body is string', () => {
 		const gen = fetchData({ modelName: 'test2', body: 'body' })
-		gen.next()
-		gen.next()
-		expect(gen.next().value).toEqual(
+		const putFetchRequestEffect = gen.next()
+		const tokenAccessCall = gen.next()
+		const raceEffect = gen.next(getOauthToken())
+		expect(raceEffect.value).toEqual(
 			race({
 				fetchResult: call(doFetch, {
 					path: 'http://news.ycombinator.com',
@@ -158,9 +161,10 @@ describe('fetchData', () => {
 
 	test('should merge body as JSON if body is JSON', () => {
 		const gen = fetchData({ modelName: 'test3', body: { baz: 'quux' } })
-		gen.next()
-		gen.next()
-		expect(gen.next().value).toEqual(
+		const putFetchRequestEffect = gen.next()
+		const tokenAccessCall = gen.next()
+		const raceEffect = gen.next(getOauthToken())
+		expect(raceEffect.value).toEqual(
 			race({
 				fetchResult: call(doFetch, {
 					path: 'http://news.ycombinator.com',
@@ -178,10 +182,11 @@ describe('fetchData', () => {
 
 	test('should populate parameter in path', () => {
 		const gen = fetchData({ modelName: 'test4' })
-		gen.next()
-		gen.next({ testServer: 'baz' })
-		gen.next()
-		expect(gen.next().value).toEqual(
+		const selectEffect = gen.next()
+		const putFetchRequestEffect = gen.next({ testServer: 'baz' })
+		const tokenAccessCall = gen.next()
+		const raceEffect = gen.next(getOauthToken())
+		expect(raceEffect.value).toEqual(
 			race({
 				fetchResult: call(doFetch, {
 					path: 'http://baz',
@@ -195,10 +200,11 @@ describe('fetchData', () => {
 
 	test('should retry when fetch times out', () => {
 		const gen = fetchData({ modelName: 'test' })
-		gen.next()
-		gen.next()
-		gen.next()
-		expect(gen.next({ timedOut: true }).value).toEqual(
+		const putFetchRequestEffect = gen.next()
+		const tokenAccessCall = gen.next()
+		const raceEffect = gen.next(getOauthToken())
+		const putFetchTimedOutEffect = gen.next({ timedOut: true })
+		expect(putFetchTimedOutEffect.value).toEqual(
 			put(createAction(actions.FETCH_TIMED_OUT, { modelName: 'test' }))
 		)
 		gen.next()
@@ -209,10 +215,11 @@ describe('fetchData', () => {
 
 	test('should not retry when fetch times out and noRetry is specified', () => {
 		const gen = fetchData({ modelName: 'test', noRetry: true })
-		gen.next()
-		gen.next()
-		gen.next()
-		expect(gen.next({ timedOut: true }).value).toEqual(
+		const putFetchRequestEffect = gen.next()
+		const tokenAccessCall = gen.next()
+		const raceEffect = gen.next(getOauthToken())
+		const putFetchTimedOutEffect = gen.next({ timedOut: true })
+		expect(putFetchTimedOutEffect.value).toEqual(
 			put(createAction(actions.FETCH_TIMED_OUT, { modelName: 'test' }))
 		)
 		gen.next()
@@ -221,9 +228,10 @@ describe('fetchData', () => {
 
 	test('should time out to a configurable value', () => {
 		const gen = fetchData({ modelName: 'test', timeLimit: 1000 })
-		gen.next()
-		gen.next()
-		expect(gen.next().value).toEqual(
+		const putFetchRequestEffect = gen.next()
+		const tokenAccessCall = gen.next()
+		const raceEffect = gen.next(getOauthToken())
+		expect(raceEffect.value).toEqual(
 			race({
 				fetchResult: call(doFetch, {
 					path: 'http://www.google.com',
@@ -237,16 +245,18 @@ describe('fetchData', () => {
 
 	test('should retry on fetch error', () => {
 		const gen = fetchData({ modelName: 'test' })
-		gen.next()
-		gen.next()
-		gen.next()
-		expect(gen.next({ fetchResult: { title: 'Error' } }).value).toEqual(
+		const putFetchRequestEffect = gen.next()
+		const tokenAccessCall = gen.next()
+		const raceEffect = gen.next(getOauthToken())
+		const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error' } })
+		expect(fetchTryFailedEffect.value).toEqual(
 			put(
 				createAction(actions.FETCH_TRY_FAILED, { modelName: 'test', errorData: { title: 'Error' } })
 			)
 		)
-		gen.next()
-		expect(gen.next().value).toEqual(
+		const delayEffect = gen.next()
+		const putFetchRequestEffectAgain = gen.next()
+		expect(putFetchRequestEffectAgain.value).toEqual(
 			put(createAction(actions.FETCH_REQUESTED, { modelName: 'test' }))
 		)
 	})
@@ -254,10 +264,11 @@ describe('fetchData', () => {
 	test('should dispatch FETCH_FAILED when all retries have failed', () => {
 		const gen = fetchData({ modelName: 'test' })
 		for (let i = 0; i <= 3; i++) {
-			gen.next()
-			gen.next()
-			gen.next()
-			expect(gen.next({ fetchResult: { title: 'Error' } }).value).toEqual(
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next(getOauthToken())
+			const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error' } })
+			expect(fetchTryFailedEffect.value).toEqual(
 				put(
 					createAction(actions.FETCH_TRY_FAILED, {
 						modelName: 'test',
@@ -265,59 +276,75 @@ describe('fetchData', () => {
 					})
 				)
 			)
-			gen.next()
+			const delayEffect = gen.next()
 		}
-		expect(gen.next().value).toEqual(put(createAction(actions.FETCH_FAILED, { modelName: 'test' })))
-		expect(gen.next().done).toEqual(true)
+		const putFetchFailedEffect = gen.next()
+		expect(putFetchFailedEffect.value).toEqual(
+			put(createAction(actions.FETCH_FAILED, { modelName: 'test' }))
+		)
+		const sagaDone = gen.next()
+		expect(sagaDone.done).toEqual(true)
 	})
 
 	test('should not dispatch FETCH_FAILED when all retries were timeouts', () => {
 		const gen = fetchData({ modelName: 'test' })
 		for (let i = 0; i <= 3; i++) {
-			gen.next()
-			gen.next()
-			gen.next()
-			expect(gen.next({ timedOut: true }).value).toEqual(
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next(getOauthToken())
+			const putFetchTimedOutEffect = gen.next({ timedOut: true })
+			expect(putFetchTimedOutEffect.value).toEqual(
 				put(
 					createAction(actions.FETCH_TIMED_OUT, {
 						modelName: 'test'
 					})
 				)
 			)
-			gen.next()
+			const delayEffect = gen.next()
 		}
 
-		expect(gen.next().done).toEqual(true)
+		const sagaDone = gen.next()
+		expect(sagaDone.done).toEqual(true)
 	})
 })
 
 describe('fetchOnce', () => {
 	test('should call fetchData exactly once', () => {
 		const gen = fetchOnce({ modelName: 'foo' })
-		expect(gen.next().value).toEqual(call(fetchData, { modelName: 'foo' }))
-		expect(gen.next().done).toEqual(true)
+		const callFetchDataEffect = gen.next()
+		expect(callFetchDataEffect.value).toEqual(call(fetchData, { modelName: 'foo' }))
+		const sagaDone = gen.next()
+		expect(sagaDone.done).toEqual(true)
 	})
 })
 
 describe('fetchDataLoop', () => {
 	test('should fetch repeatedly until terminated', () => {
 		const gen = fetchDataLoop({ modelName: 'foo', period: 1000 })
-		expect(gen.next().value).toEqual(call(fetchData, { modelName: 'foo', period: 1000 }))
-		expect(gen.next().value).toEqual(call(delay, 1000))
+		let callFetchDataEffect = gen.next()
+		expect(callFetchDataEffect.value).toEqual(call(fetchData, { modelName: 'foo', period: 1000 }))
+		let delayEffect = gen.next()
+		expect(delayEffect.value).toEqual(call(delay, 1000))
 
-		expect(gen.next().value).toEqual(call(fetchData, { modelName: 'foo', period: 1000 }))
-		expect(gen.next().value).toEqual(call(delay, 1000))
+		callFetchDataEffect = gen.next()
+		expect(callFetchDataEffect.value).toEqual(call(fetchData, { modelName: 'foo', period: 1000 }))
+		delayEffect = gen.next()
+		expect(delayEffect.value).toEqual(call(delay, 1000))
 
-		expect(gen.return().value).toEqual(cancelled())
+		const cancelledSaga = gen.return()
+		expect(cancelledSaga.value).toEqual(cancelled())
 
-		expect(gen.next(true).value).toEqual(
+		const putPeriodicTerminationSucceededEffect = gen.next(true)
+		expect(putPeriodicTerminationSucceededEffect.value).toEqual(
 			put(
 				createAction(actions.PERIODIC_TERMINATION_SUCCEEDED, {
 					modelName: 'foo'
 				})
 			)
 		)
-		expect(gen.next().done).toEqual(true)
+
+		const sagaDone = gen.next()
+		expect(sagaDone.done).toEqual(true)
 	})
 })
 
@@ -325,28 +352,29 @@ describe('fetchDataRecurring', () => {
 	test('should throw without action', () => {
 		const gen = fetchDataRecurring()
 		expect(() => {
-			gen.next()
+			const putFetchRequestEffect = gen.next()
 		}).toThrow(/'period' config parameter is required for fetchDataRecurring/)
 	})
 
 	test('should throw without action.period', () => {
 		const gen = fetchDataRecurring({})
 		expect(() => {
-			gen.next()
+			const putFetchRequestEffect = gen.next()
 		}).toThrow(/'period' config parameter is required for fetchDataRecurring/)
 	})
 
 	test('should throw without action.taskId', () => {
 		const gen = fetchDataRecurring({ period: 1000 })
 		expect(() => {
-			gen.next()
+			const putFetchRequestEffect = gen.next()
 		}).toThrow(/'taskId' config parameter is required for fetchDataRecurring/)
 	})
 
 	test('should fork off fetchData loop if all params are given', () => {
 		const action = { period: 1000, taskId: 'fooTask' }
 		const gen = fetchDataRecurring(action)
-		expect(gen.next().value).toEqual(fork(fetchDataLoop, action))
+		const forkEffect = gen.next()
+		expect(forkEffect.value).toEqual(fork(fetchDataLoop, action))
 	})
 
 	test('should not cancel if action is not a cancel for that task', () => {
@@ -378,13 +406,15 @@ describe('fetchDataRecurring', () => {
 			)
 		).toEqual(true)
 	})
+
 	test('should cancel once take matches action', () => {
 		const action = { period: 1000, taskId: 'fooTask' }
 		const gen = fetchDataRecurring(action)
-		gen.next()
+		const forkEffect = gen.next()
 		const mockTask = createMockTask()
-		gen.next(mockTask)
-		expect(gen.next().value).toEqual(cancel(mockTask))
+		const takeTerminationEffect = gen.next(mockTask)
+		const cancelledTask = gen.next()
+		expect(cancelledTask.value).toEqual(cancel(mockTask))
 	})
 })
 
@@ -392,16 +422,23 @@ describe('fetchSaga', () => {
 	test('should throw without models', () => {
 		const gen = fetchSaga()
 		expect(() => {
-			gen.next()
+			const takeEveryDataRequestEffect = gen.next()
 		}).toThrow(/'modelsParam' is required for fetchSaga/)
 	})
 
 	test('should set up all takes', () => {
 		const gen = fetchSaga({})
 
-		expect(gen.next().value).toEqual(takeEvery(actions.DATA_REQUESTED, fetchOnce))
-		expect(gen.next().value).toEqual(takeEvery(actions.PERIODIC_DATA_REQUESTED, fetchDataRecurring))
-		expect(gen.next().value).toEqual(takeLatest(actions.DATA_REQUESTED_USE_LATEST, fetchOnce))
+		const takeEveryDataRequestEffect = gen.next()
+		expect(takeEveryDataRequestEffect.value).toEqual(takeEvery(actions.DATA_REQUESTED, fetchOnce))
+		const takeEveryPeriodicDataRequestEffect = gen.next()
+		expect(takeEveryPeriodicDataRequestEffect.value).toEqual(
+			takeEvery(actions.PERIODIC_DATA_REQUESTED, fetchDataRecurring)
+		)
+		const takeLatestDataRequestedEffect = gen.next()
+		expect(takeLatestDataRequestedEffect.value).toEqual(
+			takeLatest(actions.DATA_REQUESTED_USE_LATEST, fetchOnce)
+		)
 	})
 
 	test('should use default logger', () => {
