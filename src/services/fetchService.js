@@ -4,6 +4,7 @@ import { call } from 'redux-saga/effects'
 
 type FetchConfig = {
 	queryParams: Object,
+	routeParams: Object,
 	path: string,
 	method: string,
 	headers: Object,
