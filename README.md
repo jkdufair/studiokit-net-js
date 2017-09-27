@@ -137,6 +137,12 @@ Given the following `apis.js`
 			doctor: 'zoidberg'
 		}
 	},
+	theWalkers: {
+		path: 'https://thewalkingdead/api/walker/{:walkerId}',
+		routeParams: {
+			walkerId: 1
+		}
+	}.
 	theOffice: {
 		path: 'https://dundermifflin.com/api/paper'
 		headers: {
@@ -278,6 +284,28 @@ GET https://httpbin.org/get?robot=bender
 Same as basic fetch above, with possibly different data, depending on response relative to new query params
 
 **Note**: Query parameters specified in the action will be merged with query parameters specified in `apis.js` with the query params in the action taking precedence
+
+#
+
+### Add route params:
+
+*dispatch*
+```js
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'theWalkers',
+	queryParams: {walkerId: 1}
+})
+```
+*request generated*
+```http
+GET https://thewalkingdead/api/walker/1
+```
+*resulting redux*
+
+Same as basic fetch above, with possibly different data, depending on response relative to new route params
+
+**Note**: Route parameters specified in the action will be merged with route parameters specified in `apis.js` with the route params in the action taking precedence
 
 #
 
