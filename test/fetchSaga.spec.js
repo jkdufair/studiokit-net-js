@@ -37,20 +37,13 @@ afterAll(() => {
 	console.debug = _consoleLog
 })
 
-describe('fetchData', () => {
-	test('should throw without action.modelName', () => {
-		const gen = fetchData()
-		expect(() => {
-			gen.next()
-		}).toThrow(/'modelName' config parameter is required/)
-	})
+const getOauthToken = () => {
+	return { access_token: 'some-access-token' }
+}
 
-	const getOauthToken = () => {
-		return { access_token: 'some-access-token' }
-	}
-	let fetchSagaGen
-	beforeEach(() => {
-		fetchSagaGen = fetchSaga(
+describe('fetchData', () => {
+	beforeAll(() => {
+		const fetchSagaGen = fetchSaga(
 			{
 				test: {
 					path: 'http://www.google.com'
@@ -65,6 +58,12 @@ describe('fetchData', () => {
 				},
 				test4: {
 					path: 'http://{{testServer}}'
+				},
+				test5: {
+					path: 'http://www.google.com/{:entityId}'
+				},
+				test6: {
+					path: 'http://{{testServer}}/{:entityId}'
 				}
 			},
 			'http://google.com',
@@ -105,7 +104,8 @@ describe('fetchData', () => {
 				fetchResult: call(doFetch, {
 					path: 'http://www.google.com',
 					headers: { Authorization: 'Bearer some-access-token' },
-					queryParams: {}
+					queryParams: {},
+					routeParams: {}
 				}),
 				timedOut: call(delay, 30000)
 			})
@@ -152,6 +152,7 @@ describe('fetchData', () => {
 					path: 'http://news.ycombinator.com',
 					headers: { Authorization: 'Bearer some-access-token' },
 					queryParams: {},
+					routeParams: {},
 					body: 'body'
 				}),
 				timedOut: call(delay, 30000)
@@ -170,6 +171,7 @@ describe('fetchData', () => {
 					path: 'http://news.ycombinator.com',
 					headers: { Authorization: 'Bearer some-access-token' },
 					queryParams: {},
+					routeParams: {},
 					body: {
 						foo: 'bar',
 						baz: 'quux'
@@ -180,7 +182,7 @@ describe('fetchData', () => {
 		)
 	})
 
-	test('should populate parameter in path', () => {
+	test('should populate store parameter in path', () => {
 		const gen = fetchData({ modelName: 'test4' })
 		const selectEffect = gen.next()
 		const putFetchRequestEffect = gen.next({ testServer: 'baz' })
@@ -191,7 +193,107 @@ describe('fetchData', () => {
 				fetchResult: call(doFetch, {
 					path: 'http://baz',
 					headers: { Authorization: 'Bearer some-access-token' },
-					queryParams: {}
+					queryParams: {},
+					routeParams: {}
+				}),
+				timedOut: call(delay, 30000)
+			})
+		)
+	})
+
+	test('should fail to populate store parameter in path if it is undefined', () => {
+		const gen = fetchData({ modelName: 'test4' })
+		const selectEffect = gen.next()
+		// send empty store
+		const putFetchRequestEffect = gen.next({})
+		expect(putFetchRequestEffect.value).toEqual(
+			put(
+				createAction(actions.FETCH_TRY_FAILED, {
+					modelName: 'test4',
+					errorData: 'Invalid URL'
+				})
+			)
+		)
+		// trigger fetchData fn end
+		gen.next()
+	})
+
+	test('should fail to populate store parameter in path if it is null', () => {
+		const gen = fetchData({ modelName: 'test4' })
+		const selectEffect = gen.next()
+		// send store with null value
+		const putFetchRequestEffect = gen.next({ testServer: null })
+		expect(putFetchRequestEffect.value).toEqual(
+			put(
+				createAction(actions.FETCH_TRY_FAILED, {
+					modelName: 'test4',
+					errorData: 'Invalid URL'
+				})
+			)
+		)
+	})
+
+	test('should populate route parmater in path', () => {
+		const gen = fetchData({ modelName: 'test5', routeParams: { entityId: 1 } })
+		const putFetchRequestEffect = gen.next()
+		const tokenAccessCall = gen.next()
+		const raceEffect = gen.next(getOauthToken())
+		expect(raceEffect.value).toEqual(
+			race({
+				fetchResult: call(doFetch, {
+					path: 'http://www.google.com/1',
+					headers: { Authorization: 'Bearer some-access-token' },
+					queryParams: {},
+					routeParams: {
+						entityId: 1
+					}
+				}),
+				timedOut: call(delay, 30000)
+			})
+		)
+	})
+
+	test('should fail to populate route parameter in path if it is undefined', () => {
+		const gen = fetchData({ modelName: 'test5' })
+		const putFetchRequestEffect = gen.next()
+		expect(putFetchRequestEffect.value).toEqual(
+			put(
+				createAction(actions.FETCH_TRY_FAILED, {
+					modelName: 'test5',
+					errorData: 'Invalid URL'
+				})
+			)
+		)
+	})
+
+	test('should fail to populate route parameter in path if it is null', () => {
+		const gen = fetchData({ modelName: 'test5', routeParams: { entityId: null } })
+		const putFetchRequestEffect = gen.next()
+		expect(putFetchRequestEffect.value).toEqual(
+			put(
+				createAction(actions.FETCH_TRY_FAILED, {
+					modelName: 'test5',
+					errorData: 'Invalid URL'
+				})
+			)
+		)
+	})
+
+	test('should populate route and store parameters in path', () => {
+		const gen = fetchData({ modelName: 'test6', routeParams: { entityId: 1 } })
+		const selectEffect = gen.next()
+		const putFetchRequestEffect = gen.next({ testServer: 'baz' })
+		const tokenAccessCall = gen.next()
+		const raceEffect = gen.next(getOauthToken())
+		expect(raceEffect.value).toEqual(
+			race({
+				fetchResult: call(doFetch, {
+					path: 'http://baz/1',
+					headers: { Authorization: 'Bearer some-access-token' },
+					queryParams: {},
+					routeParams: {
+						entityId: 1
+					}
 				}),
 				timedOut: call(delay, 30000)
 			})
@@ -236,7 +338,8 @@ describe('fetchData', () => {
 				fetchResult: call(doFetch, {
 					path: 'http://www.google.com',
 					headers: { Authorization: 'Bearer some-access-token' },
-					queryParams: {}
+					queryParams: {},
+					routeParams: {}
 				}),
 				timedOut: call(delay, 1000)
 			})
@@ -444,5 +547,13 @@ describe('fetchSaga', () => {
 	test('should use default logger', () => {
 		const gen = fetchSaga({ test: { path: '/foo' } }, '')
 		expect(consoleOutput).toEqual('logger set to consoleLogger')
+	})
+
+	test('should use default tokenAccess', () => {
+		const gen = fetchSaga({ test: { path: '/foo' } }, '')
+		const tokenAccess = FetchSagaRewireAPI.__get__('tokenAccess')
+		const tokenAccessFunction = FetchSagaRewireAPI.__get__('tokenAccessFunction')
+		expect(tokenAccess).toEqual(tokenAccessFunction)
+		expect(tokenAccess()).toEqual(undefined)
 	})
 })

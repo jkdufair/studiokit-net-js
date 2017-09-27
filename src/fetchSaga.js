@@ -93,7 +93,7 @@ function* fetchData(action: FetchAction) {
 	fetchConfig.queryParams = Object.assign({}, baseConfig.queryParams, action.queryParams)
 	fetchConfig.routeParams = Object.assign({}, baseConfig.routeParams, action.routeParams)
 
-	let isUrlValid = true;
+	let isUrlValid = true
 
 	// substitute parameterized query path references with values from store
 	// TODO: validate the path exists in the store
@@ -103,7 +103,6 @@ function* fetchData(action: FetchAction) {
 		const store = yield select(state => state)
 		fetchConfig.path = fetchConfig.path.replace(/{{(.+?)}}/, (matches, backref) => {
 			const value = _.get(store, backref)
-			
 			if (value === undefined || value === null) {
 				isUrlValid = false
 			}
@@ -115,7 +114,6 @@ function* fetchData(action: FetchAction) {
 	if (/{:.+}/.test(fetchConfig.path)) {
 		fetchConfig.path = fetchConfig.path.replace(/{:(.+?)}/, (matches, backref) => {
 			const value = fetchConfig.routeParams[backref]
-			
 			if (value === undefined || value === null) {
 				isUrlValid = false
 			}
