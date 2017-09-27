@@ -3,3 +3,4 @@ coverage/
 .idea/
 lib/
 npm-debug.log
+.DS_Store
