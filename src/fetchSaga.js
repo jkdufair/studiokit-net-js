@@ -46,7 +46,8 @@ type FetchAction = {
 	queryParams?: Object,
 	noStore?: boolean,
 	period?: number,
-	taskId?: string
+	taskId?: string,
+	routeParams?: Object
 }
 
 type LoggerFunction = string => void
@@ -90,6 +91,9 @@ function* fetchData(action: FetchAction) {
 		}
 	}
 	fetchConfig.queryParams = Object.assign({}, baseConfig.queryParams, action.queryParams)
+	fetchConfig.routeParams = Object.assign({}, baseConfig.routeParams, action.routeParams)
+
+	let isUrlValid = true;
 
 	// substitute parameterized query path references with values from store
 	// TODO: validate the path exists in the store
@@ -98,8 +102,35 @@ function* fetchData(action: FetchAction) {
 		// since there is no yield in an arrow fn
 		const store = yield select(state => state)
 		fetchConfig.path = fetchConfig.path.replace(/{{(.+?)}}/, (matches, backref) => {
-			return _.get(store, backref)
+			const value = _.get(store, backref)
+			
+			if (value === undefined || value === null) {
+				isUrlValid = false
+			}
+			return value
 		})
+	}
+
+	// substitute any route parameters. EX. /api/group/{:groupId}
+	if (/{:.+}/.test(fetchConfig.path)) {
+		fetchConfig.path = fetchConfig.path.replace(/{:(.+?)}/, (matches, backref) => {
+			const value = fetchConfig.routeParams[backref]
+			
+			if (value === undefined || value === null) {
+				isUrlValid = false
+			}
+			return value
+		})
+	}
+
+	if (!isUrlValid) {
+		yield put(
+			createAction(actions.FETCH_TRY_FAILED, {
+				modelName: action.modelName,
+				errorData: 'Invalid URL'
+			})
+		)
+		return
 	}
 
 	// Configure retry
@@ -152,7 +183,8 @@ function* fetchData(action: FetchAction) {
 					didTimeOut = true
 					let errorObject = {
 						type: actions.FETCH_TIMED_OUT,
-						modelName: action.modelName
+						modelName: action.modelName,
+						errorData: fetchResult
 					}
 					throw new Error(JSON.stringify(errorObject))
 				} else {
@@ -171,7 +203,12 @@ function* fetchData(action: FetchAction) {
 				}
 			}
 		} catch (error) {
-			if (errorFunction) {
+			let errorObject = JSON.parse(error.message)
+			let fetchResult = errorObject.errorData
+
+			// Don't do anything with 401 errors
+			// And some errors don't have fetch results associated with them
+			if (errorFunction && (fetchResult ? fetchResult.code != 401 : true)) {
 				errorFunction(error.message)
 			}
 			didFail = true
