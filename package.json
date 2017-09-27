@@ -2,51 +2,55 @@
 	"name": "studiokit-net-js",
 	"version": "1.1.0",
 	"scripts": {
-		"build": "babel src -d lib --ignore '**/*.spec.js'",
-		"build:watch": "babel src --watch -d lib --ignore '**/*.spec.js'",
+		"eslint-check": "eslint --print-config .eslintrc.js | eslint-config-prettier-check",
+		"lint": "eslint --ext=js ./*.js src test",
+		"fix": "npm run lint -- --fix",
 		"test": "BABEL_ENV=test jest",
 		"test:watch": "BABEL_ENV=test jest --watch",
 		"coverage": "BABEL_ENV=test jest --coverage",
-		"coveralls": "BABEL_ENV=test jest --coverage && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
-		"commit": "commit-wizard"
+		"coveralls": "npm run coverage && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
+		"build": "babel src -d lib",
+		"build:watch": "babel src --watch -d lib",
+		"precommit": "lint-staged",
+		"pretest": "npm run build",
+		"prepush": "npm run test",
+		"prepublish": "npm run test"
 	},
 	"description": "Network/API functions for Studio apps at Purdue",
 	"main": "lib/index.js",
 	"repository": "purdue-tlt/studiokit-net-js",
-	"author": "Jason Dufair <jase@purdue.edu>",
 	"license": "MIT",
 	"devDependencies": {
 		"babel-cli": "^6.24.1",
+		"babel-eslint": "^8.0.0",
 		"babel-plugin-rewire": "^1.1.0",
 		"babel-plugin-transform-flow-strip-types": "^6.22.0",
-		"coveralls": "^2.13.1",
-		"eslint": "^3.19.0",
-		"eslint-plugin-redux-saga": "^0.3.0",
-		"fetch-mock": "^5.10.0",
-		"flow-bin": "^0.46.0",
-		"isomorphic-fetch": "^2.2.1",
-		"jest": "^20.0.4",
-		"pre-git": "^3.14.0"
-	},
-	"dependencies": {
 		"babel-plugin-transform-runtime": "^6.23.0",
 		"babel-preset-env": "^1.4.0",
 		"babel-runtime": "^6.23.0",
+		"coveralls": "^2.13.1",
+		"eslint": "^4.7.2",
+		"eslint-config-prettier": "^2.5.0",
+		"eslint-config-studiokit": "^0.1.0",
+		"eslint-plugin-prettier": "^2.3.1",
+		"eslint-plugin-redux-saga": "^0.5.0",
+		"fetch-mock": "^5.10.0",
+		"flow-bin": "^0.55.0",
+		"husky": "^0.14.3",
+		"isomorphic-fetch": "^2.2.1",
+		"jest": "^21.1.0",
+		"lint-staged": "^4.2.2",
+		"prettier": "^1.7.0"
+	},
+	"dependencies": {
 		"lodash": "^4.17.4",
 		"redux": "^3.6.0",
 		"redux-saga": "^0.15.1"
 	},
-	"config": {
-		"pre-git": {
-			"commit-msg": "simple",
-			"pre-commit": ["yarn babel -- src -d lib"],
-			"pre-push": [],
-			"post-commit": [],
-			"post-checkout": [],
-			"post-merge": []
-		}
-	},
-	"jest": {
-		"testPathIgnorePatterns": ["/node_modules/", "<rootDir>/lib/"]
+	"lint-staged": {
+		"*.js": [
+			"eslint --fix",
+			"git add"
+		]
 	}
 }
