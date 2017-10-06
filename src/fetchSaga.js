@@ -166,6 +166,9 @@ function* fetchData(action: FetchAction) {
 				timedOut: call(delay, action.timeLimit ? action.timeLimit : 30000)
 			})
 			if (fetchResult && !(fetchResult.title && fetchResult.title === 'Error')) {
+				if (action.body && action.guid) {
+					fetchResult.guid = action.guid
+				}
 				yield put(
 					createAction(
 						action.noStore
