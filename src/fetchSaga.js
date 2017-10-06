@@ -82,6 +82,12 @@ function* fetchData(action: FetchAction) {
 	const fetchConfig = Object.assign({}, baseConfig, {
 		headers: headers
 	})
+	if (action.method && typeof action.method === 'string') {
+		fetchConfig.method = action.method
+		if (action.method === 'PUT' || action.method === 'PATCH' || action.method === 'DELETE') {
+			fetchConfig.path = `${fetchConfig.path}/{:id}`
+		}
+	}
 	if (action.body || baseConfig.body) {
 		// If the body is a string, we are assuming it's an application/x-www-form-urlencoded
 		if (typeof action.body === 'string') {
