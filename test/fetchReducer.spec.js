@@ -1,5 +1,5 @@
-import fetchReducer from '../lib/fetchReducer'
-import actions from '../lib/actions'
+import fetchReducer from '../src/fetchReducer'
+import actions from '../src/actions'
 
 describe('fetchReducer', () => {
 	test('Do nothing without action.modelName', () => {

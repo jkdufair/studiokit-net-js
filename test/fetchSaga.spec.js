@@ -1,4 +1,4 @@
-import actions, { createAction } from '../lib/actions'
+import actions, { createAction } from '../src/actions'
 import { delay } from 'redux-saga'
 import {
 	call,
@@ -13,9 +13,9 @@ import {
 	select
 } from 'redux-saga/effects'
 import { createMockTask } from 'redux-saga/utils'
-import { doFetch } from '../lib/services/fetchService'
-import fetchSaga, { __RewireAPI__ as FetchSagaRewireAPI } from '../lib/fetchSaga'
-import { returnEntireStore } from '../lib/fetchReducer'
+import { doFetch } from '../src/services/fetchService'
+import fetchSaga, { __RewireAPI__ as FetchSagaRewireAPI } from '../src/fetchSaga'
+import { returnEntireStore } from '../src/fetchReducer'
 
 // TODO: retry
 const fetchData = FetchSagaRewireAPI.__get__('fetchData')
@@ -41,7 +41,45 @@ const getOauthToken = () => {
 	return { access_token: 'some-access-token' }
 }
 
+describe('fetchSaga ctor', () => {
+	test('should throw without models', () => {
+		const gen = fetchSaga()
+		expect(() => {
+			const takeEveryDataRequestEffect = gen.next()
+		}).toThrow(/'modelsParam' is required for fetchSaga/)
+	})
+
+	test('should set up all takes', () => {
+		const gen = fetchSaga({})
+
+		const takeEveryDataRequestEffect = gen.next()
+		expect(takeEveryDataRequestEffect.value).toEqual(takeEvery(actions.DATA_REQUESTED, fetchOnce))
+		const takeEveryPeriodicDataRequestEffect = gen.next()
+		expect(takeEveryPeriodicDataRequestEffect.value).toEqual(
+			takeEvery(actions.PERIODIC_DATA_REQUESTED, fetchDataRecurring)
+		)
+		const takeLatestDataRequestedEffect = gen.next()
+		expect(takeLatestDataRequestedEffect.value).toEqual(
+			takeLatest(actions.DATA_REQUESTED_USE_LATEST, fetchOnce)
+		)
+	})
+
+	test('should use default logger', () => {
+		const gen = fetchSaga({ test: { path: '/foo' } }, '')
+		expect(consoleOutput).toEqual('logger set to consoleLogger')
+	})
+
+	test('should use default tokenAccess', () => {
+		const gen = fetchSaga({ test: { path: '/foo' } }, '')
+		const tokenAccess = FetchSagaRewireAPI.__get__('tokenAccess')
+		const tokenAccessFunction = FetchSagaRewireAPI.__get__('tokenAccessFunction')
+		expect(tokenAccess).toEqual(tokenAccessFunction)
+		expect(tokenAccess()).toEqual(undefined)
+	})
+})
+
 describe('fetchData', () => {
+	let errorOutput
 	beforeAll(() => {
 		const fetchSagaGen = fetchSaga(
 			{
@@ -64,17 +102,29 @@ describe('fetchData', () => {
 				},
 				test6: {
 					path: 'http://{{testServer}}/{:entityId}'
+				},
+				test7: {
+					path: 'http://www.google.com/entities'
 				}
 			},
 			'http://google.com',
 			getOauthToken, // this won't get called directly
-			() => {} // no need for error logging here
+			errorMessage => {
+				errorOutput = errorMessage
+			}
 		)
 		fetchSagaGen.next()
 	})
 
 	// NOTE: Keep in mind that if you pass a value to gen.next(), that is the value
 	// that used to evaluate the previous `yield` call
+	test('should throw when action.modelName is undefined', () => {
+		const gen = fetchData({})
+		expect(() => {
+			const startGenerator = gen.next()
+		}).toThrow(/modelName' config parameter is required for fetchData/)
+	})
+
 	test('should throw when action.modelName is not found in models', () => {
 		const gen = fetchData({ modelName: 'foo' })
 		expect(() => {
@@ -135,6 +185,61 @@ describe('fetchData', () => {
 				createAction(actions.TRANSIENT_FETCH_RESULT_RECEIVED, {
 					data: { foo: 'bar' },
 					modelName: 'test'
+				})
+			)
+		)
+		expect(gen.next().done).toEqual(true)
+	})
+
+	test('should use "action.method" if it is defined', () => {
+		const gen = fetchData({ modelName: 'test7', method: 'POST' })
+		const putFetchRequestEffect = gen.next()
+		const tokenAccessCall = gen.next()
+		const raceEffect = gen.next(getOauthToken())
+		expect(raceEffect.value).toEqual(
+			race({
+				fetchResult: call(doFetch, {
+					path: 'http://www.google.com/entities',
+					headers: { Authorization: 'Bearer some-access-token' },
+					method: 'POST',
+					queryParams: {},
+					routeParams: {}
+				}),
+				timedOut: call(delay, 30000)
+			})
+		)
+	})
+
+	test('should append routeParam onto path if action.method is "PUT", "PATCH", or "DELETE"', () => {
+		const gen = fetchData({ modelName: 'test7', method: 'PUT', routeParams: { id: 999 } })
+		const putFetchRequestEffect = gen.next()
+		const tokenAccessCall = gen.next()
+		const raceEffect = gen.next(getOauthToken())
+		expect(raceEffect.value).toEqual(
+			race({
+				fetchResult: call(doFetch, {
+					path: 'http://www.google.com/entities/999',
+					headers: { Authorization: 'Bearer some-access-token' },
+					method: 'PUT',
+					queryParams: {},
+					routeParams: { id: 999 }
+				}),
+				timedOut: call(delay, 30000)
+			})
+		)
+	})
+
+	test('should return "guid" on fetchResult if passed on with "action"', () => {
+		const gen = fetchData({ modelName: 'test7', method: 'POST', guid: 'some-guid' })
+		const putFetchRequestEffect = gen.next()
+		const tokenAccessCall = gen.next()
+		const raceEffect = gen.next()
+		const resultReceivedEffect = gen.next({ fetchResult: { foo: 'bar' } })
+		expect(resultReceivedEffect.value).toEqual(
+			put(
+				createAction(actions.FETCH_RESULT_RECEIVED, {
+					data: { foo: 'bar', guid: 'some-guid' },
+					modelName: 'test7'
 				})
 			)
 		)
@@ -409,6 +514,17 @@ describe('fetchData', () => {
 		const sagaDone = gen.next()
 		expect(sagaDone.done).toEqual(true)
 	})
+
+	test('should not call errorFunction if fetchResult.code is 401', () => {
+		errorOutput = null
+		const gen = fetchData({ modelName: 'test' })
+		const putFetchRequestEffect = gen.next()
+		const tokenAccessCall = gen.next()
+		const raceEffect = gen.next(getOauthToken())
+		const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error', code: 401 } })
+		const delayEffect = gen.next()
+		expect(errorOutput).toEqual(null)
+	})
 })
 
 describe('fetchOnce', () => {
@@ -518,42 +634,5 @@ describe('fetchDataRecurring', () => {
 		const takeTerminationEffect = gen.next(mockTask)
 		const cancelledTask = gen.next()
 		expect(cancelledTask.value).toEqual(cancel(mockTask))
-	})
-})
-
-describe('fetchSaga', () => {
-	test('should throw without models', () => {
-		const gen = fetchSaga()
-		expect(() => {
-			const takeEveryDataRequestEffect = gen.next()
-		}).toThrow(/'modelsParam' is required for fetchSaga/)
-	})
-
-	test('should set up all takes', () => {
-		const gen = fetchSaga({})
-
-		const takeEveryDataRequestEffect = gen.next()
-		expect(takeEveryDataRequestEffect.value).toEqual(takeEvery(actions.DATA_REQUESTED, fetchOnce))
-		const takeEveryPeriodicDataRequestEffect = gen.next()
-		expect(takeEveryPeriodicDataRequestEffect.value).toEqual(
-			takeEvery(actions.PERIODIC_DATA_REQUESTED, fetchDataRecurring)
-		)
-		const takeLatestDataRequestedEffect = gen.next()
-		expect(takeLatestDataRequestedEffect.value).toEqual(
-			takeLatest(actions.DATA_REQUESTED_USE_LATEST, fetchOnce)
-		)
-	})
-
-	test('should use default logger', () => {
-		const gen = fetchSaga({ test: { path: '/foo' } }, '')
-		expect(consoleOutput).toEqual('logger set to consoleLogger')
-	})
-
-	test('should use default tokenAccess', () => {
-		const gen = fetchSaga({ test: { path: '/foo' } }, '')
-		const tokenAccess = FetchSagaRewireAPI.__get__('tokenAccess')
-		const tokenAccessFunction = FetchSagaRewireAPI.__get__('tokenAccessFunction')
-		expect(tokenAccess).toEqual(tokenAccessFunction)
-		expect(tokenAccess()).toEqual(undefined)
 	})
 })

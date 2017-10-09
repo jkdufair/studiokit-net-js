@@ -33,21 +33,29 @@ type OAuthToken = {
 
 /**
  * modelName - The key that is used to locate the request config in apis.js and also to place the result in the redux store
+ * method - (optional) The HTTP Method to use for the fetch. Otherwise will use the method set in apis.js, or 'GET'
  * headers - (optional) An object as key/value pairs of headers to be sent with the request
  * queryParams - (optional) An object as key/value pairs to be added to query as query params
+ * routeParams - (optional) An object as key/value pairs to be replaced in the fetch path using pattern matching, "/{:key}" => "/value"
  * noStore - (optional) If true, make the request but do not store in redux. Can be used with take & friends for side effects
  * period - (optional) How often to re-fetch when used in a recurring fetch scenario
  * taskId - (optional) A pre-generated (by your application) id to be used to cancel a recurring task at a later time
- * 
+ * noRetry - (optional)  will prevent the use of the default logarithmic backoff retry strategy
+ * timeLimit - (optional) number that will specify the timeout for a single attempt at a request. Defaults to 3000ms
+ * guid - (optional) A pre-generated (by your application) GUID that will be attached to the fetchResult.data, to be stored in redux and used to match
  */
 type FetchAction = {
 	modelName: string,
+	method?: string,
 	headers?: Object,
 	queryParams?: Object,
+	routeParams?: Object,
 	noStore?: boolean,
 	period?: number,
 	taskId?: string,
-	routeParams?: Object
+	noRetry?: boolean,
+	timeLimit?: number,
+	guid?: string
 }
 
 type LoggerFunction = string => void
