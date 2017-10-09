@@ -90,11 +90,19 @@ function* fetchData(action: FetchAction) {
 	const fetchConfig = Object.assign({}, baseConfig, {
 		headers: headers
 	})
+	// set method from action
 	if (action.method && typeof action.method === 'string') {
 		fetchConfig.method = action.method
-		if (action.method === 'PUT' || action.method === 'PATCH' || action.method === 'DELETE') {
-			fetchConfig.path = `${fetchConfig.path}/{:id}`
-		}
+	}
+	// append entity id routeParam for collections single result requests
+	if (
+		fetchConfig.isCollection &&
+		(action.shouldReturnSingle ||
+			action.method === 'PUT' ||
+			action.method === 'PATCH' ||
+			action.method === 'DELETE')
+	) {
+		fetchConfig.path = `${fetchConfig.path}/{:id}`
 	}
 	if (action.body || baseConfig.body) {
 		// If the body is a string, we are assuming it's an application/x-www-form-urlencoded
@@ -174,17 +182,33 @@ function* fetchData(action: FetchAction) {
 				timedOut: call(delay, action.timeLimit ? action.timeLimit : 30000)
 			})
 			if (fetchResult && !(fetchResult.title && fetchResult.title === 'Error')) {
-				if (action.guid) {
-					fetchResult.guid = action.guid
+				let storeData = fetchResult
+				let storeModelName = action.modelName
+				if (fetchConfig.isCollection) {
+					if (action.shouldReturnSingle) {
+						storeModelName = `${storeModelName}.items.${fetchResult.id}`
+					} else {
+						storeData = {
+							isCollection: true
+						}
+						storeData.items = fetchResult.items.reduce((retval, curr) => {
+							retval[curr.id] = curr
+							return retval
+						}, {})
+					}
 				}
+				if (action.guid) {
+					storeData.guid = action.guid
+				}
+				// TODO: handle PUT, PATCH, DELETE results
 				yield put(
 					createAction(
 						action.noStore
 							? actions.TRANSIENT_FETCH_RESULT_RECEIVED
 							: actions.FETCH_RESULT_RECEIVED,
 						{
-							data: fetchResult,
-							modelName: action.modelName
+							data: storeData,
+							modelName: storeModelName
 						}
 					)
 				)

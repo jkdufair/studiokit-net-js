@@ -103,8 +103,9 @@ describe('fetchData', () => {
 				test6: {
 					path: 'http://{{testServer}}/{:entityId}'
 				},
-				test7: {
-					path: 'http://www.google.com/entities'
+				entities: {
+					path: 'http://www.google.com/entities',
+					isCollection: true
 				}
 			},
 			'http://google.com',
@@ -192,14 +193,14 @@ describe('fetchData', () => {
 	})
 
 	test('should use "action.method" if it is defined', () => {
-		const gen = fetchData({ modelName: 'test7', method: 'POST' })
+		const gen = fetchData({ modelName: 'test', method: 'POST' })
 		const putFetchRequestEffect = gen.next()
 		const tokenAccessCall = gen.next()
 		const raceEffect = gen.next(getOauthToken())
 		expect(raceEffect.value).toEqual(
 			race({
 				fetchResult: call(doFetch, {
-					path: 'http://www.google.com/entities',
+					path: 'http://www.google.com',
 					headers: { Authorization: 'Bearer some-access-token' },
 					method: 'POST',
 					queryParams: {},
@@ -210,27 +211,8 @@ describe('fetchData', () => {
 		)
 	})
 
-	test('should append routeParam onto path if action.method is "PUT", "PATCH", or "DELETE"', () => {
-		const gen = fetchData({ modelName: 'test7', method: 'PUT', routeParams: { id: 999 } })
-		const putFetchRequestEffect = gen.next()
-		const tokenAccessCall = gen.next()
-		const raceEffect = gen.next(getOauthToken())
-		expect(raceEffect.value).toEqual(
-			race({
-				fetchResult: call(doFetch, {
-					path: 'http://www.google.com/entities/999',
-					headers: { Authorization: 'Bearer some-access-token' },
-					method: 'PUT',
-					queryParams: {},
-					routeParams: { id: 999 }
-				}),
-				timedOut: call(delay, 30000)
-			})
-		)
-	})
-
-	test('should return "guid" on fetchResult if passed on with "action"', () => {
-		const gen = fetchData({ modelName: 'test7', method: 'POST', guid: 'some-guid' })
+	test('should return "guid" on fetchResult if passed in "action.guid"', () => {
+		const gen = fetchData({ modelName: 'test', method: 'POST', guid: 'some-guid' })
 		const putFetchRequestEffect = gen.next()
 		const tokenAccessCall = gen.next()
 		const raceEffect = gen.next()
@@ -239,11 +221,103 @@ describe('fetchData', () => {
 			put(
 				createAction(actions.FETCH_RESULT_RECEIVED, {
 					data: { foo: 'bar', guid: 'some-guid' },
-					modelName: 'test7'
+					modelName: 'test'
 				})
 			)
 		)
 		expect(gen.next().done).toEqual(true)
+	})
+
+	describe('entity collection', () => {
+		test('should append routeParam "/{:id}" onto path if action.shouldReturnSingle = true', () => {
+			const gen = fetchData({
+				modelName: 'entities',
+				shouldReturnSingle: true,
+				routeParams: { id: 999 }
+			})
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next(getOauthToken())
+			expect(raceEffect.value).toEqual(
+				race({
+					fetchResult: call(doFetch, {
+						path: 'http://www.google.com/entities/999',
+						headers: { Authorization: 'Bearer some-access-token' },
+						isCollection: true,
+						queryParams: {},
+						routeParams: { id: 999 }
+					}),
+					timedOut: call(delay, 30000)
+				})
+			)
+		})
+
+		test('should append routeParam "/{:id}" onto path if action.method is "PUT", "PATCH", or "DELETE"', () => {
+			const gen = fetchData({ modelName: 'entities', method: 'PUT', routeParams: { id: 999 } })
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next(getOauthToken())
+			expect(raceEffect.value).toEqual(
+				race({
+					fetchResult: call(doFetch, {
+						path: 'http://www.google.com/entities/999',
+						headers: { Authorization: 'Bearer some-access-token' },
+						method: 'PUT',
+						isCollection: true,
+						queryParams: {},
+						routeParams: { id: 999 }
+					}),
+					timedOut: call(delay, 30000)
+				})
+			)
+		})
+
+		test('should return a key-value object of api results', () => {
+			const gen = fetchData({ modelName: 'entities', method: 'GET', guid: 'some-guid' })
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next()
+			const resultReceivedEffect = gen.next({
+				fetchResult: { items: [{ id: 1, name: 'foo' }, { id: 3, name: 'bar' }] }
+			})
+			expect(resultReceivedEffect.value).toEqual(
+				put(
+					createAction(actions.FETCH_RESULT_RECEIVED, {
+						data: {
+							items: { 1: { id: 1, name: 'foo' }, 3: { id: 3, name: 'bar' } },
+							guid: 'some-guid',
+							isCollection: true
+						},
+						modelName: 'entities'
+					})
+				)
+			)
+			expect(gen.next().done).toEqual(true)
+		})
+
+		test('should get and add new single entities by id', () => {
+			const gen = fetchData({
+				modelName: 'entities',
+				shouldReturnSingle: true,
+				routeParams: { id: 3 },
+				guid: 'some-guid'
+			})
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next()
+			const resultReceivedEffect = gen.next({
+				fetchResult: { id: 3, name: 'baz' }
+			})
+			expect(resultReceivedEffect.value).toEqual(
+				put(
+					createAction(actions.FETCH_RESULT_RECEIVED, {
+						data: { id: 3, name: 'baz', guid: 'some-guid' },
+						modelName: 'entities.items.3'
+					})
+				)
+			)
+			expect(gen.next().done).toEqual(true)
+		})
 	})
 
 	test('should replace baseConfig body as string if body is string', () => {
