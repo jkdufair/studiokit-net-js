@@ -44,7 +44,8 @@
 		"isomorphic-fetch": "^2.2.1",
 		"jest": "^21.2.1",
 		"lint-staged": "^4.2.2",
-		"prettier": "^1.7.0"
+		"prettier": "^1.7.0",
+		"uuid": "^3.1.0"
 	},
 	"dependencies": {
 		"lodash": "^4.17.4",

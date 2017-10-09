@@ -13,6 +13,7 @@ import {
 	select
 } from 'redux-saga/effects'
 import { createMockTask } from 'redux-saga/utils'
+import uuid from 'uuid'
 import { doFetch } from '../src/services/fetchService'
 import fetchSaga, { __RewireAPI__ as FetchSagaRewireAPI } from '../src/fetchSaga'
 import { returnEntireStore } from '../src/fetchReducer'
@@ -212,7 +213,8 @@ describe('fetchData', () => {
 	})
 
 	test('should return "guid" on fetchResult if passed in "action.guid"', () => {
-		const gen = fetchData({ modelName: 'test', method: 'POST', guid: 'some-guid' })
+		const guid = uuid.v4()
+		const gen = fetchData({ modelName: 'test', method: 'POST', guid })
 		const putFetchRequestEffect = gen.next()
 		const tokenAccessCall = gen.next()
 		const raceEffect = gen.next()
@@ -220,7 +222,7 @@ describe('fetchData', () => {
 		expect(resultReceivedEffect.value).toEqual(
 			put(
 				createAction(actions.FETCH_RESULT_RECEIVED, {
-					data: { foo: 'bar', guid: 'some-guid' },
+					data: { foo: 'bar', guid },
 					modelName: 'test'
 				})
 			)
@@ -273,7 +275,8 @@ describe('fetchData', () => {
 		})
 
 		test('should return a key-value object of api results', () => {
-			const gen = fetchData({ modelName: 'entities', method: 'GET', guid: 'some-guid' })
+			const guid = uuid.v4()
+			const gen = fetchData({ modelName: 'entities', method: 'GET', guid })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next()
@@ -285,7 +288,7 @@ describe('fetchData', () => {
 					createAction(actions.FETCH_RESULT_RECEIVED, {
 						data: {
 							items: { 1: { id: 1, name: 'foo' }, 3: { id: 3, name: 'bar' } },
-							guid: 'some-guid',
+							guid,
 							isCollection: true
 						},
 						modelName: 'entities'
@@ -296,11 +299,12 @@ describe('fetchData', () => {
 		})
 
 		test('should get and add new single entities by id', () => {
+			const guid = uuid.v4()
 			const gen = fetchData({
 				modelName: 'entities',
 				shouldReturnSingle: true,
 				routeParams: { id: 3 },
-				guid: 'some-guid'
+				guid
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
@@ -311,7 +315,7 @@ describe('fetchData', () => {
 			expect(resultReceivedEffect.value).toEqual(
 				put(
 					createAction(actions.FETCH_RESULT_RECEIVED, {
-						data: { id: 3, name: 'baz', guid: 'some-guid' },
+						data: { id: 3, name: 'baz', guid },
 						modelName: 'entities.items.3'
 					})
 				)
