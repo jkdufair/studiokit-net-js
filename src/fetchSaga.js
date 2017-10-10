@@ -36,7 +36,7 @@ type OAuthToken = {
  * method - (optional) The HTTP Method to use for the fetch. Otherwise will use the method set in apis.js, or 'GET'
  * headers - (optional) An object as key/value pairs of headers to be sent with the request
  * queryParams - (optional) An object as key/value pairs to be added to query as query params
- * routeParams - (optional) An object as key/value pairs to be replaced in the fetch path using pattern matching, "/{:key}" => "/value"
+ * pathParams - (optional) An object as key/value pairs to be replaced in the fetch path using pattern matching, "/{:key}" => "/value"
  * noStore - (optional) If true, make the request but do not store in redux. Can be used with take & friends for side effects
  * period - (optional) How often to re-fetch when used in a recurring fetch scenario
  * taskId - (optional) A pre-generated (by your application) id to be used to cancel a recurring task at a later time
@@ -49,7 +49,7 @@ type FetchAction = {
 	method?: string,
 	headers?: Object,
 	queryParams?: Object,
-	routeParams?: Object,
+	pathParams?: Object,
 	noStore?: boolean,
 	period?: number,
 	taskId?: string,
@@ -90,20 +90,25 @@ function* fetchData(action: FetchAction) {
 	const fetchConfig = Object.assign({}, baseConfig, {
 		headers: headers
 	})
+
 	// set method from action
 	if (action.method && typeof action.method === 'string') {
 		fetchConfig.method = action.method
 	}
-	// append entity id routeParam for collections single result requests
-	if (
-		fetchConfig.isCollection &&
-		(action.shouldReturnSingle ||
-			action.method === 'PUT' ||
-			action.method === 'PATCH' ||
-			action.method === 'DELETE')
-	) {
-		fetchConfig.path = `${fetchConfig.path}/{:id}`
+
+	let isCollectionItemFetch = false
+	let isCollectionItemCreate = false
+	if (fetchConfig.isCollection) {
+		// GET, PUT, PATCH, DELETE
+		isCollectionItemFetch = action.pathParams && action.pathParams.hasOwnProperty('id')
+		// POST
+		isCollectionItemCreate = fetchConfig.method === 'POST'
+		// append collection item id routeParam
+		if (isCollectionItemFetch && !isCollectionItemCreate) {
+			fetchConfig.path = `${fetchConfig.path}/{:id}`
+		}
 	}
+
 	if (action.body || baseConfig.body) {
 		// If the body is a string, we are assuming it's an application/x-www-form-urlencoded
 		if (typeof action.body === 'string') {
@@ -112,13 +117,22 @@ function* fetchData(action: FetchAction) {
 			fetchConfig.body = Object.assign({}, baseConfig.body, action.body)
 		}
 	}
+
 	fetchConfig.queryParams = Object.assign({}, baseConfig.queryParams, action.queryParams)
-	fetchConfig.routeParams = Object.assign({}, baseConfig.routeParams, action.routeParams)
 
 	let isUrlValid = true
-
-	// substitute parameterized query path references with values from store
-	// TODO: validate the path exists in the store
+	// substitute any basic path parameters, e.g. /api/group/{:groupId}
+	const pathParams = Object.assign({}, baseConfig.pathParams, action.pathParams)
+	if (/{:.+}/.test(fetchConfig.path)) {
+		fetchConfig.path = fetchConfig.path.replace(/{:(.+?)}/, (matches, backref) => {
+			const value = pathParams[backref]
+			if (value === undefined || value === null) {
+				isUrlValid = false
+			}
+			return value
+		})
+	}
+	// substitute any path parameters from the redux store, e.g. '{{apiRoot}}/groups'
 	if (/{{.+}}/.test(fetchConfig.path)) {
 		// have to get reference to the whole store here
 		// since there is no yield in an arrow fn
@@ -131,18 +145,6 @@ function* fetchData(action: FetchAction) {
 			return value
 		})
 	}
-
-	// substitute any route parameters. EX. /api/group/{:groupId}
-	if (/{:.+}/.test(fetchConfig.path)) {
-		fetchConfig.path = fetchConfig.path.replace(/{:(.+?)}/, (matches, backref) => {
-			const value = fetchConfig.routeParams[backref]
-			if (value === undefined || value === null) {
-				isUrlValid = false
-			}
-			return value
-		})
-	}
-
 	if (!isUrlValid) {
 		yield put(
 			createAction(actions.FETCH_TRY_FAILED, {
@@ -159,17 +161,24 @@ function* fetchData(action: FetchAction) {
 	let didFail
 	let didTimeOut
 	let lastError: string = ''
+	let modelName = action.modelName
+
+	// track collection item requests by id (update, delete) or guid (create)
+	if (isCollectionItemFetch) {
+		modelName = `${action.modelName}.data.${pathParams.id}`
+	} else if (isCollectionItemCreate) {
+		modelName = `${action.modelName}.data.${action.guid}`
+	}
 
 	// Run retry loop
 	do {
 		didFail = false
 		didTimeOut = false
-
 		tryCount++
 		// Indicate fetch action has begun
 		yield put(
 			createAction(action.noStore ? actions.TRANSIENT_FETCH_REQUESTED : actions.FETCH_REQUESTED, {
-				modelName: action.modelName
+				modelName
 			})
 		)
 		try {
@@ -182,60 +191,82 @@ function* fetchData(action: FetchAction) {
 				timedOut: call(delay, action.timeLimit ? action.timeLimit : 30000)
 			})
 			if (fetchResult && !(fetchResult.title && fetchResult.title === 'Error')) {
-				let storeData = fetchResult
-				let storeModelName = action.modelName
+				let storeAction = action.noStore
+					? actions.TRANSIENT_FETCH_RESULT_RECEIVED
+					: actions.FETCH_RESULT_RECEIVED
+				let data = fetchResult
+
 				if (fetchConfig.isCollection) {
-					if (action.shouldReturnSingle) {
-						storeModelName = `${storeModelName}.items.${fetchResult.id}`
+					data = {}
+					if (fetchConfig.method === 'DELETE') {
+						storeAction = actions.KEY_REMOVAL_REQUESTED
+					} else if (isCollectionItemFetch || isCollectionItemCreate) {
+						data = fetchResult
 					} else {
-						storeData = {
-							isCollection: true
-						}
-						storeData.items = fetchResult.items.reduce((retval, curr) => {
-							retval[curr.id] = curr
-							return retval
-						}, {})
+						const fetchedAt = new Date()
+						const resultsArray = !_.isArray(fetchResult)
+							? Object.keys(fetchResult).map(key => fetchResult[key])
+							: fetchResult
+						resultsArray.forEach(item => {
+							data[item.id] = {
+								data: item,
+								isFetching: false,
+								hasError: false,
+								timedOut: false,
+								fetchedAt
+							}
+						})
 					}
 				}
-				if (action.guid) {
-					storeData.guid = action.guid
+
+				// attach guid to result
+				if (action.guid && _.isPlainObject(data)) {
+					data.guid = action.guid
 				}
-				// TODO: handle PUT, PATCH, DELETE results
-				yield put(
-					createAction(
-						action.noStore
-							? actions.TRANSIENT_FETCH_RESULT_RECEIVED
-							: actions.FETCH_RESULT_RECEIVED,
-						{
-							data: storeData,
-							modelName: storeModelName
-						}
+
+				// POST new collection item
+				if (isCollectionItemCreate) {
+					// add by new result's id
+					yield put(
+						createAction(storeAction, {
+							data,
+							modelName: `${action.modelName}.data.${data.id}`
+						})
 					)
-				)
+					// remove temp item under guid key
+					yield put(createAction(actions.KEY_REMOVAL_REQUESTED, { modelName }))
+				} else {
+					yield put(
+						createAction(storeAction, {
+							data,
+							modelName
+						})
+					)
+				}
 			} else {
 				if (timedOut) {
 					yield put(
 						createAction(actions.FETCH_TIMED_OUT, {
-							modelName: action.modelName
+							modelName
 						})
 					)
 					didTimeOut = true
 					let errorObject = {
 						type: actions.FETCH_TIMED_OUT,
-						modelName: action.modelName,
+						modelName,
 						errorData: fetchResult
 					}
 					throw new Error(JSON.stringify(errorObject))
 				} else {
 					yield put(
 						createAction(actions.FETCH_TRY_FAILED, {
-							modelName: action.modelName,
+							modelName,
 							errorData: fetchResult
 						})
 					)
 					let errorObject = {
 						type: actions.FETCH_TRY_FAILED,
-						modelName: action.modelName,
+						modelName,
 						errorData: fetchResult
 					}
 					throw new Error(JSON.stringify(errorObject))
@@ -261,7 +292,7 @@ function* fetchData(action: FetchAction) {
 	// Handle retry failure
 	if (tryCount === tryLimit && didFail) {
 		if (!didTimeOut) {
-			yield put(createAction(actions.FETCH_FAILED, { modelName: action.modelName }))
+			yield put(createAction(actions.FETCH_FAILED, { modelName }))
 		}
 		logger('fetchData retry fail')
 		logger(lastError)
