@@ -14,6 +14,7 @@ import {
 	takeLatest
 } from 'redux-saga/effects'
 import _ from 'lodash'
+import uuid from 'uuid'
 import { doFetch, setApiRoot } from './services/fetchService'
 import actions, { createAction } from './actions'
 
@@ -167,7 +168,7 @@ function* fetchData(action: FetchAction) {
 	if (isCollectionItemFetch) {
 		modelName = `${action.modelName}.data.${pathParams.id}`
 	} else if (isCollectionItemCreate) {
-		modelName = `${action.modelName}.data.${action.guid}`
+		modelName = `${action.modelName}.data.${action.guid || uuid.v4()}`
 	}
 
 	// Run retry loop

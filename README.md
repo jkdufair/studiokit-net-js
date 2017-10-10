@@ -84,10 +84,10 @@ Once the data is fetched, it will live in the redux store at the models.publicDa
 ```js
 models: {
 	publicData: {
+		data: { foo: 'bar', baz: ['quux', 'fluux']},
 		isFetching: false,
 		hasError: false,
 		timedOut: false,
-		data: { foo: 'bar', baz: ['quux', 'fluux']},
 		fetchedAt: "2017-05-23T20:38:11.103Z"
 	}
 }
@@ -101,7 +101,7 @@ type FetchAction = {
 	method?: string,
 	headers?: Object,
 	queryParams?: Object,
-	routeParams?: Object,
+	pathParams?: Object,
 	noStore?: boolean,
 	period?: number,
 	taskId?: string,
@@ -115,7 +115,7 @@ type FetchAction = {
 - `method` is an optional string used as the HTTP Method for the fetch. Otherwise will use the method set in `apis.js`, or `'GET'`
 - `headers` is an optional object used as key/value pairs to populate the request headers
 - `queryParams` is an optional object used as key/value pairs to populate the query parameters
-- `routeParams` is an optional object used as key/value pairs to be replaced in the fetch path using pattern matching, e.g. `/{:key}` => `/value`
+- `pathParams` is an optional object used as key/value pairs to be replaced in the fetch path using pattern matching, e.g. `/{:key}` => `/value`
 - `noStore` is an optional boolean that, if true, indicates the request should be made without storing the response in the redux store
 - `period` is an optional number of milliseconds after which a request should repeat when dispatching a recurring fetch
 - `taskId` is a string that must be passed to a recurring fetch for future cancellation
@@ -145,7 +145,7 @@ Given the following `apis.js`
 	},
 	theWalkers: {
 		path: 'https://thewalkingdead/api/walker/{:walkerId}',
-		routeParams: {
+		pathParams: {
 			walkerId: 1
 		}
 	}.
@@ -173,7 +173,8 @@ Given the following `apis.js`
 		body: { person: 'Fry' }
 	},
 	entities: {
-		path: '/api/entities'
+		path: '/api/entities',
+		isCollection: true
 	}
 }
 ```
@@ -186,7 +187,7 @@ You can make the following types of requests:
 [Cancel Periodic Fetch](#cancel-periodic-fetch)  
 [No Store](#no-store)  
 [Post](#post)  
-[Entity Crud](#entity-crud)  
+[Collections](#collections)  
 
 #
 
@@ -401,9 +402,9 @@ Same as basic fetch above, with the `data` key containing the response data from
 
 #
 
-### Entity Crud:
+### Collections
 
-#### GET Entities
+#### GET all
 *dispatch*
 ```js
 store.dispatch({
@@ -420,23 +421,32 @@ GET https://myapp.com/api/entities
 {
 	models: {
 		entities: {
+			data: {
+				1: {
+					data: {id: 1, ...},
+					isFetching: false,
+					hasError: false,
+					timedOut: false,
+					fetchedAt: '2017-05-23T20:38:11.103Z'
+				},
+				...
+			},
 			isFetching: false,
 			hasError: false,
 			timedOut: false,
-			data: {...}
 			fetchedAt: '2017-05-23T20:38:11.103Z'
 		}
 	}
 }
 ```
 
-#### GET Entity
+#### GET item
 *dispatch*
 ```js
 store.dispatch({
 	type: netActions.DATA_REQUESTED,
 	modelName: 'entities',
-	routeParams: {
+	pathParams: {
 		id: 1
 	}
 })
@@ -445,20 +455,47 @@ store.dispatch({
 ```http
 GET https://myapp.com/api/entities/1
 ```
-*resulting redux*
+*resulting redux*  
+Updates item in store at `entities.data.1`
 
-#### PATCH/PUT Entity
+#### POST item
+*dispatch*
+```js
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'entities',
+	method: 'POST',
+	body: {
+		name: 'entity name'
+	}
+})
+```
+*request generated*
+```http
+Content-Type: application/json
+POST https://myapp.com/api/entities/1
+{"name": "entity name"}
+```
+*resulting redux*  
+Adds item in store at `entities.data` under the return object's `id`
+
+*Note*  
+During the request, status is stored in `entities.data` under a `guid` key, which can be provided in the action for tracking
+
+#### PATCH item
 *dispatch*
 ```js
 store.dispatch({
 	type: netActions.DATA_REQUESTED,
 	modelName: 'entities',
 	method: 'PATCH'
-	routeParams: {
+	pathParams: {
 		id: 1
 	},
 	body: {
-		name: 'New Name'
+		op: 'replace',
+		path: 'Name',
+		value: 'updated group name'
 	}
 })
 ```
@@ -466,9 +503,14 @@ store.dispatch({
 ```http
 Content-Type: application/json
 PATCH https://myapp.com/api/entities/1
-{name: "New Name"}
+{"op": "replace", "path": "Name", "value": "updated group name"}
 ```
-*resulting redux*
+
+*resulting redux*  
+Updates item in store at `entities.data.1`
+
+*Note*  
+See http://jsonpatch.com/
 
 #### DELETE Entity
 *dispatch*
@@ -477,7 +519,7 @@ store.dispatch({
 	type: netActions.DATA_REQUESTED,
 	modelName: 'entities',
 	method: 'DELETE'
-	routeParams: {
+	pathParams: {
 		id: 1
 	}
 })
@@ -486,7 +528,8 @@ store.dispatch({
 ```http
 DELETE https://myapp.com/api/entities/1
 ```
-*resulting redux*
+*resulting redux*  
+Removes item in store at `entities.data.1`
 
 #
 
