@@ -240,6 +240,46 @@ describe('fetchReducer', () => {
 				}
 			})
 		})
+
+		test('collection nested level replace existing data on same key', () => {
+			// makes sure "data" key gets completely replaced and not merged
+			const fetchedAtDate = new Date()
+			const _Date = Date
+			global.Date = jest.fn(() => fetchedAtDate)
+			const state = fetchReducer(
+				{
+					groups: {
+						data: {
+							1: {
+								isFetching: false,
+								hasError: false,
+								timedOut: false,
+								fetchedAt: fetchedAtDate,
+								data: { key: 'value', key2: 'value2' }
+							}
+						}
+					}
+				},
+				{
+					type: actions.FETCH_RESULT_RECEIVED,
+					modelName: 'groups.data.1',
+					data: { key: 'value' }
+				}
+			)
+			expect(state).toEqual({
+				groups: {
+					data: {
+						1: {
+							isFetching: false,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedAtDate,
+							data: { key: 'value' }
+						}
+					}
+				}
+			})
+		})
 	})
 
 	describe('FETCH_FAILED', () => {
@@ -275,6 +315,41 @@ describe('fetchReducer', () => {
 			)
 			expect(state).toEqual({
 				user: { foo: 'bar', test: { isFetching: false, hasError: true, timedOut: false } }
+			})
+		})
+
+		test('collection nested level replace state', () => {
+			const fetchedAt = new Date()
+			const _Date = Date
+			global.Date = jest.fn(() => fetchedAt)
+			const state = fetchReducer(
+				{
+					groups: {
+						data: {
+							1: {
+								data: { id: 1, foo: 'bar' },
+								isFetching: true,
+								hasError: false,
+								timedOut: false,
+								fetchedAt
+							}
+						}
+					}
+				},
+				{ type: actions.FETCH_FAILED, modelName: 'groups.data.1' }
+			)
+			expect(state).toEqual({
+				groups: {
+					data: {
+						1: {
+							data: { id: 1, foo: 'bar' },
+							isFetching: false,
+							hasError: true,
+							timedOut: false,
+							fetchedAt
+						}
+					}
+				}
 			})
 		})
 	})
