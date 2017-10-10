@@ -63,7 +63,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			return _.set(path, newValue, state)
 
 		case actions.KEY_REMOVAL_REQUESTED:
-			return _.omit(path, state)
+			return _.unset(path, state)
 
 		default:
 			return state

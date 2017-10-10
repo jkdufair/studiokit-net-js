@@ -407,6 +407,14 @@ describe('fetchReducer', () => {
 			)
 			expect(state).toEqual({ test2: 'bar' })
 		})
+
+		test('remove key collection nested', () => {
+			const state = fetchReducer(
+				{ groups: { data: { 1: { data: { id: 1, name: 'group name' } } } } },
+				{ type: actions.KEY_REMOVAL_REQUESTED, modelName: 'groups.data.1' }
+			)
+			expect(state).toEqual({ groups: { data: {} } })
+		})
 	})
 
 	describe('Full lifecycle', () => {
