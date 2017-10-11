@@ -1,5 +1,5 @@
-import fetchReducer from '../lib/fetchReducer'
-import actions from '../lib/actions'
+import fetchReducer from '../src/fetchReducer'
+import actions from '../src/actions'
 
 describe('fetchReducer', () => {
 	test('Do nothing without action.modelName', () => {
@@ -240,6 +240,46 @@ describe('fetchReducer', () => {
 				}
 			})
 		})
+
+		test('collection nested level replace existing data on same key', () => {
+			// makes sure "data" key gets completely replaced and not merged
+			const fetchedAtDate = new Date()
+			const _Date = Date
+			global.Date = jest.fn(() => fetchedAtDate)
+			const state = fetchReducer(
+				{
+					groups: {
+						data: {
+							1: {
+								isFetching: false,
+								hasError: false,
+								timedOut: false,
+								fetchedAt: fetchedAtDate,
+								data: { key: 'value', key2: 'value2' }
+							}
+						}
+					}
+				},
+				{
+					type: actions.FETCH_RESULT_RECEIVED,
+					modelName: 'groups.data.1',
+					data: { key: 'value' }
+				}
+			)
+			expect(state).toEqual({
+				groups: {
+					data: {
+						1: {
+							isFetching: false,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedAtDate,
+							data: { key: 'value' }
+						}
+					}
+				}
+			})
+		})
 	})
 
 	describe('FETCH_FAILED', () => {
@@ -275,6 +315,41 @@ describe('fetchReducer', () => {
 			)
 			expect(state).toEqual({
 				user: { foo: 'bar', test: { isFetching: false, hasError: true, timedOut: false } }
+			})
+		})
+
+		test('collection nested level replace state', () => {
+			const fetchedAt = new Date()
+			const _Date = Date
+			global.Date = jest.fn(() => fetchedAt)
+			const state = fetchReducer(
+				{
+					groups: {
+						data: {
+							1: {
+								data: { id: 1, foo: 'bar' },
+								isFetching: true,
+								hasError: false,
+								timedOut: false,
+								fetchedAt
+							}
+						}
+					}
+				},
+				{ type: actions.FETCH_FAILED, modelName: 'groups.data.1' }
+			)
+			expect(state).toEqual({
+				groups: {
+					data: {
+						1: {
+							data: { id: 1, foo: 'bar' },
+							isFetching: false,
+							hasError: true,
+							timedOut: false,
+							fetchedAt
+						}
+					}
+				}
 			})
 		})
 	})
@@ -331,6 +406,14 @@ describe('fetchReducer', () => {
 				{ type: actions.KEY_REMOVAL_REQUESTED, modelName: 'test' }
 			)
 			expect(state).toEqual({ test2: 'bar' })
+		})
+
+		test('remove key collection nested', () => {
+			const state = fetchReducer(
+				{ groups: { data: { 1: { data: { id: 1, name: 'group name' } } } } },
+				{ type: actions.KEY_REMOVAL_REQUESTED, modelName: 'groups.data.1' }
+			)
+			expect(state).toEqual({ groups: { data: {} } })
 		})
 	})
 

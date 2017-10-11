@@ -1,4 +1,4 @@
-import { createAction } from '../lib/actions'
+import { createAction } from '../src/actions'
 
 describe('Utilities', () => {
 	test('Basic createAction', () => {

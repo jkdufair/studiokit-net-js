@@ -5,9 +5,9 @@
 		"eslint-check": "eslint --print-config .eslintrc.js | eslint-config-prettier-check",
 		"lint": "eslint --ext=js ./*.js src test",
 		"fix": "npm run lint -- --fix",
-		"test": "BABEL_ENV=test jest",
-		"test:watch": "BABEL_ENV=test jest --watch",
-		"coverage": "BABEL_ENV=test jest --coverage",
+		"test": "cross-env BABEL_ENV=test jest",
+		"test:watch": "cross-env BABEL_ENV=test jest --watch",
+		"coverage": "cross-env BABEL_ENV=test jest --coverage",
 		"coveralls": "npm run coverage && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
 		"build": "babel src -d lib",
 		"build:watch": "babel src --watch -d lib",
@@ -32,6 +32,7 @@
 		"babel-preset-env": "^1.4.0",
 		"babel-runtime": "^6.23.0",
 		"coveralls": "^2.13.1",
+		"cross-env": "^5.0.5",
 		"eslint": "^4.7.2",
 		"eslint-config-prettier": "^2.5.0",
 		"eslint-config-studiokit": "^0.1.0",
@@ -41,14 +42,15 @@
 		"flow-bin": "^0.55.0",
 		"husky": "^0.14.3",
 		"isomorphic-fetch": "^2.2.1",
-		"jest": "^21.1.0",
+		"jest": "^21.2.1",
 		"lint-staged": "^4.2.2",
 		"prettier": "^1.7.0"
 	},
 	"dependencies": {
 		"lodash": "^4.17.4",
 		"redux": "^3.6.0",
-		"redux-saga": "^0.15.1"
+		"redux-saga": "^0.15.1",
+		"uuid": "^3.1.0"
 	},
 	"lint-staged": {
 		"*.js": [

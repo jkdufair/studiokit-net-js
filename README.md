@@ -14,7 +14,7 @@ For *in-vivo* examples of how to use this library, see the [example react app](h
 # Installation
 
 ## Install this library and redux-saga as a dependency
-1. `yarn add studiokit-net`
+1. `yarn add studiokit-net-js`
 1. `yarn add redux-saga` (which depends on `redux` itself)
 1. Create a `reducers.js` module that includes the reducer from this library, i.e.
 	```js
@@ -84,10 +84,10 @@ Once the data is fetched, it will live in the redux store at the models.publicDa
 ```js
 models: {
 	publicData: {
+		data: { foo: 'bar', baz: ['quux', 'fluux']},
 		isFetching: false,
 		hasError: false,
 		timedOut: false,
-		data: { foo: 'bar', baz: ['quux', 'fluux']},
 		fetchedAt: "2017-05-23T20:38:11.103Z"
 	}
 }
@@ -98,24 +98,30 @@ Actions are dispatched using the following keys in the action object for configu
 ```ts
 type FetchAction = {
 	modelName: string,
+	method?: string,
 	headers?: Object,
 	queryParams?: Object,
+	pathParams?: Object,
 	noStore?: boolean,
 	period?: number,
 	taskId?: string,
 	noRetry?: boolean,
-	timeLimit: number
+	timeLimit?: number,
+	guid?: string
 }
 ```
 
 - `modelName` refers to the path to the fetch configuration key found in `apis.js`
+- `method` is an optional string used as the HTTP Method for the fetch. Otherwise will use the method set in `apis.js`, or `'GET'`
 - `headers` is an optional object used as key/value pairs to populate the request headers
 - `queryParams` is an optional object used as key/value pairs to populate the query parameters
+- `pathParams` is an optional object used as key/value pairs to be replaced in the fetch path using pattern matching, e.g. `/{:key}` => `/value`
 - `noStore` is an optional boolean that, if true, indicates the request should be made without storing the response in the redux store
 - `period` is an optional number of milliseconds after which a request should repeat when dispatching a recurring fetch
 - `taskId` is a string that must be passed to a recurring fetch for future cancellation
 - `noRetry` will prevent the use of the default logarithmic backoff retry strategy
 - `timeLimit` is an optional number that will specify the timeout for a single attempt at a request. Defaults to 3000ms
+- `guid` is an optional pre-generated (by your application) GUID that will be attached to a fetch result's data, to be stored in redux and used to match request results in components
 
 The following actions can be dispatched
 - `DATA_REQUESTED`: This will fetch the data specified at the `modelName` key of the action
@@ -139,7 +145,7 @@ Given the following `apis.js`
 	},
 	theWalkers: {
 		path: 'https://thewalkingdead/api/walker/{:walkerId}',
-		routeParams: {
+		pathParams: {
 			walkerId: 1
 		}
 	}.
@@ -165,6 +171,10 @@ Given the following `apis.js`
 		path: '/api/createSomeKnownThing'
 		method: 'POST',
 		body: { person: 'Fry' }
+	},
+	entities: {
+		path: '/api/entities',
+		isCollection: true
 	}
 }
 ```
@@ -176,7 +186,8 @@ You can make the following types of requests:
 [Periodic Fetch](#periodic-fetch)  
 [Cancel Periodic Fetch](#cancel-periodic-fetch)  
 [No Store](#no-store)  
-[Post](#post)
+[Post](#post)  
+[Collections](#collections)  
 
 #
 
@@ -388,6 +399,137 @@ POST https://myapp.com/api/createSomeThing
 *resulting redux*
 
 Same as basic fetch above, with the `data` key containing the response data from the `POST` request
+
+#
+
+### Collections
+
+#### GET all
+*dispatch*
+```js
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'entities'
+})
+```
+*request generated*
+```http
+GET https://myapp.com/api/entities
+```
+*resulting redux*
+```js
+{
+	models: {
+		entities: {
+			data: {
+				1: {
+					data: {id: 1, ...},
+					isFetching: false,
+					hasError: false,
+					timedOut: false,
+					fetchedAt: '2017-05-23T20:38:11.103Z'
+				},
+				...
+			},
+			isFetching: false,
+			hasError: false,
+			timedOut: false,
+			fetchedAt: '2017-05-23T20:38:11.103Z'
+		}
+	}
+}
+```
+
+#### GET item
+*dispatch*
+```js
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'entities',
+	pathParams: {
+		id: 1
+	}
+})
+```
+*request generated*
+```http
+GET https://myapp.com/api/entities/1
+```
+*resulting redux*  
+Updates item in store at `entities.data.1`
+
+#### POST item
+*dispatch*
+```js
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'entities',
+	method: 'POST',
+	body: {
+		name: 'entity name'
+	}
+})
+```
+*request generated*
+```http
+Content-Type: application/json
+POST https://myapp.com/api/entities/1
+{"name": "entity name"}
+```
+*resulting redux*  
+Adds item in store at `entities.data` under the return object's `id`
+
+*Note*  
+During the request, status is stored in `entities.data` under a `guid` key, which can be provided in the action for tracking
+
+#### PATCH item
+*dispatch*
+```js
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'entities',
+	method: 'PATCH'
+	pathParams: {
+		id: 1
+	},
+	body: {
+		op: 'replace',
+		path: 'Name',
+		value: 'updated group name'
+	}
+})
+```
+*request generated*
+```http
+Content-Type: application/json
+PATCH https://myapp.com/api/entities/1
+{"op": "replace", "path": "Name", "value": "updated group name"}
+```
+
+*resulting redux*  
+Updates item in store at `entities.data.1`
+
+*Note*  
+See http://jsonpatch.com/
+
+#### DELETE Entity
+*dispatch*
+```js
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'entities',
+	method: 'DELETE'
+	pathParams: {
+		id: 1
+	}
+})
+```
+*request generated*
+```http
+DELETE https://myapp.com/api/entities/1
+```
+*resulting redux*  
+Removes item in store at `entities.data.1`
 
 #
 

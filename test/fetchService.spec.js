@@ -3,7 +3,7 @@ import {
 	getApiRoot,
 	doFetch,
 	__RewireAPI__ as FetchServiceRewireAPI
-} from '../lib/services/fetchService'
+} from '../src/services/fetchService'
 
 describe('Path construction', () => {
 	const constructPath = FetchServiceRewireAPI.__get__('constructPath')
