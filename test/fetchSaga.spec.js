@@ -159,7 +159,7 @@ describe('fetchData', () => {
 						method: 'POST',
 						queryParams: {}
 					}),
-					timedOut: call(delay, 30000)
+					timedOutResult: call(delay, 30000)
 				})
 			)
 		})
@@ -176,7 +176,7 @@ describe('fetchData', () => {
 						queryParams: {},
 						body: 'body'
 					}),
-					timedOut: call(delay, 30000)
+					timedOutResult: call(delay, 30000)
 				})
 			)
 		})
@@ -197,7 +197,7 @@ describe('fetchData', () => {
 							baz: 'quux'
 						}
 					}),
-					timedOut: call(delay, 30000)
+					timedOutResult: call(delay, 30000)
 				})
 			)
 		})
@@ -215,7 +215,7 @@ describe('fetchData', () => {
 						headers: { Authorization: 'Bearer some-access-token' },
 						queryParams: {}
 					}),
-					timedOut: call(delay, 30000)
+					timedOutResult: call(delay, 30000)
 				})
 			)
 		})
@@ -227,7 +227,7 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next(getState())
 			expect(putFetchRequestEffect.value).toEqual(
 				put(
-					createAction(actions.FETCH_TRY_FAILED, {
+					createAction(actions.FETCH_FAILED, {
 						modelName: 'test4',
 						errorData: 'Invalid URL'
 					})
@@ -244,7 +244,7 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next({ testServer: null })
 			expect(putFetchRequestEffect.value).toEqual(
 				put(
-					createAction(actions.FETCH_TRY_FAILED, {
+					createAction(actions.FETCH_FAILED, {
 						modelName: 'test4',
 						errorData: 'Invalid URL'
 					})
@@ -264,7 +264,7 @@ describe('fetchData', () => {
 						headers: { Authorization: 'Bearer some-access-token' },
 						queryParams: {}
 					}),
-					timedOut: call(delay, 30000)
+					timedOutResult: call(delay, 30000)
 				})
 			)
 		})
@@ -274,7 +274,7 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			expect(putFetchRequestEffect.value).toEqual(
 				put(
-					createAction(actions.FETCH_TRY_FAILED, {
+					createAction(actions.FETCH_FAILED, {
 						modelName: 'test5',
 						errorData: 'Invalid URL'
 					})
@@ -287,7 +287,20 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			expect(putFetchRequestEffect.value).toEqual(
 				put(
-					createAction(actions.FETCH_TRY_FAILED, {
+					createAction(actions.FETCH_FAILED, {
+						modelName: 'test5',
+						errorData: 'Invalid URL'
+					})
+				)
+			)
+		})
+
+		test('should fail to populate basic parameter in path when "noStore" = true', () => {
+			const gen = fetchData({ modelName: 'test5', noStore: true })
+			const putFetchRequestEffect = gen.next()
+			expect(putFetchRequestEffect.value).toEqual(
+				put(
+					createAction(actions.TRANSIENT_FETCH_FAILED, {
 						modelName: 'test5',
 						errorData: 'Invalid URL'
 					})
@@ -308,7 +321,7 @@ describe('fetchData', () => {
 						headers: { Authorization: 'Bearer some-access-token' },
 						queryParams: {}
 					}),
-					timedOut: call(delay, 30000)
+					timedOutResult: call(delay, 30000)
 				})
 			)
 		})
@@ -337,7 +350,7 @@ describe('fetchData', () => {
 						headers: { Authorization: 'Bearer some-access-token' },
 						queryParams: {}
 					}),
-					timedOut: call(delay, 30000)
+					timedOutResult: call(delay, 30000)
 				})
 			)
 		})
@@ -400,12 +413,9 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
-			const putFetchTimedOutEffect = gen.next({ timedOut: true })
-			expect(putFetchTimedOutEffect.value).toEqual(
-				put(createAction(actions.FETCH_TIMED_OUT, { modelName: 'test' }))
-			)
-			gen.next()
-			expect(gen.next().value).toEqual(
+			const putFetchTimedOutEffect = gen.next({ timedOutResult: true })
+			const delayAndPutAgainEffect = gen.next()
+			expect(delayAndPutAgainEffect.value).toEqual(
 				put(createAction(actions.FETCH_REQUESTED, { modelName: 'test' }))
 			)
 		})
@@ -415,12 +425,10 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
-			const putFetchTimedOutEffect = gen.next({ timedOut: true })
-			expect(putFetchTimedOutEffect.value).toEqual(
-				put(createAction(actions.FETCH_TIMED_OUT, { modelName: 'test' }))
-			)
-			gen.next()
-			expect(gen.next().done).toEqual(true)
+			const putFetchTimedOutEffect = gen.next({ timedOutResult: true })
+			const putFailedEffect = gen.next()
+			const sagaDone = gen.next()
+			expect(sagaDone.done).toEqual(true)
 		})
 
 		test('should time out to a configurable value', () => {
@@ -435,7 +443,7 @@ describe('fetchData', () => {
 						headers: { Authorization: 'Bearer some-access-token' },
 						queryParams: {}
 					}),
-					timedOut: call(delay, 1000)
+					timedOutResult: call(delay, 1000)
 				})
 			)
 		})
@@ -446,63 +454,89 @@ describe('fetchData', () => {
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
 			const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error' } })
-			expect(fetchTryFailedEffect.value).toEqual(
-				put(
-					createAction(actions.FETCH_TRY_FAILED, {
-						modelName: 'test',
-						errorData: { title: 'Error' }
-					})
-				)
-			)
-			const delayEffect = gen.next()
-			const putFetchRequestEffectAgain = gen.next()
-			expect(putFetchRequestEffectAgain.value).toEqual(
+			const delayAndPutAgainEffect = gen.next()
+			expect(delayAndPutAgainEffect.value).toEqual(
 				put(createAction(actions.FETCH_REQUESTED, { modelName: 'test' }))
 			)
 		})
 
 		test('should dispatch FETCH_FAILED when all retries have failed', () => {
 			const gen = fetchData({ modelName: 'test' })
+			const putFetchRequestEffect = gen.next()
 			for (let i = 0; i <= 3; i++) {
-				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next(getOauthToken())
 				const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error' } })
-				expect(fetchTryFailedEffect.value).toEqual(
-					put(
-						createAction(actions.FETCH_TRY_FAILED, {
-							modelName: 'test',
-							errorData: { title: 'Error' }
-						})
+				if (i < 3) {
+					const delayAndPutAgainEffect = gen.next()
+					expect(delayAndPutAgainEffect.value).toEqual(
+						put(createAction(actions.FETCH_REQUESTED, { modelName: 'test' }))
 					)
-				)
-				const delayEffect = gen.next()
+				}
 			}
-			const putFetchFailedEffect = gen.next()
-			expect(putFetchFailedEffect.value).toEqual(
-				put(createAction(actions.FETCH_FAILED, { modelName: 'test' }))
+			const delayAndPutFetchFailedEffect = gen.next()
+			expect(delayAndPutFetchFailedEffect.value).toEqual(
+				put(
+					createAction(actions.FETCH_FAILED, {
+						modelName: 'test',
+						errorData: { didTimeOut: false, title: 'Error' }
+					})
+				)
 			)
 			const sagaDone = gen.next()
 			expect(sagaDone.done).toEqual(true)
 		})
 
-		test('should not dispatch FETCH_FAILED when all retries were timeouts', () => {
+		test('should dispatch FETCH_FAILED with didTimeOut if all tries timedOut', () => {
 			const gen = fetchData({ modelName: 'test' })
+			const putFetchRequestEffect = gen.next()
 			for (let i = 0; i <= 3; i++) {
-				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next(getOauthToken())
-				const putFetchTimedOutEffect = gen.next({ timedOut: true })
-				expect(putFetchTimedOutEffect.value).toEqual(
-					put(
-						createAction(actions.FETCH_TIMED_OUT, {
-							modelName: 'test'
-						})
+				const fetchTryFailedEffect = gen.next({ timedOutResult: true })
+				if (i < 3) {
+					const delayAndPutAgainEffect = gen.next()
+					expect(delayAndPutAgainEffect.value).toEqual(
+						put(createAction(actions.FETCH_REQUESTED, { modelName: 'test' }))
 					)
-				)
-				const delayEffect = gen.next()
+				}
 			}
+			const delayAndPutFetchFailedEffect = gen.next()
+			expect(delayAndPutFetchFailedEffect.value).toEqual(
+				put(
+					createAction(actions.FETCH_FAILED, {
+						modelName: 'test',
+						errorData: { didTimeOut: true }
+					})
+				)
+			)
+			const sagaDone = gen.next()
+			expect(sagaDone.done).toEqual(true)
+		})
 
+		test('should dispatch TRANSIENT_FETCH_FAILED when all retries have failed for TRANSIENT_FETCH request', () => {
+			const gen = fetchData({ modelName: 'test', noStore: true })
+			const putFetchRequestEffect = gen.next()
+			for (let i = 0; i <= 3; i++) {
+				const tokenAccessCall = gen.next()
+				const raceEffect = gen.next(getOauthToken())
+				const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error' } })
+				if (i < 3) {
+					const delayAndPutAgainEffect = gen.next()
+					expect(delayAndPutAgainEffect.value).toEqual(
+						put(createAction(actions.TRANSIENT_FETCH_REQUESTED, { modelName: 'test' }))
+					)
+				}
+			}
+			const delayAndPutFetchFailedEffect = gen.next()
+			expect(delayAndPutFetchFailedEffect.value).toEqual(
+				put(
+					createAction(actions.TRANSIENT_FETCH_FAILED, {
+						modelName: 'test',
+						errorData: { didTimeOut: false, title: 'Error' }
+					})
+				)
+			)
 			const sagaDone = gen.next()
 			expect(sagaDone.done).toEqual(true)
 		})
@@ -516,6 +550,25 @@ describe('fetchData', () => {
 			const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error', code: 401 } })
 			const delayEffect = gen.next()
 			expect(errorOutput).toEqual(null)
+		})
+
+		test('should not return errorData if some unrelated error occurred', () => {
+			errorOutput = null
+			const gen = fetchData({ modelName: 'test', noRetry: true })
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next(getOauthToken())
+			const throwFetchErrorEffect = gen.throw('some other error')
+			const putErrorEffect = gen.next()
+			expect(putErrorEffect.value).toEqual(
+				put(
+					createAction(actions.FETCH_FAILED, {
+						modelName: 'test'
+					})
+				)
+			)
+			const sagaDone = gen.next()
+			expect(sagaDone.done).toEqual(true)
 		})
 	})
 
@@ -615,7 +668,7 @@ describe('fetchData', () => {
 							isCollection: true,
 							queryParams: {}
 						}),
-						timedOut: call(delay, 30000)
+						timedOutResult: call(delay, 30000)
 					})
 				)
 			})
@@ -660,7 +713,7 @@ describe('fetchData', () => {
 							isCollection: true,
 							queryParams: {}
 						}),
-						timedOut: call(delay, 30000)
+						timedOutResult: call(delay, 30000)
 					})
 				)
 			})
@@ -746,7 +799,7 @@ describe('fetchData', () => {
 							isCollection: true,
 							queryParams: {}
 						}),
-						timedOut: call(delay, 30000)
+						timedOutResult: call(delay, 30000)
 					})
 				)
 			})

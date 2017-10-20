@@ -61,6 +61,11 @@ type FetchAction = {
 	guid?: string
 }
 
+type FetchError = {
+	modelName: string,
+	errorData: Object
+}
+
 type LoggerFunction = string => void
 type TokenAccessFunction = void => ?OAuthToken
 type ErrorFunction = string => void
@@ -136,8 +141,8 @@ function* fetchData(action: FetchAction) {
 		fetchConfig.method = action.method
 	}
 
-	let isCollectionItemFetch = false
-	let isCollectionItemCreate = false
+	let isCollectionItemFetch: boolean = false
+	let isCollectionItemCreate: boolean = false
 	if (fetchConfig.isCollection) {
 		// GET, PUT, PATCH, DELETE
 		isCollectionItemFetch = action.pathParams && action.pathParams.hasOwnProperty('id')
@@ -160,7 +165,7 @@ function* fetchData(action: FetchAction) {
 
 	fetchConfig.queryParams = Object.assign({}, baseConfig.queryParams, action.queryParams)
 
-	let isUrlValid = true
+	let isUrlValid: boolean = true
 	// substitute any basic path parameters, e.g. /api/group/{:groupId}
 	const pathParams = Object.assign({}, baseConfig.pathParams, action.pathParams)
 	if (/{:.+}/.test(fetchConfig.path)) {
@@ -187,7 +192,7 @@ function* fetchData(action: FetchAction) {
 	}
 	if (!isUrlValid) {
 		yield put(
-			createAction(actions.FETCH_TRY_FAILED, {
+			createAction(action.noStore ? actions.TRANSIENT_FETCH_FAILED : actions.FETCH_FAILED, {
 				modelName: action.modelName,
 				errorData: 'Invalid URL'
 			})
@@ -196,12 +201,12 @@ function* fetchData(action: FetchAction) {
 	}
 
 	// Configure retry
-	const tryLimit = action.noRetry ? 0 : 4
-	let tryCount = 0
-	let didFail
-	let didTimeOut
-	let lastError: string = ''
-	let modelName = action.modelName
+	const tryLimit: number = action.noRetry ? 1 : 4
+	let tryCount: number = 0
+	let didFail: boolean = false
+	let lastFetchError: ?FetchError
+	let lastError: ?Error
+	let modelName: string = action.modelName
 
 	// track collection item requests by id (update, delete) or guid (create)
 	if (isCollectionItemFetch) {
@@ -213,7 +218,6 @@ function* fetchData(action: FetchAction) {
 	// Run retry loop
 	do {
 		didFail = false
-		didTimeOut = false
 		tryCount++
 		// Indicate fetch action has begun
 		yield put(
@@ -226,9 +230,9 @@ function* fetchData(action: FetchAction) {
 			if (oauthToken && oauthToken.access_token) {
 				fetchConfig.headers['Authorization'] = `Bearer ${oauthToken.access_token}`
 			}
-			const { fetchResult, timedOut } = yield race({
+			const { fetchResult, timedOutResult } = yield race({
 				fetchResult: call(doFetch, fetchConfig),
-				timedOut: call(delay, action.timeLimit ? action.timeLimit : 30000)
+				timedOutResult: call(delay, action.timeLimit ? action.timeLimit : 30000)
 			})
 			if (fetchResult && !(fetchResult.title && fetchResult.title === 'Error')) {
 				let storeAction = action.noStore
@@ -284,56 +288,43 @@ function* fetchData(action: FetchAction) {
 					)
 				}
 			} else {
-				if (timedOut) {
-					yield put(
-						createAction(actions.FETCH_TIMED_OUT, {
-							modelName
-						})
+				// combine fetchResult with didTimeOut
+				lastFetchError = {
+					modelName,
+					errorData: Object.assign(
+						{
+							didTimeOut: timedOutResult || false
+						},
+						fetchResult
 					)
-					didTimeOut = true
-					let errorObject = {
-						type: actions.FETCH_TIMED_OUT,
-						modelName,
-						errorData: fetchResult
-					}
-					throw new Error(JSON.stringify(errorObject))
-				} else {
-					yield put(
-						createAction(actions.FETCH_TRY_FAILED, {
-							modelName,
-							errorData: fetchResult
-						})
-					)
-					let errorObject = {
-						type: actions.FETCH_TRY_FAILED,
-						modelName,
-						errorData: fetchResult
-					}
-					throw new Error(JSON.stringify(errorObject))
 				}
+				throw new Error(JSON.stringify(lastFetchError))
 			}
 		} catch (error) {
-			let errorObject = JSON.parse(error.message)
-			let fetchResult = errorObject.errorData
+			let errorData = lastFetchError ? lastFetchError.errorData : null
 
 			// Don't do anything with 401 errors
 			// And some errors don't have fetch results associated with them
-			if (fetchResult ? fetchResult.code != 401 : true) {
+			if (errorData && errorData.code ? errorData.code !== 401 : true) {
 				errorFunction(error.message)
 			}
-			didFail = true
-			lastError = error
 			logger('fetchData fail')
 			logger(error)
+
+			didFail = true
+			lastError = error
 			yield call(delay, 2 ^ (tryCount * 100)) // 100, 200, 400...
 		}
 	} while (tryCount < tryLimit && didFail)
 
 	// Handle retry failure
 	if (tryCount === tryLimit && didFail) {
-		if (!didTimeOut) {
-			yield put(createAction(actions.FETCH_FAILED, { modelName }))
-		}
+		yield put(
+			createAction(
+				action.noStore ? actions.TRANSIENT_FETCH_FAILED : actions.FETCH_FAILED,
+				Object.assign({ modelName }, lastFetchError)
+			)
+		)
 		logger('fetchData retry fail')
 		logger(lastError)
 	}
