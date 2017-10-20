@@ -141,8 +141,28 @@ describe('doFetch', () => {
 		global.fetch = jest.fn(() => {})
 		const gen = doFetch({ path: 'http://www.google.com' })
 		const response = gen.next()
-		const response2 = gen.next({ json: () => ({ foo: 'bar' }) })
+		const response2 = gen.next({ ok: true, json: () => ({ foo: 'bar' }) })
 		expect(response2.value.CALL.fn()).toEqual({ foo: 'bar' })
+		global.fetch = _fetch
+	})
+
+	test('Basic GET test error response from server', () => {
+		const _fetch = global.fetch
+		global.fetch = jest.fn(() => {})
+		const gen = doFetch({ path: 'http://www.google.com' })
+		const response = gen.next()
+		const response2 = gen.next({
+			ok: false,
+			status: 400,
+			statusText: 'Bad Request',
+			json: () => ({ foo: 'bar' })
+		})
+		expect(response2.value.CALL.fn()).toEqual({
+			title: 'Error',
+			message: 'Bad Request',
+			code: 400,
+			foo: 'bar'
+		})
 		global.fetch = _fetch
 	})
 })
