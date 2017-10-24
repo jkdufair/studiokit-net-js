@@ -290,6 +290,16 @@ describe('fetchReducer', () => {
 			})
 		})
 
+		test('single level, didTimeOut = true', () => {
+			const state = fetchReducer(
+				{},
+				{ type: actions.FETCH_FAILED, modelName: 'test', didTimeOut: true }
+			)
+			expect(state).toEqual({
+				test: { isFetching: false, hasError: true, timedOut: true }
+			})
+		})
+
 		test('nested level', () => {
 			const state = fetchReducer({}, { type: actions.FETCH_FAILED, modelName: 'user.test' })
 			expect(state).toEqual({
@@ -350,43 +360,6 @@ describe('fetchReducer', () => {
 						}
 					}
 				}
-			})
-		})
-	})
-
-	describe('FETCH_TIMED_OUT', () => {
-		test('single level', () => {
-			const state = fetchReducer({}, { type: actions.FETCH_TIMED_OUT, modelName: 'test' })
-			expect(state).toEqual({
-				test: { isFetching: false, hasError: true, timedOut: true }
-			})
-		})
-
-		test('nested level', () => {
-			const state = fetchReducer({}, { type: actions.FETCH_TIMED_OUT, modelName: 'user.test' })
-			expect(state).toEqual({
-				user: { test: { isFetching: false, hasError: true, timedOut: true } }
-			})
-		})
-
-		test('nested level merge state', () => {
-			const state = fetchReducer(
-				{ foo: 'bar' },
-				{ type: actions.FETCH_TIMED_OUT, modelName: 'user.test' }
-			)
-			expect(state).toEqual({
-				foo: 'bar',
-				user: { test: { isFetching: false, hasError: true, timedOut: true } }
-			})
-		})
-
-		test('nested level replace state', () => {
-			const state = fetchReducer(
-				{ user: { foo: 'bar' } },
-				{ type: actions.FETCH_TIMED_OUT, modelName: 'user.test' }
-			)
-			expect(state).toEqual({
-				user: { foo: 'bar', test: { isFetching: false, hasError: true, timedOut: true } }
 			})
 		})
 	})
