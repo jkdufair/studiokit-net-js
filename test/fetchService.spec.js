@@ -126,23 +126,56 @@ describe('doFetch', () => {
 		global.fetch = _fetch
 	})
 
-	test('Basic GET test empty response from server', () => {
-		const _fetch = global.fetch
-		global.fetch = jest.fn(() => {})
-		const gen = doFetch({ path: 'http://www.google.com' })
-		const response = gen.next()
-		const response2 = gen.next()
-		expect(response2.value.CALL.fn()).toEqual(null)
-		global.fetch = _fetch
-	})
-
 	test('Basic GET test non-empty response from server', () => {
 		const _fetch = global.fetch
 		global.fetch = jest.fn(() => {})
 		const gen = doFetch({ path: 'http://www.google.com' })
-		const response = gen.next()
-		const response2 = gen.next({ json: () => ({ foo: 'bar' }) })
-		expect(response2.value.CALL.fn()).toEqual({ foo: 'bar' })
+		const callFetchEffect = gen.next()
+		const response = {
+			ok: true,
+			status: 200,
+			json: () => ({ foo: 'bar' })
+		}
+		const callResponseJsonEffect = gen.next(response)
+		const sagaDone = gen.next(response.json())
+		expect(sagaDone.value).toEqual({
+			foo: 'bar'
+		})
+		expect(sagaDone.done).toEqual(true)
+		global.fetch = _fetch
+	})
+
+	test('Basic GET test empty response from server', () => {
+		const _fetch = global.fetch
+		global.fetch = jest.fn(() => {})
+		const gen = doFetch({ path: 'http://www.google.com' })
+		const callFetchEffect = gen.next()
+		const sagaDone = gen.next()
+		expect(sagaDone.value).toEqual(null)
+		expect(sagaDone.done).toEqual(true)
+		global.fetch = _fetch
+	})
+
+	test('Basic GET test error response from server', () => {
+		const _fetch = global.fetch
+		global.fetch = jest.fn(() => {})
+		const gen = doFetch({ path: 'http://www.google.com' })
+		const callFetchEffect = gen.next()
+		const response = {
+			ok: false,
+			status: 400,
+			statusText: 'Bad Request',
+			json: () => ({ foo: 'bar' })
+		}
+		const callResponseJsonEffect = gen.next(response)
+		const sagaDone = gen.next(response.json())
+		expect(sagaDone.value).toEqual({
+			title: 'Error',
+			message: 'Bad Request',
+			code: 400,
+			foo: 'bar'
+		})
+		expect(sagaDone.done).toEqual(true)
 		global.fetch = _fetch
 	})
 })

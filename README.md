@@ -394,7 +394,7 @@ store.dispatch({
 ```http
 Content-Type: application/json
 POST https://myapp.com/api/createSomeThing
-{ruleOne: "Don't talk about Fight Club",ruleTwo: "Don't talk about Fight Club"}
+{"ruleOne": "Don't talk about Fight Club","ruleTwo": "Don't talk about Fight Club"}
 ```
 *resulting redux*
 
