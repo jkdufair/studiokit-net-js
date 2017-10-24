@@ -53,7 +53,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 		case actions.FETCH_FAILED:
 			newValue.isFetching = false
 			newValue.hasError = true
-			newValue.timedOut = action.didTimeOut || false
+			newValue.timedOut = !!action.didTimeOut
 			return _.set(path, newValue, state)
 
 		case actions.KEY_REMOVAL_REQUESTED:

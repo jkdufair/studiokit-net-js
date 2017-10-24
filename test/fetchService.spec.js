@@ -130,9 +130,10 @@ describe('doFetch', () => {
 		const _fetch = global.fetch
 		global.fetch = jest.fn(() => {})
 		const gen = doFetch({ path: 'http://www.google.com' })
-		const response = gen.next()
-		const response2 = gen.next()
-		expect(response2.value.CALL.fn()).toEqual(null)
+		const callFetchEffect = gen.next()
+		const sagaDone = gen.next()
+		expect(sagaDone.value).toEqual(null)
+		expect(sagaDone.done).toEqual(true)
 		global.fetch = _fetch
 	})
 
@@ -150,19 +151,22 @@ describe('doFetch', () => {
 		const _fetch = global.fetch
 		global.fetch = jest.fn(() => {})
 		const gen = doFetch({ path: 'http://www.google.com' })
-		const response = gen.next()
-		const response2 = gen.next({
+		const callFetchEffect = gen.next()
+		const response = {
 			ok: false,
 			status: 400,
 			statusText: 'Bad Request',
 			json: () => ({ foo: 'bar' })
-		})
-		expect(response2.value.CALL.fn()).toEqual({
+		}
+		const callResponseJsonEffect = gen.next(response)
+		const sagaDone = gen.next(response.json())
+		expect(sagaDone.value).toEqual({
 			title: 'Error',
 			message: 'Bad Request',
 			code: 400,
 			foo: 'bar'
 		})
+		expect(sagaDone.done).toEqual(true)
 		global.fetch = _fetch
 	})
 })

@@ -293,7 +293,7 @@ function* fetchData(action: FetchAction) {
 					modelName,
 					errorData: Object.assign(
 						{
-							didTimeOut: timedOutResult || false
+							didTimeOut: !!timedOutResult
 						},
 						fetchResult
 					)
