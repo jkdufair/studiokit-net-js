@@ -303,6 +303,10 @@ function* fetchData(action: FetchAction) {
 		} catch (error) {
 			let errorData = lastFetchError ? lastFetchError.errorData : null
 
+			yield put(
+				createAction(actions.TRY_FETCH_FAILED, Object.assign({ modelName }, lastFetchError))
+			)
+
 			// Don't do anything with 401 errors
 			// And some errors don't have fetch results associated with them
 			if (errorData && errorData.code ? errorData.code !== 401 : true) {

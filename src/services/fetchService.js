@@ -83,7 +83,7 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 	if (!response) {
 		return null
 	}
-	const responseJson = yield call(response.json)
+	const responseJson = yield call(() => response.json())
 	if (!response.ok) {
 		return Object.assign(
 			{},
