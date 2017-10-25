@@ -414,6 +414,7 @@ describe('fetchData', () => {
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
 			const putFetchTimedOutEffect = gen.next({ timedOutResult: true })
+			const putTryFailedEffect = gen.next()
 			const delayAndPutAgainEffect = gen.next()
 			expect(delayAndPutAgainEffect.value).toEqual(
 				put(createAction(actions.FETCH_REQUESTED, { modelName: 'test' }))
@@ -426,6 +427,7 @@ describe('fetchData', () => {
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
 			const putFetchTimedOutEffect = gen.next({ timedOutResult: true })
+			const putTryFailedEffect = gen.next()
 			const putFailedEffect = gen.next()
 			const sagaDone = gen.next()
 			expect(sagaDone.done).toEqual(true)
@@ -454,6 +456,7 @@ describe('fetchData', () => {
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
 			const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error' } })
+			const putTryFailedEffect = gen.next()
 			const delayAndPutAgainEffect = gen.next()
 			expect(delayAndPutAgainEffect.value).toEqual(
 				put(createAction(actions.FETCH_REQUESTED, { modelName: 'test' }))
@@ -467,6 +470,7 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next(getOauthToken())
 				const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error' } })
+				const putTryFailedEffect = gen.next()
 				if (i < 3) {
 					const delayAndPutAgainEffect = gen.next()
 					expect(delayAndPutAgainEffect.value).toEqual(
@@ -494,6 +498,7 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next(getOauthToken())
 				const fetchTryFailedEffect = gen.next({ timedOutResult: true })
+				const putTryFailedEffect = gen.next()
 				if (i < 3) {
 					const delayAndPutAgainEffect = gen.next()
 					expect(delayAndPutAgainEffect.value).toEqual(
@@ -521,6 +526,7 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next(getOauthToken())
 				const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error' } })
+				const putTryFailedEffect = gen.next()
 				if (i < 3) {
 					const delayAndPutAgainEffect = gen.next()
 					expect(delayAndPutAgainEffect.value).toEqual(
@@ -548,6 +554,7 @@ describe('fetchData', () => {
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
 			const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error', code: 401 } })
+			const putTryFailedEffect = gen.next()
 			const delayEffect = gen.next()
 			expect(errorOutput).toEqual(null)
 		})
@@ -559,6 +566,7 @@ describe('fetchData', () => {
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
 			const throwFetchErrorEffect = gen.throw('some other error')
+			const putTryFailedEffect = gen.next()
 			const putErrorEffect = gen.next()
 			expect(putErrorEffect.value).toEqual(
 				put(
