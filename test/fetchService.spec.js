@@ -168,6 +168,7 @@ describe('doFetch', () => {
 			json: () => ({ foo: 'bar' })
 		}
 		const callResponseJsonEffect = gen.next(response)
+		expect(callResponseJsonEffect.value.CALL.fn()).toEqual({ foo: 'bar' })
 		const sagaDone = gen.next(response.json())
 		expect(sagaDone.value).toEqual({
 			title: 'Error',
