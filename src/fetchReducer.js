@@ -1,7 +1,8 @@
 // @flow
 
 import actions from './actions'
-import _ from 'lodash/fp'
+import _ from 'lodash'
+import _fp from 'lodash/fp'
 
 import type { Action } from 'redux'
 
@@ -19,7 +20,7 @@ type ModelState = {
 }
 
 function getMetadata(state: FetchState, path: Array<string>): MetadataState {
-	return _.get(path.concat('_metadata'), state) || {}
+	return _.merge({}, _.get(state, path.concat('_metadata')))
 }
 
 /**
@@ -38,38 +39,38 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 		return state
 	}
 	const path: Array<string> = action.modelName.split('.')
-	let newValue = _.get(path, state) || {}
+	let newValue = _.merge({}, _.get(state, path))
 	const metadata = getMetadata(state, path)
 
 	switch (action.type) {
 		case actions.FETCH_REQUESTED:
-			newValue._metadata = Object.assign(metadata, {
+			newValue._metadata = _.merge(metadata, {
 				isFetching: true,
 				hasError: false,
 				timedOut: false
 			})
-			return _.set(path, newValue, state)
+			return _fp.set(path, newValue, state)
 
 		case actions.FETCH_RESULT_RECEIVED:
 			newValue = action.data
-			newValue._metadata = Object.assign(metadata, {
+			newValue._metadata = _.merge(metadata, {
 				isFetching: false,
 				hasError: false,
 				timedOut: false,
 				fetchedAt: new Date()
 			})
-			return _.set(path, newValue, state)
+			return _fp.set(path, newValue, state)
 
 		case actions.FETCH_FAILED:
-			newValue._metadata = Object.assign(metadata, {
+			newValue._metadata = _.merge(metadata, {
 				isFetching: false,
 				hasError: true,
 				timedOut: !!action.didTimeOut
 			})
-			return _.set(path, newValue, state)
+			return _fp.set(path, newValue, state)
 
 		case actions.KEY_REMOVAL_REQUESTED:
-			return _.unset(path, state)
+			return _fp.unset(path, state)
 
 		default:
 			return state

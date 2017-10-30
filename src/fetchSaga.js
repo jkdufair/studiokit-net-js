@@ -131,10 +131,10 @@ function* fetchData(action: FetchAction) {
 		throw new Error(`Cannot find \'${action.modelName}\' model in model dictionary`)
 	}
 
-	const modelConfig = Object.assign({}, model._config)
-	const fetchConfig = Object.assign({}, modelConfig.fetch, {
-		headers: Object.assign({}, action.headers),
-		queryParams: Object.assign({}, action.queryParams)
+	const modelConfig = _.merge({}, model._config)
+	const fetchConfig = _.merge({}, modelConfig.fetch, {
+		headers: _.merge({}, action.headers),
+		queryParams: _.merge({}, action.queryParams)
 	})
 
 	// set "method" if defined
@@ -148,7 +148,7 @@ function* fetchData(action: FetchAction) {
 		if (typeof action.body === 'string') {
 			fetchConfig.body = action.body
 		} else {
-			fetchConfig.body = Object.assign({}, fetchConfig.body, action.body)
+			fetchConfig.body = _.merge({}, fetchConfig.body, action.body)
 		}
 	}
 
@@ -166,8 +166,8 @@ function* fetchData(action: FetchAction) {
 			let lastModelLevel = models
 			modelNameLevels.forEach((levelName, index) => {
 				const currentModelLevel = _.get(lastModelLevel, levelName)
-				const currentModelConfig = Object.assign({}, currentModelLevel._config)
-				const currentFetchConfig = Object.assign({}, currentModelConfig.fetch)
+				const currentModelConfig = _.merge({}, currentModelLevel._config)
+				const currentFetchConfig = _.merge({}, currentModelConfig.fetch)
 				if (index === 0) {
 					fetchConfig.path = currentFetchConfig.path || `/api/${levelName}`
 					modelName = levelName
@@ -294,7 +294,7 @@ function* fetchData(action: FetchAction) {
 							? Object.keys(fetchResult).map(key => fetchResult[key])
 							: fetchResult
 						resultsArray.forEach(item => {
-							data[item.id] = Object.assign({}, item, {
+							data[item.id] = _.merge({}, item, {
 								_metadata: {
 									isFetching: false,
 									hasError: false,
@@ -337,7 +337,7 @@ function* fetchData(action: FetchAction) {
 				// combine fetchResult with didTimeOut
 				lastFetchError = {
 					modelName,
-					errorData: Object.assign(
+					errorData: _.merge(
 						{
 							didTimeOut: !!timedOutResult
 						},
@@ -349,9 +349,7 @@ function* fetchData(action: FetchAction) {
 		} catch (error) {
 			let errorData = lastFetchError ? lastFetchError.errorData : null
 
-			yield put(
-				createAction(actions.TRY_FETCH_FAILED, Object.assign({ modelName }, lastFetchError))
-			)
+			yield put(createAction(actions.TRY_FETCH_FAILED, _.merge({ modelName }, lastFetchError)))
 
 			// Don't do anything with 401 errors
 			// And some errors don't have fetch results associated with them
@@ -372,7 +370,7 @@ function* fetchData(action: FetchAction) {
 		yield put(
 			createAction(
 				action.noStore ? actions.TRANSIENT_FETCH_FAILED : actions.FETCH_FAILED,
-				Object.assign({ modelName }, lastFetchError)
+				_.merge({ modelName }, lastFetchError)
 			)
 		)
 		logger('fetchData retry fail')
