@@ -175,7 +175,7 @@ function* fetchData(action: FetchAction) {
 					return
 				}
 				fetchConfig.path = `${fetchConfig.path}/{:id}/${currentFetchConfig.path || levelName}`
-				modelName = `${modelName}.data.{:id}.${levelName}`
+				modelName = `${modelName}.{:id}.${levelName}`
 				lastModelLevel = currentModelLevel
 			})
 		} else if (!fetchConfig.path) {
@@ -194,9 +194,9 @@ function* fetchData(action: FetchAction) {
 		// track collection item requests by id (update, delete) or guid (create)
 		if (isCollectionItemFetch && !isCollectionItemCreate) {
 			fetchConfig.path = `${fetchConfig.path}/{:id}`
-			modelName = `${modelName}.data.{:id}`
+			modelName = `${modelName}.{:id}`
 		} else if (isCollectionItemCreate) {
-			modelName = `${modelName}.data.${action.guid || uuid.v4()}`
+			modelName = `${modelName}.${action.guid || uuid.v4()}`
 		}
 	}
 
@@ -213,7 +213,7 @@ function* fetchData(action: FetchAction) {
 		})
 	}
 
-	// substitute any pathParams in modelName, e.g. groups.data.{:id}
+	// substitute any pathParams in modelName, e.g. groups.{:id}
 	if (/{:.+}/.test(modelName)) {
 		let index = 0
 		modelName = modelName.replace(/{:(.+?)}/g, (matches, backref) => {
@@ -294,13 +294,14 @@ function* fetchData(action: FetchAction) {
 							? Object.keys(fetchResult).map(key => fetchResult[key])
 							: fetchResult
 						resultsArray.forEach(item => {
-							data[item.id] = {
-								data: item,
-								isFetching: false,
-								hasError: false,
-								timedOut: false,
-								fetchedAt
-							}
+							data[item.id] = Object.assign({}, item, {
+								_metadata: {
+									isFetching: false,
+									hasError: false,
+									timedOut: false,
+									fetchedAt
+								}
+							})
 						})
 					}
 				}

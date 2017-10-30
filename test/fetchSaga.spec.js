@@ -720,18 +720,24 @@ describe('fetchData', () => {
 						createAction(actions.FETCH_RESULT_RECEIVED, {
 							data: {
 								1: {
-									data: { id: 1, name: 'foo' },
-									isFetching: false,
-									hasError: false,
-									timedOut: false,
-									fetchedAt
+									id: 1,
+									name: 'foo',
+									_metadata: {
+										isFetching: false,
+										hasError: false,
+										timedOut: false,
+										fetchedAt
+									}
 								},
 								2: {
-									data: { id: 2, name: 'bar' },
-									isFetching: false,
-									hasError: false,
-									timedOut: false,
-									fetchedAt
+									id: 2,
+									name: 'bar',
+									_metadata: {
+										isFetching: false,
+										hasError: false,
+										timedOut: false,
+										fetchedAt
+									}
 								}
 							},
 							modelName: 'entities'
@@ -758,18 +764,24 @@ describe('fetchData', () => {
 						createAction(actions.FETCH_RESULT_RECEIVED, {
 							data: {
 								1: {
-									data: { id: 1, name: 'foo' },
-									isFetching: false,
-									hasError: false,
-									timedOut: false,
-									fetchedAt
+									id: 1,
+									name: 'foo',
+									_metadata: {
+										isFetching: false,
+										hasError: false,
+										timedOut: false,
+										fetchedAt
+									}
 								},
 								2: {
-									data: { id: 2, name: 'bar' },
-									isFetching: false,
-									hasError: false,
-									timedOut: false,
-									fetchedAt
+									id: 2,
+									name: 'bar',
+									_metadata: {
+										isFetching: false,
+										hasError: false,
+										timedOut: false,
+										fetchedAt
+									}
 								}
 							},
 							modelName: 'entities'
@@ -818,7 +830,7 @@ describe('fetchData', () => {
 					put(
 						createAction(actions.FETCH_RESULT_RECEIVED, {
 							data: { id: 2, name: 'bar', guid },
-							modelName: 'entities.data.2'
+							modelName: 'entities.2'
 						})
 					)
 				)
@@ -852,7 +864,7 @@ describe('fetchData', () => {
 				expect(putFetchRequestEffect.value).toEqual(
 					put(
 						createAction(actions.FETCH_REQUESTED, {
-							modelName: `entities.data.${guid}`
+							modelName: `entities.${guid}`
 						})
 					)
 				)
@@ -876,7 +888,7 @@ describe('fetchData', () => {
 					put(
 						createAction(actions.FETCH_RESULT_RECEIVED, {
 							data: { id: 3, name: 'baz', guid },
-							modelName: 'entities.data.3'
+							modelName: 'entities.3'
 						})
 					)
 				)
@@ -900,7 +912,7 @@ describe('fetchData', () => {
 				expect(resultStoredEffect.value).toEqual(
 					put(
 						createAction(actions.KEY_REMOVAL_REQUESTED, {
-							modelName: `entities.data.${guid}`
+							modelName: `entities.${guid}`
 						})
 					)
 				)
@@ -948,7 +960,7 @@ describe('fetchData', () => {
 					put(
 						createAction(actions.KEY_REMOVAL_REQUESTED, {
 							data: { guid },
-							modelName: 'entities.data.2'
+							modelName: 'entities.2'
 						})
 					)
 				)
@@ -979,21 +991,27 @@ describe('fetchData', () => {
 						createAction(actions.FETCH_RESULT_RECEIVED, {
 							data: {
 								1: {
-									data: { id: 1, name: 'foo' },
-									isFetching: false,
-									hasError: false,
-									timedOut: false,
-									fetchedAt
+									id: 1,
+									name: 'foo',
+									_metadata: {
+										isFetching: false,
+										hasError: false,
+										timedOut: false,
+										fetchedAt
+									}
 								},
 								2: {
-									data: { id: 2, name: 'bar' },
-									isFetching: false,
-									hasError: false,
-									timedOut: false,
-									fetchedAt
+									id: 2,
+									name: 'bar',
+									_metadata: {
+										isFetching: false,
+										hasError: false,
+										timedOut: false,
+										fetchedAt
+									}
 								}
 							},
-							modelName: 'topLevelEntities.data.1.secondLevelEntities'
+							modelName: 'topLevelEntities.1.secondLevelEntities'
 						})
 					)
 				)
@@ -1020,21 +1038,27 @@ describe('fetchData', () => {
 						createAction(actions.FETCH_RESULT_RECEIVED, {
 							data: {
 								1: {
-									data: { id: 1, name: 'foo' },
-									isFetching: false,
-									hasError: false,
-									timedOut: false,
-									fetchedAt
+									id: 1,
+									name: 'foo',
+									_metadata: {
+										isFetching: false,
+										hasError: false,
+										timedOut: false,
+										fetchedAt
+									}
 								},
 								2: {
-									data: { id: 2, name: 'bar' },
-									isFetching: false,
-									hasError: false,
-									timedOut: false,
-									fetchedAt
+									id: 2,
+									name: 'bar',
+									_metadata: {
+										isFetching: false,
+										hasError: false,
+										timedOut: false,
+										fetchedAt
+									}
 								}
 							},
-							modelName: 'topLevelEntities.data.1.secondLevelEntities'
+							modelName: 'topLevelEntities.1.secondLevelEntities'
 						})
 					)
 				)
@@ -1080,7 +1104,7 @@ describe('fetchData', () => {
 					put(
 						createAction(actions.FETCH_RESULT_RECEIVED, {
 							data: { id: 999, name: 'bar', guid },
-							modelName: 'topLevelEntities.data.2.secondLevelEntities.data.999'
+							modelName: 'topLevelEntities.2.secondLevelEntities.999'
 						})
 					)
 				)
@@ -1123,7 +1147,7 @@ describe('fetchData', () => {
 				expect(putFetchRequestEffect.value).toEqual(
 					put(
 						createAction(actions.FETCH_REQUESTED, {
-							modelName: `topLevelEntities.data.1.secondLevelEntities.data.${guid}`
+							modelName: `topLevelEntities.1.secondLevelEntities.${guid}`
 						})
 					)
 				)
@@ -1148,7 +1172,7 @@ describe('fetchData', () => {
 					put(
 						createAction(actions.FETCH_RESULT_RECEIVED, {
 							data: { id: 3, name: 'baz', guid },
-							modelName: 'topLevelEntities.data.1.secondLevelEntities.data.3'
+							modelName: 'topLevelEntities.1.secondLevelEntities.3'
 						})
 					)
 				)
@@ -1173,7 +1197,7 @@ describe('fetchData', () => {
 				expect(resultStoredEffect.value).toEqual(
 					put(
 						createAction(actions.KEY_REMOVAL_REQUESTED, {
-							modelName: `topLevelEntities.data.1.secondLevelEntities.data.${guid}`
+							modelName: `topLevelEntities.1.secondLevelEntities.${guid}`
 						})
 					)
 				)
@@ -1221,7 +1245,7 @@ describe('fetchData', () => {
 					put(
 						createAction(actions.KEY_REMOVAL_REQUESTED, {
 							data: { guid },
-							modelName: 'topLevelEntities.data.1.secondLevelEntities.data.2'
+							modelName: 'topLevelEntities.1.secondLevelEntities.2'
 						})
 					)
 				)

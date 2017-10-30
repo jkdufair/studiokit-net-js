@@ -7,12 +7,19 @@ import type { Action } from 'redux'
 
 type FetchState = {}
 
-type ModelState = {
+type MetadataState = {
 	isFetching: boolean,
 	hasError: boolean,
 	timedOut: boolean,
-	data?: Object,
 	fetchedAt?: Date
+}
+
+type ModelState = {
+	_metadata: MetadataState
+}
+
+function getMetadata(state: FetchState, path: Array<string>): MetadataState {
+	return _.get(path.concat('_metadata'), state) || {}
 }
 
 /**
@@ -31,29 +38,34 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 		return state
 	}
 	const path: Array<string> = action.modelName.split('.')
-	const newValue = {}
-	newValue.data = _.get(path.concat('data'), state)
-	newValue.fetchedAt = _.get(_.union(['fetchedAt'], path), state)
+	let newValue = _.get(path, state) || {}
+	const metadata = getMetadata(state, path)
 
 	switch (action.type) {
 		case actions.FETCH_REQUESTED:
-			newValue.isFetching = true
-			newValue.hasError = false
-			newValue.timedOut = false
+			newValue._metadata = Object.assign(metadata, {
+				isFetching: true,
+				hasError: false,
+				timedOut: false
+			})
 			return _.set(path, newValue, state)
 
 		case actions.FETCH_RESULT_RECEIVED:
-			newValue.data = action.data
-			newValue.isFetching = false
-			newValue.hasError = false
-			newValue.timedOut = false
-			newValue.fetchedAt = new Date()
+			newValue = action.data
+			newValue._metadata = Object.assign(metadata, {
+				isFetching: false,
+				hasError: false,
+				timedOut: false,
+				fetchedAt: new Date()
+			})
 			return _.set(path, newValue, state)
 
 		case actions.FETCH_FAILED:
-			newValue.isFetching = false
-			newValue.hasError = true
-			newValue.timedOut = !!action.didTimeOut
+			newValue._metadata = Object.assign(metadata, {
+				isFetching: false,
+				hasError: true,
+				timedOut: !!action.didTimeOut
+			})
 			return _.set(path, newValue, state)
 
 		case actions.KEY_REMOVAL_REQUESTED:
