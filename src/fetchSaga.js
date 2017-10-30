@@ -126,40 +126,55 @@ function* fetchData(action: FetchAction) {
 
 	// Get fetch parameters from global fetch dictionary using the modelName passed in to locate them
 	// Combine parameters from global dictionary with any passed in - locals override dictionary
-	const baseConfig = _.get(models, action.modelName)
-
-	if (!baseConfig) {
+	const model = _.get(models, action.modelName)
+	if (!model) {
 		throw new Error(`Cannot find \'${action.modelName}\' model in model dictionary`)
 	}
-	const headers = Object.assign({}, baseConfig.headers, action.headers)
-	const fetchConfig = Object.assign({}, baseConfig, {
-		headers: headers
+
+	const modelConfig = Object.assign({}, model._config)
+	const fetchConfig = Object.assign({}, modelConfig.fetch, {
+		headers: Object.assign({}, action.headers),
+		queryParams: Object.assign({}, action.queryParams)
 	})
 
-	// set method from action
+	// set "method" if defined
 	if (action.method && typeof action.method === 'string') {
 		fetchConfig.method = action.method
+	}
+
+	// set or merge "body"
+	if (action.body || fetchConfig.body) {
+		// If the body is a string, we are assuming it's an application/x-www-form-urlencoded
+		if (typeof action.body === 'string') {
+			fetchConfig.body = action.body
+		} else {
+			fetchConfig.body = Object.assign({}, fetchConfig.body, action.body)
+		}
 	}
 
 	let modelName: string = action.modelName
 	let isCollectionItemFetch: boolean = false
 	let isCollectionItemCreate: boolean = false
-	const pathParams = Object.assign([], baseConfig.pathParams, action.pathParams)
+	let isUrlValid: boolean = true
+	const pathParams = action.pathParams || []
 
-	if (fetchConfig.isCollection) {
+	// collection "fetchConfig.path" and "modelName"
+	if (modelConfig.isCollection) {
 		// construct modelName and path
 		const modelNameLevels = modelName.split('.')
 		if (modelNameLevels.length > 1) {
 			let lastModelLevel = models
 			modelNameLevels.forEach((levelName, index) => {
 				const currentModelLevel = _.get(lastModelLevel, levelName)
+				const currentModelConfig = Object.assign({}, currentModelLevel._config)
+				const currentFetchConfig = Object.assign({}, currentModelConfig.fetch)
 				if (index === 0) {
-					fetchConfig.path = currentModelLevel.path || `/api/${levelName}`
+					fetchConfig.path = currentFetchConfig.path || `/api/${levelName}`
 					modelName = levelName
 					lastModelLevel = currentModelLevel
 					return
 				}
-				fetchConfig.path = `${fetchConfig.path}/{:id}/${currentModelLevel.path || levelName}`
+				fetchConfig.path = `${fetchConfig.path}/{:id}/${currentFetchConfig.path || levelName}`
 				modelName = `${modelName}.data.{:id}.${levelName}`
 				lastModelLevel = currentModelLevel
 			})
@@ -185,18 +200,6 @@ function* fetchData(action: FetchAction) {
 		}
 	}
 
-	if (action.body || baseConfig.body) {
-		// If the body is a string, we are assuming it's an application/x-www-form-urlencoded
-		if (typeof action.body === 'string') {
-			fetchConfig.body = action.body
-		} else {
-			fetchConfig.body = Object.assign({}, baseConfig.body, action.body)
-		}
-	}
-
-	fetchConfig.queryParams = Object.assign({}, baseConfig.queryParams, action.queryParams)
-
-	let isUrlValid: boolean = true
 	// substitute any pathParams in path, e.g. /api/group/{:id}
 	if (/{:.+}/.test(fetchConfig.path)) {
 		let index = 0
@@ -236,6 +239,7 @@ function* fetchData(action: FetchAction) {
 			return value
 		})
 	}
+
 	if (!isUrlValid) {
 		yield put(
 			createAction(action.noStore ? actions.TRANSIENT_FETCH_FAILED : actions.FETCH_FAILED, {
@@ -278,7 +282,7 @@ function* fetchData(action: FetchAction) {
 					: actions.FETCH_RESULT_RECEIVED
 				let data = fetchResult
 
-				if (fetchConfig.isCollection) {
+				if (modelConfig.isCollection) {
 					data = {}
 					if (fetchConfig.method === 'DELETE') {
 						storeAction = actions.KEY_REMOVAL_REQUESTED

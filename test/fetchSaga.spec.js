@@ -95,41 +95,81 @@ describe('fetchData', () => {
 		const fetchSagaGen = fetchSaga(
 			{
 				test: {
-					path: 'http://www.google.com'
+					_config: {
+						fetch: {
+							path: 'http://www.google.com'
+						}
+					}
 				},
 				test2: {
-					path: 'http://news.ycombinator.com',
-					body: 'string'
+					_config: {
+						fetch: {
+							path: 'http://news.ycombinator.com',
+							body: 'string'
+						}
+					}
 				},
 				test3: {
-					path: 'http://news.ycombinator.com',
-					body: { foo: 'bar' }
+					_config: {
+						fetch: {
+							path: 'http://news.ycombinator.com',
+							body: { foo: 'bar' }
+						}
+					}
 				},
 				test4: {
-					path: 'http://{{testServer}}'
+					_config: {
+						fetch: {
+							path: 'http://{{testServer}}'
+						}
+					}
 				},
 				test5: {
-					path: 'http://www.google.com/{:entityId}'
+					_config: {
+						fetch: {
+							path: 'http://www.google.com/{:entityId}'
+						}
+					}
 				},
 				test6: {
-					path: 'http://{{testServer}}/{:entityId}'
+					_config: {
+						fetch: {
+							path: 'http://{{testServer}}/{:entityId}'
+						}
+					}
 				},
 				entities: {
-					path: 'http://www.google.com/entities',
-					isCollection: true
-				},
-				topLevelEntities: {
-					path: 'http://www.google.com/topLevelEntities',
-					isCollection: true,
-					secondLevelEntities: {
-						path: 'secondLevelEntities',
+					_config: {
+						fetch: {
+							path: 'http://www.google.com/entities'
+						},
 						isCollection: true
 					}
 				},
-				topLevelEntitiesNoPath: {
-					isCollection: true,
-					secondLevelEntities: {
+				topLevelEntities: {
+					_config: {
+						fetch: {
+							path: 'http://www.google.com/topLevelEntities'
+						},
 						isCollection: true
+					},
+					secondLevelEntities: {
+						_config: {
+							fetch: {
+								path: 'secondLevelEntities'
+							},
+							isCollection: true
+						}
+					}
+				},
+				topLevelEntitiesNoPath: {
+					_config: {
+						isCollection: true
+					},
+					secondLevelEntities: {
+						_config: {
+							isCollection: true
+						}
 					}
 				}
 			},
@@ -350,12 +390,7 @@ describe('fetchData', () => {
 					fetchResult: call(doFetch, {
 						path: '/api/topLevelEntitiesNoPath',
 						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {},
-						// TODO: filter these from fetchConfig
-						isCollection: true,
-						secondLevelEntities: {
-							isCollection: true
-						}
+						queryParams: {}
 					}),
 					timedOutResult: call(delay, 30000)
 				})
@@ -372,11 +407,7 @@ describe('fetchData', () => {
 					fetchResult: call(doFetch, {
 						path: '/api/topLevelEntitiesNoPath/1',
 						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {},
-						isCollection: true,
-						secondLevelEntities: {
-							isCollection: true
-						}
+						queryParams: {}
 					}),
 					timedOutResult: call(delay, 30000)
 				})
@@ -396,8 +427,7 @@ describe('fetchData', () => {
 					fetchResult: call(doFetch, {
 						path: '/api/topLevelEntitiesNoPath/1/secondLevelEntities',
 						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {},
-						isCollection: true
+						queryParams: {}
 					}),
 					timedOutResult: call(delay, 30000)
 				})
@@ -764,7 +794,6 @@ describe('fetchData', () => {
 						fetchResult: call(doFetch, {
 							path: 'http://www.google.com/entities/999',
 							headers: { Authorization: 'Bearer some-access-token' },
-							isCollection: true,
 							queryParams: {}
 						}),
 						timedOutResult: call(delay, 30000)
@@ -809,7 +838,6 @@ describe('fetchData', () => {
 							path: 'http://www.google.com/entities',
 							headers: { Authorization: 'Bearer some-access-token' },
 							method: 'POST',
-							isCollection: true,
 							queryParams: {}
 						}),
 						timedOutResult: call(delay, 30000)
@@ -895,7 +923,6 @@ describe('fetchData', () => {
 							path: 'http://www.google.com/entities/999',
 							method: 'DELETE',
 							headers: { Authorization: 'Bearer some-access-token' },
-							isCollection: true,
 							queryParams: {}
 						}),
 						timedOutResult: call(delay, 30000)
@@ -1029,7 +1056,6 @@ describe('fetchData', () => {
 						fetchResult: call(doFetch, {
 							path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999',
 							headers: { Authorization: 'Bearer some-access-token' },
-							isCollection: true,
 							queryParams: {}
 						}),
 						timedOutResult: call(delay, 30000)
@@ -1078,7 +1104,6 @@ describe('fetchData', () => {
 							path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities',
 							headers: { Authorization: 'Bearer some-access-token' },
 							method: 'POST',
-							isCollection: true,
 							queryParams: {}
 						}),
 						timedOutResult: call(delay, 30000)
@@ -1171,7 +1196,6 @@ describe('fetchData', () => {
 							path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999',
 							method: 'DELETE',
 							headers: { Authorization: 'Bearer some-access-token' },
-							isCollection: true,
 							queryParams: {}
 						}),
 						timedOutResult: call(delay, 30000)
