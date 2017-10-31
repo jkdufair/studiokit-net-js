@@ -25,13 +25,17 @@ For *in-vivo* examples of how to use this library, see the [example react app](h
 		models: netReducers.fetchReducer
 	})
 	```
-1. Create an `apis.js` module specifying any apis you will call in your application, i.e.
+1. Create an `apis.js` module specifying any apis you will call in your application. All configuration properties are set under `_config`. Fetch request specific default properties are set on `_config.fetch`, i.e.
 	```js
 	const apis = {
 		publicData: {
-			path: 'https://httpbin.org/get',
-			queryParams: {
-				foo: 'bar'
+			_config: {
+				fetch: {
+					path: 'https://httpbin.org/get',
+					queryParams: {
+						foo: 'bar'
+					}
+				}
 			}
 		}
 	}
@@ -115,7 +119,7 @@ type FetchAction = {
 - `method` is an optional string used as the HTTP Method for the fetch. Otherwise will use the method set in `apis.js`, or `'GET'`
 - `headers` is an optional object used as key/value pairs to populate the request headers
 - `queryParams` is an optional object used as key/value pairs to populate the query parameters
-- `pathParams` is an optional object used as key/value pairs to be replaced in the fetch path using pattern matching, e.g. `/{:key}` => `/value`
+- `pathParams` is an optional array of values to be replaced in the fetch path using pattern matching, in order, e.g. `[1, 2]` and `/collection/{:id}/subcollection/{:id}` => `/collection/1/subcollection/2`
 - `noStore` is an optional boolean that, if true, indicates the request should be made without storing the response in the redux store
 - `period` is an optional number of milliseconds after which a request should repeat when dispatching a recurring fetch
 - `taskId` is a string that must be passed to a recurring fetch for future cancellation
@@ -135,46 +139,92 @@ Given the following `apis.js`
 ```js
 {
 	basicData: {
-		path: 'https://httpbin.org/get'
+		_config: {
+			fetch: {
+				path: 'https://httpbin.org/get'
+			}
+		}
 	},
 	futurama: {
-		path: 'https://www.planetexpress.com/api/goodNewsEveryone',
-		queryParams: {
-			doctor: 'zoidberg'
+		_config: {
+			fetch: {
+				path: 'https://www.planetexpress.com/api/goodNewsEveryone',
+				queryParams: {
+					doctor: 'zoidberg'
+				}
+			}
 		}
 	},
 	theWalkers: {
-		path: 'https://thewalkingdead/api/walker/{:walkerId}',
-		pathParams: {
-			walkerId: 1
+		_config: {
+			fetch: {
+				path: 'https://thewalkingdead/api/walker/{:walkerId}',
+				pathParams: {
+					walkerId: 1
+				}
+			}
 		}
 	}.
 	theOffice: {
-		path: 'https://dundermifflin.com/api/paper'
-		headers: {
-			'Content-Type': 'x-beet-farmer'
+		_config: {
+			fetch: {
+				path: 'https://dundermifflin.com/api/paper'
+				headers: {
+					'Content-Type': 'x-beet-farmer'
+				}
+			}
 		}
 	},
 	aGrouping: {
 		apiOne: {
-			path: '/api/one'
+			_config: {
+				fetch: {
+					path: '/api/one'
+				}
+			}
 		},
 		apiTwo: {
-			path: '/api/two/{{models.futurama.data.zoidberg}}'
+			_config: {
+				fetch: {
+					path: '/api/two/{{models.futurama.zoidberg}}'
+				}
+			}
 		}
 	},
 	basicPost: {
-		path: '/api/createSomeThing'
-		method: 'POST'
+		_config: {
+			fetch: {
+				path: '/api/createSomeThing'
+				method: 'POST'
+			}
+		}
 	},
 	basicPostTwo: {
-		path: '/api/createSomeKnownThing'
-		method: 'POST',
-		body: { person: 'Fry' }
+		_config: {
+			fetch: {
+				path: '/api/createSomeKnownThing'
+				method: 'POST',
+				body: { person: 'Fry' }
+			}
+		}
 	},
 	entities: {
-		path: '/api/entities',
-		isCollection: true
+		_config: {
+			fetch: {
+				path: '/api/entities'
+			},
+			isCollection: true
+		}
+	},
+	topLevelEntities: {
+		_config: {
+			isCollection: true
+		},
+		secondLevelEntities: {
+			_config: {
+				isCollection: true
+			}
+		}
 	}
 }
 ```
@@ -188,6 +238,7 @@ You can make the following types of requests:
 [No Store](#no-store)  
 [Post](#post)  
 [Collections](#collections)  
+[Nested Collections](#nested-collections)  
 
 #
 
@@ -209,11 +260,14 @@ GET https://httpbin.org/get
 {
 	models: {
 		basicData: {
-			isFetching: false,
-			hasError: false,
-			timedOut: false,
-			data: {...}
-			fetchedAt: '2017-05-23T20:38:11.103Z'
+			foo: 'bar',
+			...,
+			_metadata: {
+				isFetching: false,
+				hasError: false,
+				timedOut: false,
+				fetchedAt: '2017-05-23T20:38:11.103Z'
+			}
 		}
 	}
 }
@@ -240,11 +294,14 @@ GET https://myapp.com/api/one
 	models: {
 		aGrouping: {
 			apiOne: {
-				isFetching: false,
-				hasError: false,
-				timedOut: false,
-				data: {...}
-				fetchedAt: '2017-05-23T20:38:11.103Z'
+				foo: 'bar',
+				...,
+				_metadata: {
+					isFetching: false,
+					hasError: false,
+					timedOut: false,
+					fetchedAt: '2017-05-23T20:38:11.103Z'
+				}
 			}
 		}
 	}
@@ -421,20 +478,23 @@ GET https://myapp.com/api/entities
 {
 	models: {
 		entities: {
-			data: {
-				1: {
-					data: {id: 1, ...},
+			1: {
+				id: 1, 
+				...,
+				_metadata: {
 					isFetching: false,
 					hasError: false,
 					timedOut: false,
 					fetchedAt: '2017-05-23T20:38:11.103Z'
-				},
-				...
+				}
 			},
-			isFetching: false,
-			hasError: false,
-			timedOut: false,
-			fetchedAt: '2017-05-23T20:38:11.103Z'
+			...,
+			_metadata: {
+				isFetching: false,
+				hasError: false,
+				timedOut: false,
+				fetchedAt: '2017-05-23T20:38:11.103Z'
+			}
 		}
 	}
 }
@@ -446,9 +506,7 @@ GET https://myapp.com/api/entities
 store.dispatch({
 	type: netActions.DATA_REQUESTED,
 	modelName: 'entities',
-	pathParams: {
-		id: 1
-	}
+	pathParams: [1]
 })
 ```
 *request generated*
@@ -456,7 +514,7 @@ store.dispatch({
 GET https://myapp.com/api/entities/1
 ```
 *resulting redux*  
-Updates item in store at `entities.data.1`
+Updates item in store at `entities.1`
 
 #### POST item
 *dispatch*
@@ -477,10 +535,10 @@ POST https://myapp.com/api/entities/1
 {"name": "entity name"}
 ```
 *resulting redux*  
-Adds item in store at `entities.data` under the return object's `id`
+Adds item in store at `entities` under the return object's `id`
 
 *Note*  
-During the request, status is stored in `entities.data` under a `guid` key, which can be provided in the action for tracking
+During the request, status is stored in `entities` under a `guid` key, which can be provided in the action for tracking
 
 #### PATCH item
 *dispatch*
@@ -489,9 +547,7 @@ store.dispatch({
 	type: netActions.DATA_REQUESTED,
 	modelName: 'entities',
 	method: 'PATCH'
-	pathParams: {
-		id: 1
-	},
+	pathParams: [1],
 	body: {
 		op: 'replace',
 		path: 'Name',
@@ -507,7 +563,7 @@ PATCH https://myapp.com/api/entities/1
 ```
 
 *resulting redux*  
-Updates item in store at `entities.data.1`
+Updates item in store at `entities.1`
 
 *Note*  
 See http://jsonpatch.com/
@@ -519,9 +575,7 @@ store.dispatch({
 	type: netActions.DATA_REQUESTED,
 	modelName: 'entities',
 	method: 'DELETE'
-	pathParams: {
-		id: 1
-	}
+	pathParams: [1]
 })
 ```
 *request generated*
@@ -529,7 +583,147 @@ store.dispatch({
 DELETE https://myapp.com/api/entities/1
 ```
 *resulting redux*  
-Removes item in store at `entities.data.1`
+Removes item in store at `entities.1`
+
+#
+
+### Nested Collections
+
+Nested collections behave the same as normal collections, but require a `pathParams` to have at least one value per nested level.
+
+#### GET all
+*dispatch*
+```js
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'topLevelEntities.secondLevelEntities',
+	pathParams: [1]
+})
+```
+*request generated*
+```http
+GET https://myapp.com/api/topLevelEntities/1/secondLevelEntities
+```
+*resulting redux*
+```js
+{
+	models: {
+		topLevelEntities: {
+			1: {
+				id: 1, 
+				secondLevelEntities: {
+					999: {
+						id: 999,
+						...,
+						_metadata: {
+							isFetching: false,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: '2017-05-23T20:38:11.103Z'
+						}
+					},
+					...,
+					_metadata: {
+						isFetching: false,
+						hasError: false,
+						timedOut: false,
+						fetchedAt: '2017-05-23T20:38:11.103Z'
+					}
+				}
+			}
+		}
+	}
+}
+```
+Stores item in object as key/value pairs in store at `topLevelEntities.1.secondLevelEntities`
+
+
+#### GET item
+*dispatch*
+```js
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'topLevelEntities.secondLevelEntities',
+	pathParams: [1, 999]
+})
+```
+*request generated*
+```http
+GET https://myapp.com/api/topLevelEntities/1/secondLevelEntities/999
+```
+*resulting redux*  
+Updates item in store at `topLevelEntities.1.secondLevelEntities.999`
+
+
+#### POST item
+*dispatch*
+```js
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'topLevelEntities.secondLevelEntities',
+	pathParams: [1],
+	method: 'POST',
+	body: {
+		name: 'entity name'
+	}
+})
+```
+*request generated*
+```http
+Content-Type: application/json
+POST https://myapp.com/api/topLevelEntities/1/secondLevelEntities
+{"name": "entity name"}
+```
+*resulting redux*  
+Adds item in store at `topLevelEntities.1.secondLevelEntities` under the return object's `id`
+
+*Note*  
+During the request, status is stored in `topLevelEntities.1.secondLevelEntities` under a `guid` key, which can be provided in the action for tracking
+
+#### PATCH item
+*dispatch*
+```js
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'topLevelEntities.secondLevelEntities',
+	method: 'PATCH'
+	pathParams: [1, 999],
+	body: {
+		op: 'replace',
+		path: 'Name',
+		value: 'updated group name'
+	}
+})
+```
+*request generated*
+```http
+Content-Type: application/json
+PATCH https://myapp.com/api/topLevelEntities/1/secondLevelEntities/999
+{"op": "replace", "path": "Name", "value": "updated group name"}
+```
+
+*resulting redux*  
+Updates item in store at `topLevelEntities.1.secondLevelEntities.999`
+
+*Note*  
+See http://jsonpatch.com/
+
+#### DELETE Entity
+*dispatch*
+```js
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'topLevelEntities.secondLevelEntities',
+	method: 'DELETE'
+	pathParams: [1, 999]
+})
+```
+*request generated*
+```http
+DELETE https://myapp.com/api/topLevelEntities/1/secondLevelEntities/999
+```
+*resulting redux*  
+Removes item in store at `topLevelEntities.1.secondLevelEntities.999`
 
 #
 

@@ -39,7 +39,7 @@ type OAuthToken = {
  * method - (optional) The HTTP Method to use for the fetch. Otherwise will use the method set in apis.js, or 'GET'
  * headers - (optional) An object as key/value pairs of headers to be sent with the request
  * queryParams - (optional) An object as key/value pairs to be added to query as query params
- * pathParams - (optional) An object as key/value pairs to be replaced in the fetch path using pattern matching, "/{:key}" => "/value"
+ * pathParams - (optional) An array of values to be replaced in the fetch path using pattern matching, in order, "/collection/{}/subcollection/{}" => "/collection/1/subcollection/2"
  * noStore - (optional) If true, make the request but do not store in redux. Can be used with take & friends for side effects
  * period - (optional) How often to re-fetch when used in a recurring fetch scenario
  * taskId - (optional) A pre-generated (by your application) id to be used to cancel a recurring task at a later time
@@ -52,7 +52,7 @@ type FetchAction = {
 	method?: string,
 	headers?: Object,
 	queryParams?: Object,
-	pathParams?: Object,
+	pathParams?: Array<string>,
 	noStore?: boolean,
 	period?: number,
 	taskId?: string,
@@ -126,57 +126,106 @@ function* fetchData(action: FetchAction) {
 
 	// Get fetch parameters from global fetch dictionary using the modelName passed in to locate them
 	// Combine parameters from global dictionary with any passed in - locals override dictionary
-	const baseConfig = _.get(models, action.modelName)
-
-	if (!baseConfig) {
+	const model = _.get(models, action.modelName)
+	if (!model) {
 		throw new Error(`Cannot find \'${action.modelName}\' model in model dictionary`)
 	}
-	const headers = Object.assign({}, baseConfig.headers, action.headers)
-	const fetchConfig = Object.assign({}, baseConfig, {
-		headers: headers
+
+	const modelConfig = _.merge({}, model._config)
+	const fetchConfig = _.merge({}, modelConfig.fetch, {
+		headers: _.merge({}, action.headers),
+		queryParams: _.merge({}, action.queryParams)
 	})
 
-	// set method from action
+	// set "method" if defined
 	if (action.method && typeof action.method === 'string') {
 		fetchConfig.method = action.method
 	}
 
-	let isCollectionItemFetch: boolean = false
-	let isCollectionItemCreate: boolean = false
-	if (fetchConfig.isCollection) {
-		// GET, PUT, PATCH, DELETE
-		isCollectionItemFetch = action.pathParams && action.pathParams.hasOwnProperty('id')
-		// POST
-		isCollectionItemCreate = fetchConfig.method === 'POST'
-		// append collection item id routeParam
-		if (isCollectionItemFetch && !isCollectionItemCreate) {
-			fetchConfig.path = `${fetchConfig.path}/{:id}`
-		}
-	}
-
-	if (action.body || baseConfig.body) {
+	// set or merge "body"
+	if (action.body || fetchConfig.body) {
 		// If the body is a string, we are assuming it's an application/x-www-form-urlencoded
 		if (typeof action.body === 'string') {
 			fetchConfig.body = action.body
 		} else {
-			fetchConfig.body = Object.assign({}, baseConfig.body, action.body)
+			fetchConfig.body = _.merge({}, fetchConfig.body, action.body)
 		}
 	}
 
-	fetchConfig.queryParams = Object.assign({}, baseConfig.queryParams, action.queryParams)
-
+	let modelName: string = action.modelName
+	let isCollectionItemFetch: boolean = false
+	let isCollectionItemCreate: boolean = false
 	let isUrlValid: boolean = true
-	// substitute any basic path parameters, e.g. /api/group/{:groupId}
-	const pathParams = Object.assign({}, baseConfig.pathParams, action.pathParams)
+	const pathParams = action.pathParams || []
+
+	// collection "fetchConfig.path" and "modelName"
+	if (modelConfig.isCollection) {
+		// construct modelName and path
+		const modelNameLevels = modelName.split('.')
+		if (modelNameLevels.length > 1) {
+			let lastModelLevel = models
+			modelNameLevels.forEach((levelName, index) => {
+				const currentModelLevel = _.get(lastModelLevel, levelName)
+				const currentModelConfig = _.merge({}, currentModelLevel._config)
+				const currentFetchConfig = _.merge({}, currentModelConfig.fetch)
+				if (index === 0) {
+					fetchConfig.path = currentFetchConfig.path || `/api/${levelName}`
+					modelName = levelName
+					lastModelLevel = currentModelLevel
+					return
+				}
+				fetchConfig.path = `${fetchConfig.path}/{:id}/${currentFetchConfig.path || levelName}`
+				modelName = `${modelName}.{:id}.${levelName}`
+				lastModelLevel = currentModelLevel
+			})
+		} else if (!fetchConfig.path) {
+			fetchConfig.path = `/api/${modelName}`
+		}
+
+		// determine if we need to add pathParam hooks
+		const pathLevels = (fetchConfig.path.match(/{:.+}/g) || []).length
+
+		// GET, PUT, PATCH, DELETE => append '/{:id}'
+		isCollectionItemFetch = pathParams.length > pathLevels
+		// POST
+		isCollectionItemCreate = fetchConfig.method === 'POST'
+
+		// insert pathParam hooks into path and modelName
+		// track collection item requests by id (update, delete) or guid (create)
+		if (isCollectionItemFetch && !isCollectionItemCreate) {
+			fetchConfig.path = `${fetchConfig.path}/{:id}`
+			modelName = `${modelName}.{:id}`
+		} else if (isCollectionItemCreate) {
+			modelName = `${modelName}.${action.guid || uuid.v4()}`
+		}
+	}
+
+	// substitute any pathParams in path, e.g. /api/group/{:id}
 	if (/{:.+}/.test(fetchConfig.path)) {
-		fetchConfig.path = fetchConfig.path.replace(/{:(.+?)}/, (matches, backref) => {
-			const value = pathParams[backref]
+		let index = 0
+		fetchConfig.path = fetchConfig.path.replace(/{:(.+?)}/g, (matches, backref) => {
+			const value = pathParams[index]
 			if (value === undefined || value === null) {
 				isUrlValid = false
 			}
+			index++
 			return value
 		})
 	}
+
+	// substitute any pathParams in modelName, e.g. groups.{:id}
+	if (/{:.+}/.test(modelName)) {
+		let index = 0
+		modelName = modelName.replace(/{:(.+?)}/g, (matches, backref) => {
+			const value = pathParams[index]
+			if (value === undefined || value === null) {
+				isUrlValid = false
+			}
+			index++
+			return value
+		})
+	}
+
 	// substitute any path parameters from the redux store, e.g. '{{apiRoot}}/groups'
 	if (/{{.+}}/.test(fetchConfig.path)) {
 		// have to get reference to the whole store here
@@ -190,6 +239,7 @@ function* fetchData(action: FetchAction) {
 			return value
 		})
 	}
+
 	if (!isUrlValid) {
 		yield put(
 			createAction(action.noStore ? actions.TRANSIENT_FETCH_FAILED : actions.FETCH_FAILED, {
@@ -206,14 +256,6 @@ function* fetchData(action: FetchAction) {
 	let didFail: boolean = false
 	let lastFetchError: ?FetchError
 	let lastError: ?Error
-	let modelName: string = action.modelName
-
-	// track collection item requests by id (update, delete) or guid (create)
-	if (isCollectionItemFetch) {
-		modelName = `${action.modelName}.data.${pathParams.id}`
-	} else if (isCollectionItemCreate) {
-		modelName = `${action.modelName}.data.${action.guid || uuid.v4()}`
-	}
 
 	// Run retry loop
 	do {
@@ -240,7 +282,7 @@ function* fetchData(action: FetchAction) {
 					: actions.FETCH_RESULT_RECEIVED
 				let data = fetchResult
 
-				if (fetchConfig.isCollection) {
+				if (modelConfig.isCollection) {
 					data = {}
 					if (fetchConfig.method === 'DELETE') {
 						storeAction = actions.KEY_REMOVAL_REQUESTED
@@ -252,13 +294,14 @@ function* fetchData(action: FetchAction) {
 							? Object.keys(fetchResult).map(key => fetchResult[key])
 							: fetchResult
 						resultsArray.forEach(item => {
-							data[item.id] = {
-								data: item,
-								isFetching: false,
-								hasError: false,
-								timedOut: false,
-								fetchedAt
-							}
+							data[item.id] = _.merge({}, item, {
+								_metadata: {
+									isFetching: false,
+									hasError: false,
+									timedOut: false,
+									fetchedAt
+								}
+							})
 						})
 					}
 				}
@@ -270,11 +313,14 @@ function* fetchData(action: FetchAction) {
 
 				// POST new collection item
 				if (isCollectionItemCreate) {
+					const modelNameLevels = modelName.split('.')
+					// remove guid
+					modelNameLevels.pop()
 					// add by new result's id
 					yield put(
 						createAction(storeAction, {
 							data,
-							modelName: `${action.modelName}.data.${data.id}`
+							modelName: `${modelNameLevels.join('.')}.${data.id}`
 						})
 					)
 					// remove temp item under guid key
@@ -291,7 +337,7 @@ function* fetchData(action: FetchAction) {
 				// combine fetchResult with didTimeOut
 				lastFetchError = {
 					modelName,
-					errorData: Object.assign(
+					errorData: _.merge(
 						{
 							didTimeOut: !!timedOutResult
 						},
@@ -303,9 +349,7 @@ function* fetchData(action: FetchAction) {
 		} catch (error) {
 			let errorData = lastFetchError ? lastFetchError.errorData : null
 
-			yield put(
-				createAction(actions.TRY_FETCH_FAILED, Object.assign({ modelName }, lastFetchError))
-			)
+			yield put(createAction(actions.TRY_FETCH_FAILED, _.merge({ modelName }, lastFetchError)))
 
 			// Don't do anything with 401 errors
 			// And some errors don't have fetch results associated with them
@@ -326,7 +370,7 @@ function* fetchData(action: FetchAction) {
 		yield put(
 			createAction(
 				action.noStore ? actions.TRANSIENT_FETCH_FAILED : actions.FETCH_FAILED,
-				Object.assign({ modelName }, lastFetchError)
+				_.merge({ modelName }, lastFetchError)
 			)
 		)
 		logger('fetchData retry fail')
