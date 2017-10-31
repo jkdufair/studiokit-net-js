@@ -260,11 +260,14 @@ GET https://httpbin.org/get
 {
 	models: {
 		basicData: {
-			isFetching: false,
-			hasError: false,
-			timedOut: false,
-			data: {...}
-			fetchedAt: '2017-05-23T20:38:11.103Z'
+			foo: 'bar',
+			...,
+			_metadata: {
+				isFetching: false,
+				hasError: false,
+				timedOut: false,
+				fetchedAt: '2017-05-23T20:38:11.103Z'
+			}
 		}
 	}
 }
@@ -291,11 +294,14 @@ GET https://myapp.com/api/one
 	models: {
 		aGrouping: {
 			apiOne: {
-				isFetching: false,
-				hasError: false,
-				timedOut: false,
-				data: {...}
-				fetchedAt: '2017-05-23T20:38:11.103Z'
+				foo: 'bar',
+				...,
+				_metadata: {
+					isFetching: false,
+					hasError: false,
+					timedOut: false,
+					fetchedAt: '2017-05-23T20:38:11.103Z'
+				}
 			}
 		}
 	}
@@ -472,20 +478,23 @@ GET https://myapp.com/api/entities
 {
 	models: {
 		entities: {
-			data: {
-				1: {
-					data: {id: 1, ...},
+			1: {
+				id: 1, 
+				...,
+				_metadata: {
 					isFetching: false,
 					hasError: false,
 					timedOut: false,
 					fetchedAt: '2017-05-23T20:38:11.103Z'
-				},
-				...
+				}
 			},
-			isFetching: false,
-			hasError: false,
-			timedOut: false,
-			fetchedAt: '2017-05-23T20:38:11.103Z'
+			...,
+			_metadata: {
+				isFetching: false,
+				hasError: false,
+				timedOut: false,
+				fetchedAt: '2017-05-23T20:38:11.103Z'
+			}
 		}
 	}
 }
@@ -600,33 +609,28 @@ GET https://myapp.com/api/topLevelEntities/1/secondLevelEntities
 {
 	models: {
 		topLevelEntities: {
-			data: {
-				1: {
-					data: {
-						id: 1, 
-						secondLevelEntities: {
-							data: {
-								999: {
-									data: {id: 999, ...},
-									isFetching: false,
-									hasError: false,
-									timedOut: false,
-									fetchedAt: '2017-05-23T20:38:11.103Z'
-								},
-								...
-							},
+			1: {
+				id: 1, 
+				secondLevelEntities: {
+					999: {
+						id: 999,
+						...,
+						_metadata: {
 							isFetching: false,
 							hasError: false,
 							timedOut: false,
 							fetchedAt: '2017-05-23T20:38:11.103Z'
 						}
-						...
 					},
-					...
-				},
-				...
-			},
-			...
+					...,
+					_metadata: {
+						isFetching: false,
+						hasError: false,
+						timedOut: false,
+						fetchedAt: '2017-05-23T20:38:11.103Z'
+					}
+				}
+			}
 		}
 	}
 }
