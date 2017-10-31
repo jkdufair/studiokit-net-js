@@ -153,18 +153,41 @@ describe('fetchData', () => {
 						},
 						isCollection: true
 					},
+					entityAction: {
+						_config: {
+							fetch: {
+								path: 'entityAction',
+								method: 'POST'
+							}
+						}
+					},
 					secondLevelEntities: {
 						_config: {
 							fetch: {
 								path: 'secondLevelEntities'
 							},
 							isCollection: true
+						},
+						entityAction: {
+							_config: {
+								fetch: {
+									path: 'entityAction'
+								}
+							}
 						}
 					}
 				},
 				topLevelEntitiesNoPath: {
 					_config: {
 						isCollection: true
+					},
+					entityAction: {
+						_config: {
+							fetch: {
+								path: 'entityAction',
+								method: 'POST'
+							}
+						}
 					},
 					secondLevelEntities: {
 						_config: {
@@ -175,14 +198,6 @@ describe('fetchData', () => {
 								fetch: {
 									path: 'entityAction'
 								}
-							}
-						}
-					},
-					entityAction: {
-						_config: {
-							fetch: {
-								path: 'entityAction',
-								method: 'POST'
 							}
 						}
 					}
@@ -1020,6 +1035,53 @@ describe('fetchData', () => {
 				expect(gen.next().done).toEqual(true)
 			})
 		})
+
+		describe('GET item action', () => {
+			test('should replace pathParams of "/{:id}" in path if "pathParams" array includes any values', () => {
+				const gen = fetchData({
+					modelName: 'topLevelEntities.entityAction',
+					pathParams: [1]
+				})
+				const putFetchRequestEffect = gen.next()
+				const tokenAccessCall = gen.next()
+				const raceEffect = gen.next(getOauthToken())
+				expect(raceEffect.value).toEqual(
+					race({
+						fetchResult: call(doFetch, {
+							path: 'http://www.google.com/topLevelEntities/1/entityAction',
+							method: 'POST',
+							headers: { Authorization: 'Bearer some-access-token' },
+							queryParams: {}
+						}),
+						timedOutResult: call(delay, 30000)
+					})
+				)
+			})
+
+			test('should add result on single nested entity by id', () => {
+				const guid = uuid.v4()
+				const gen = fetchData({
+					modelName: 'topLevelEntities.entityAction',
+					pathParams: [2],
+					guid
+				})
+				const putFetchRequestEffect = gen.next()
+				const tokenAccessCall = gen.next()
+				const raceEffect = gen.next()
+				const resultReceivedEffect = gen.next({
+					fetchResult: { foo: 'bar' }
+				})
+				expect(resultReceivedEffect.value).toEqual(
+					put(
+						createAction(actions.FETCH_RESULT_RECEIVED, {
+							data: { foo: 'bar', guid },
+							modelName: 'topLevelEntities.2.entityAction'
+						})
+					)
+				)
+				expect(gen.next().done).toEqual(true)
+			})
+		})
 	})
 
 	describe('nested collection fetch', () => {
@@ -1299,6 +1361,52 @@ describe('fetchData', () => {
 						createAction(actions.KEY_REMOVAL_REQUESTED, {
 							data: { guid },
 							modelName: 'topLevelEntities.1.secondLevelEntities.2'
+						})
+					)
+				)
+				expect(gen.next().done).toEqual(true)
+			})
+		})
+
+		describe('GET item action', () => {
+			test('should replace pathParams of "/{:id}" in path if "pathParams" array includes any values', () => {
+				const gen = fetchData({
+					modelName: 'topLevelEntities.secondLevelEntities.entityAction',
+					pathParams: [1, 999]
+				})
+				const putFetchRequestEffect = gen.next()
+				const tokenAccessCall = gen.next()
+				const raceEffect = gen.next(getOauthToken())
+				expect(raceEffect.value).toEqual(
+					race({
+						fetchResult: call(doFetch, {
+							path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999/entityAction',
+							headers: { Authorization: 'Bearer some-access-token' },
+							queryParams: {}
+						}),
+						timedOutResult: call(delay, 30000)
+					})
+				)
+			})
+
+			test('should add result on single nested entity by id', () => {
+				const guid = uuid.v4()
+				const gen = fetchData({
+					modelName: 'topLevelEntities.secondLevelEntities.entityAction',
+					pathParams: [2, 999],
+					guid
+				})
+				const putFetchRequestEffect = gen.next()
+				const tokenAccessCall = gen.next()
+				const raceEffect = gen.next()
+				const resultReceivedEffect = gen.next({
+					fetchResult: { foo: 'bar' }
+				})
+				expect(resultReceivedEffect.value).toEqual(
+					put(
+						createAction(actions.FETCH_RESULT_RECEIVED, {
+							data: { foo: 'bar', guid },
+							modelName: 'topLevelEntities.2.secondLevelEntities.999.entityAction'
 						})
 					)
 				)
