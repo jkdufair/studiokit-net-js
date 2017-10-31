@@ -95,28 +95,82 @@ describe('fetchData', () => {
 		const fetchSagaGen = fetchSaga(
 			{
 				test: {
-					path: 'http://www.google.com'
+					_config: {
+						fetch: {
+							path: 'http://www.google.com'
+						}
+					}
 				},
 				test2: {
-					path: 'http://news.ycombinator.com',
-					body: 'string'
+					_config: {
+						fetch: {
+							path: 'http://news.ycombinator.com',
+							body: 'string'
+						}
+					}
 				},
 				test3: {
-					path: 'http://news.ycombinator.com',
-					body: { foo: 'bar' }
+					_config: {
+						fetch: {
+							path: 'http://news.ycombinator.com',
+							body: { foo: 'bar' }
+						}
+					}
 				},
 				test4: {
-					path: 'http://{{testServer}}'
+					_config: {
+						fetch: {
+							path: 'http://{{testServer}}'
+						}
+					}
 				},
 				test5: {
-					path: 'http://www.google.com/{:entityId}'
+					_config: {
+						fetch: {
+							path: 'http://www.google.com/{:entityId}'
+						}
+					}
 				},
 				test6: {
-					path: 'http://{{testServer}}/{:entityId}'
+					_config: {
+						fetch: {
+							path: 'http://{{testServer}}/{:entityId}'
+						}
+					}
 				},
 				entities: {
-					path: 'http://www.google.com/entities',
-					isCollection: true
+					_config: {
+						fetch: {
+							path: 'http://www.google.com/entities'
+						},
+						isCollection: true
+					}
+				},
+				topLevelEntities: {
+					_config: {
+						fetch: {
+							path: 'http://www.google.com/topLevelEntities'
+						},
+						isCollection: true
+					},
+					secondLevelEntities: {
+						_config: {
+							fetch: {
+								path: 'secondLevelEntities'
+							},
+							isCollection: true
+						}
+					}
+				},
+				topLevelEntitiesNoPath: {
+					_config: {
+						isCollection: true
+					},
+					secondLevelEntities: {
+						_config: {
+							isCollection: true
+						}
+					}
 				}
 			},
 			'http://google.com',
@@ -159,7 +213,7 @@ describe('fetchData', () => {
 						method: 'POST',
 						queryParams: {}
 					}),
-					timedOut: call(delay, 30000)
+					timedOutResult: call(delay, 30000)
 				})
 			)
 		})
@@ -176,7 +230,7 @@ describe('fetchData', () => {
 						queryParams: {},
 						body: 'body'
 					}),
-					timedOut: call(delay, 30000)
+					timedOutResult: call(delay, 30000)
 				})
 			)
 		})
@@ -197,7 +251,7 @@ describe('fetchData', () => {
 							baz: 'quux'
 						}
 					}),
-					timedOut: call(delay, 30000)
+					timedOutResult: call(delay, 30000)
 				})
 			)
 		})
@@ -215,7 +269,7 @@ describe('fetchData', () => {
 						headers: { Authorization: 'Bearer some-access-token' },
 						queryParams: {}
 					}),
-					timedOut: call(delay, 30000)
+					timedOutResult: call(delay, 30000)
 				})
 			)
 		})
@@ -227,7 +281,7 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next(getState())
 			expect(putFetchRequestEffect.value).toEqual(
 				put(
-					createAction(actions.FETCH_TRY_FAILED, {
+					createAction(actions.FETCH_FAILED, {
 						modelName: 'test4',
 						errorData: 'Invalid URL'
 					})
@@ -244,7 +298,7 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next({ testServer: null })
 			expect(putFetchRequestEffect.value).toEqual(
 				put(
-					createAction(actions.FETCH_TRY_FAILED, {
+					createAction(actions.FETCH_FAILED, {
 						modelName: 'test4',
 						errorData: 'Invalid URL'
 					})
@@ -253,7 +307,7 @@ describe('fetchData', () => {
 		})
 
 		test('should populate basic parmater in path', () => {
-			const gen = fetchData({ modelName: 'test5', pathParams: { entityId: 1 } })
+			const gen = fetchData({ modelName: 'test5', pathParams: [1] })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
@@ -264,7 +318,7 @@ describe('fetchData', () => {
 						headers: { Authorization: 'Bearer some-access-token' },
 						queryParams: {}
 					}),
-					timedOut: call(delay, 30000)
+					timedOutResult: call(delay, 30000)
 				})
 			)
 		})
@@ -274,7 +328,7 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			expect(putFetchRequestEffect.value).toEqual(
 				put(
-					createAction(actions.FETCH_TRY_FAILED, {
+					createAction(actions.FETCH_FAILED, {
 						modelName: 'test5',
 						errorData: 'Invalid URL'
 					})
@@ -283,11 +337,24 @@ describe('fetchData', () => {
 		})
 
 		test('should fail to populate basic parameter in path if it is null', () => {
-			const gen = fetchData({ modelName: 'test5', pathParams: { entityId: null } })
+			const gen = fetchData({ modelName: 'test5', pathParams: [null] })
 			const putFetchRequestEffect = gen.next()
 			expect(putFetchRequestEffect.value).toEqual(
 				put(
-					createAction(actions.FETCH_TRY_FAILED, {
+					createAction(actions.FETCH_FAILED, {
+						modelName: 'test5',
+						errorData: 'Invalid URL'
+					})
+				)
+			)
+		})
+
+		test('should fail to populate basic parameter in path when "noStore" = true', () => {
+			const gen = fetchData({ modelName: 'test5', noStore: true })
+			const putFetchRequestEffect = gen.next()
+			expect(putFetchRequestEffect.value).toEqual(
+				put(
+					createAction(actions.TRANSIENT_FETCH_FAILED, {
 						modelName: 'test5',
 						errorData: 'Invalid URL'
 					})
@@ -296,7 +363,7 @@ describe('fetchData', () => {
 		})
 
 		test('should populate basic and store parameters in path', () => {
-			const gen = fetchData({ modelName: 'test6', pathParams: { entityId: 1 } })
+			const gen = fetchData({ modelName: 'test6', pathParams: [1] })
 			const selectEffect = gen.next()
 			const putFetchRequestEffect = gen.next({ testServer: 'baz' })
 			const tokenAccessCall = gen.next()
@@ -308,8 +375,75 @@ describe('fetchData', () => {
 						headers: { Authorization: 'Bearer some-access-token' },
 						queryParams: {}
 					}),
-					timedOut: call(delay, 30000)
+					timedOutResult: call(delay, 30000)
 				})
+			)
+		})
+
+		test('should construct path from modelName for collections without paths, no pathParams', () => {
+			const gen = fetchData({ modelName: 'topLevelEntitiesNoPath' })
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next(getOauthToken())
+			expect(raceEffect.value).toEqual(
+				race({
+					fetchResult: call(doFetch, {
+						path: '/api/topLevelEntitiesNoPath',
+						headers: { Authorization: 'Bearer some-access-token' },
+						queryParams: {}
+					}),
+					timedOutResult: call(delay, 30000)
+				})
+			)
+		})
+
+		test('should construct path from modelName for collections without paths, single level, with pathParams', () => {
+			const gen = fetchData({ modelName: 'topLevelEntitiesNoPath', pathParams: [1] })
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next(getOauthToken())
+			expect(raceEffect.value).toEqual(
+				race({
+					fetchResult: call(doFetch, {
+						path: '/api/topLevelEntitiesNoPath/1',
+						headers: { Authorization: 'Bearer some-access-token' },
+						queryParams: {}
+					}),
+					timedOutResult: call(delay, 30000)
+				})
+			)
+		})
+
+		test('should construct path from modelName for collections without paths, nested level, with pathParams', () => {
+			const gen = fetchData({
+				modelName: 'topLevelEntitiesNoPath.secondLevelEntities',
+				pathParams: [1]
+			})
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next(getOauthToken())
+			expect(raceEffect.value).toEqual(
+				race({
+					fetchResult: call(doFetch, {
+						path: '/api/topLevelEntitiesNoPath/1/secondLevelEntities',
+						headers: { Authorization: 'Bearer some-access-token' },
+						queryParams: {}
+					}),
+					timedOutResult: call(delay, 30000)
+				})
+			)
+		})
+
+		test('should fail to populate basic parameter in path if it is undefined, for collection', () => {
+			const gen = fetchData({ modelName: 'topLevelEntitiesNoPath', pathParams: [undefined] })
+			const putFetchRequestEffect = gen.next()
+			expect(putFetchRequestEffect.value).toEqual(
+				put(
+					createAction(actions.FETCH_FAILED, {
+						modelName: 'topLevelEntitiesNoPath',
+						errorData: 'Invalid URL'
+					})
+				)
 			)
 		})
 
@@ -337,7 +471,7 @@ describe('fetchData', () => {
 						headers: { Authorization: 'Bearer some-access-token' },
 						queryParams: {}
 					}),
-					timedOut: call(delay, 30000)
+					timedOutResult: call(delay, 30000)
 				})
 			)
 		})
@@ -400,12 +534,10 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
-			const putFetchTimedOutEffect = gen.next({ timedOut: true })
-			expect(putFetchTimedOutEffect.value).toEqual(
-				put(createAction(actions.FETCH_TIMED_OUT, { modelName: 'test' }))
-			)
-			gen.next()
-			expect(gen.next().value).toEqual(
+			const putFetchTimedOutEffect = gen.next({ timedOutResult: true })
+			const putTryFailedEffect = gen.next()
+			const delayAndPutAgainEffect = gen.next()
+			expect(delayAndPutAgainEffect.value).toEqual(
 				put(createAction(actions.FETCH_REQUESTED, { modelName: 'test' }))
 			)
 		})
@@ -415,12 +547,11 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
-			const putFetchTimedOutEffect = gen.next({ timedOut: true })
-			expect(putFetchTimedOutEffect.value).toEqual(
-				put(createAction(actions.FETCH_TIMED_OUT, { modelName: 'test' }))
-			)
-			gen.next()
-			expect(gen.next().done).toEqual(true)
+			const putFetchTimedOutEffect = gen.next({ timedOutResult: true })
+			const putTryFailedEffect = gen.next()
+			const putFailedEffect = gen.next()
+			const sagaDone = gen.next()
+			expect(sagaDone.done).toEqual(true)
 		})
 
 		test('should time out to a configurable value', () => {
@@ -435,7 +566,7 @@ describe('fetchData', () => {
 						headers: { Authorization: 'Bearer some-access-token' },
 						queryParams: {}
 					}),
-					timedOut: call(delay, 1000)
+					timedOutResult: call(delay, 1000)
 				})
 			)
 		})
@@ -446,63 +577,93 @@ describe('fetchData', () => {
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
 			const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error' } })
-			expect(fetchTryFailedEffect.value).toEqual(
-				put(
-					createAction(actions.FETCH_TRY_FAILED, {
-						modelName: 'test',
-						errorData: { title: 'Error' }
-					})
-				)
-			)
-			const delayEffect = gen.next()
-			const putFetchRequestEffectAgain = gen.next()
-			expect(putFetchRequestEffectAgain.value).toEqual(
+			const putTryFailedEffect = gen.next()
+			const delayAndPutAgainEffect = gen.next()
+			expect(delayAndPutAgainEffect.value).toEqual(
 				put(createAction(actions.FETCH_REQUESTED, { modelName: 'test' }))
 			)
 		})
 
 		test('should dispatch FETCH_FAILED when all retries have failed', () => {
 			const gen = fetchData({ modelName: 'test' })
+			const putFetchRequestEffect = gen.next()
 			for (let i = 0; i <= 3; i++) {
-				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next(getOauthToken())
 				const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error' } })
-				expect(fetchTryFailedEffect.value).toEqual(
-					put(
-						createAction(actions.FETCH_TRY_FAILED, {
-							modelName: 'test',
-							errorData: { title: 'Error' }
-						})
+				const putTryFailedEffect = gen.next()
+				if (i < 3) {
+					const delayAndPutAgainEffect = gen.next()
+					expect(delayAndPutAgainEffect.value).toEqual(
+						put(createAction(actions.FETCH_REQUESTED, { modelName: 'test' }))
 					)
-				)
-				const delayEffect = gen.next()
+				}
 			}
-			const putFetchFailedEffect = gen.next()
-			expect(putFetchFailedEffect.value).toEqual(
-				put(createAction(actions.FETCH_FAILED, { modelName: 'test' }))
+			const delayAndPutFetchFailedEffect = gen.next()
+			expect(delayAndPutFetchFailedEffect.value).toEqual(
+				put(
+					createAction(actions.FETCH_FAILED, {
+						modelName: 'test',
+						errorData: { didTimeOut: false, title: 'Error' }
+					})
+				)
 			)
 			const sagaDone = gen.next()
 			expect(sagaDone.done).toEqual(true)
 		})
 
-		test('should not dispatch FETCH_FAILED when all retries were timeouts', () => {
+		test('should dispatch FETCH_FAILED with didTimeOut if all tries timedOut', () => {
 			const gen = fetchData({ modelName: 'test' })
+			const putFetchRequestEffect = gen.next()
 			for (let i = 0; i <= 3; i++) {
-				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next(getOauthToken())
-				const putFetchTimedOutEffect = gen.next({ timedOut: true })
-				expect(putFetchTimedOutEffect.value).toEqual(
-					put(
-						createAction(actions.FETCH_TIMED_OUT, {
-							modelName: 'test'
-						})
+				const fetchTryFailedEffect = gen.next({ timedOutResult: true })
+				const putTryFailedEffect = gen.next()
+				if (i < 3) {
+					const delayAndPutAgainEffect = gen.next()
+					expect(delayAndPutAgainEffect.value).toEqual(
+						put(createAction(actions.FETCH_REQUESTED, { modelName: 'test' }))
 					)
-				)
-				const delayEffect = gen.next()
+				}
 			}
+			const delayAndPutFetchFailedEffect = gen.next()
+			expect(delayAndPutFetchFailedEffect.value).toEqual(
+				put(
+					createAction(actions.FETCH_FAILED, {
+						modelName: 'test',
+						errorData: { didTimeOut: true }
+					})
+				)
+			)
+			const sagaDone = gen.next()
+			expect(sagaDone.done).toEqual(true)
+		})
 
+		test('should dispatch TRANSIENT_FETCH_FAILED when all retries have failed for TRANSIENT_FETCH request', () => {
+			const gen = fetchData({ modelName: 'test', noStore: true })
+			const putFetchRequestEffect = gen.next()
+			for (let i = 0; i <= 3; i++) {
+				const tokenAccessCall = gen.next()
+				const raceEffect = gen.next(getOauthToken())
+				const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error' } })
+				const putTryFailedEffect = gen.next()
+				if (i < 3) {
+					const delayAndPutAgainEffect = gen.next()
+					expect(delayAndPutAgainEffect.value).toEqual(
+						put(createAction(actions.TRANSIENT_FETCH_REQUESTED, { modelName: 'test' }))
+					)
+				}
+			}
+			const delayAndPutFetchFailedEffect = gen.next()
+			expect(delayAndPutFetchFailedEffect.value).toEqual(
+				put(
+					createAction(actions.TRANSIENT_FETCH_FAILED, {
+						modelName: 'test',
+						errorData: { didTimeOut: false, title: 'Error' }
+					})
+				)
+			)
 			const sagaDone = gen.next()
 			expect(sagaDone.done).toEqual(true)
 		})
@@ -514,8 +675,29 @@ describe('fetchData', () => {
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
 			const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error', code: 401 } })
+			const putTryFailedEffect = gen.next()
 			const delayEffect = gen.next()
 			expect(errorOutput).toEqual(null)
+		})
+
+		test('should not return errorData if some unrelated error occurred', () => {
+			errorOutput = null
+			const gen = fetchData({ modelName: 'test', noRetry: true })
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next(getOauthToken())
+			const throwFetchErrorEffect = gen.throw('some other error')
+			const putTryFailedEffect = gen.next()
+			const putErrorEffect = gen.next()
+			expect(putErrorEffect.value).toEqual(
+				put(
+					createAction(actions.FETCH_FAILED, {
+						modelName: 'test'
+					})
+				)
+			)
+			const sagaDone = gen.next()
+			expect(sagaDone.done).toEqual(true)
 		})
 	})
 
@@ -538,18 +720,24 @@ describe('fetchData', () => {
 						createAction(actions.FETCH_RESULT_RECEIVED, {
 							data: {
 								1: {
-									data: { id: 1, name: 'foo' },
-									isFetching: false,
-									hasError: false,
-									timedOut: false,
-									fetchedAt
+									id: 1,
+									name: 'foo',
+									_metadata: {
+										isFetching: false,
+										hasError: false,
+										timedOut: false,
+										fetchedAt
+									}
 								},
 								2: {
-									data: { id: 2, name: 'bar' },
-									isFetching: false,
-									hasError: false,
-									timedOut: false,
-									fetchedAt
+									id: 2,
+									name: 'bar',
+									_metadata: {
+										isFetching: false,
+										hasError: false,
+										timedOut: false,
+										fetchedAt
+									}
 								}
 							},
 							modelName: 'entities'
@@ -576,18 +764,24 @@ describe('fetchData', () => {
 						createAction(actions.FETCH_RESULT_RECEIVED, {
 							data: {
 								1: {
-									data: { id: 1, name: 'foo' },
-									isFetching: false,
-									hasError: false,
-									timedOut: false,
-									fetchedAt
+									id: 1,
+									name: 'foo',
+									_metadata: {
+										isFetching: false,
+										hasError: false,
+										timedOut: false,
+										fetchedAt
+									}
 								},
 								2: {
-									data: { id: 2, name: 'bar' },
-									isFetching: false,
-									hasError: false,
-									timedOut: false,
-									fetchedAt
+									id: 2,
+									name: 'bar',
+									_metadata: {
+										isFetching: false,
+										hasError: false,
+										timedOut: false,
+										fetchedAt
+									}
 								}
 							},
 							modelName: 'entities'
@@ -599,10 +793,10 @@ describe('fetchData', () => {
 		})
 
 		describe('GET item', () => {
-			test('should append pathParam "/{:id}" onto path if "pathParams.id" exists', () => {
+			test('should append pathParam "/{:id}" onto path if "pathParams" array includes a single value', () => {
 				const gen = fetchData({
 					modelName: 'entities',
-					pathParams: { id: 999 }
+					pathParams: [999]
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -612,10 +806,9 @@ describe('fetchData', () => {
 						fetchResult: call(doFetch, {
 							path: 'http://www.google.com/entities/999',
 							headers: { Authorization: 'Bearer some-access-token' },
-							isCollection: true,
 							queryParams: {}
 						}),
-						timedOut: call(delay, 30000)
+						timedOutResult: call(delay, 30000)
 					})
 				)
 			})
@@ -624,7 +817,7 @@ describe('fetchData', () => {
 				const guid = uuid.v4()
 				const gen = fetchData({
 					modelName: 'entities',
-					pathParams: { id: 2 },
+					pathParams: [2],
 					guid
 				})
 				const putFetchRequestEffect = gen.next()
@@ -637,7 +830,7 @@ describe('fetchData', () => {
 					put(
 						createAction(actions.FETCH_RESULT_RECEIVED, {
 							data: { id: 2, name: 'bar', guid },
-							modelName: 'entities.data.2'
+							modelName: 'entities.2'
 						})
 					)
 				)
@@ -657,10 +850,9 @@ describe('fetchData', () => {
 							path: 'http://www.google.com/entities',
 							headers: { Authorization: 'Bearer some-access-token' },
 							method: 'POST',
-							isCollection: true,
 							queryParams: {}
 						}),
-						timedOut: call(delay, 30000)
+						timedOutResult: call(delay, 30000)
 					})
 				)
 			})
@@ -672,7 +864,7 @@ describe('fetchData', () => {
 				expect(putFetchRequestEffect.value).toEqual(
 					put(
 						createAction(actions.FETCH_REQUESTED, {
-							modelName: `entities.data.${guid}`
+							modelName: `entities.${guid}`
 						})
 					)
 				)
@@ -696,7 +888,7 @@ describe('fetchData', () => {
 					put(
 						createAction(actions.FETCH_RESULT_RECEIVED, {
 							data: { id: 3, name: 'baz', guid },
-							modelName: 'entities.data.3'
+							modelName: 'entities.3'
 						})
 					)
 				)
@@ -720,7 +912,7 @@ describe('fetchData', () => {
 				expect(resultStoredEffect.value).toEqual(
 					put(
 						createAction(actions.KEY_REMOVAL_REQUESTED, {
-							modelName: `entities.data.${guid}`
+							modelName: `entities.${guid}`
 						})
 					)
 				)
@@ -732,7 +924,7 @@ describe('fetchData', () => {
 				const gen = fetchData({
 					modelName: 'entities',
 					method: 'DELETE',
-					pathParams: { id: 999 }
+					pathParams: [999]
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -743,10 +935,9 @@ describe('fetchData', () => {
 							path: 'http://www.google.com/entities/999',
 							method: 'DELETE',
 							headers: { Authorization: 'Bearer some-access-token' },
-							isCollection: true,
 							queryParams: {}
 						}),
-						timedOut: call(delay, 30000)
+						timedOutResult: call(delay, 30000)
 					})
 				)
 			})
@@ -756,7 +947,7 @@ describe('fetchData', () => {
 				const gen = fetchData({
 					modelName: 'entities',
 					method: 'DELETE',
-					pathParams: { id: 2 },
+					pathParams: [2],
 					guid
 				})
 				const putFetchRequestEffect = gen.next()
@@ -769,7 +960,292 @@ describe('fetchData', () => {
 					put(
 						createAction(actions.KEY_REMOVAL_REQUESTED, {
 							data: { guid },
-							modelName: 'entities.data.2'
+							modelName: 'entities.2'
+						})
+					)
+				)
+				expect(gen.next().done).toEqual(true)
+			})
+		})
+	})
+
+	describe('nested collection fetch', () => {
+		describe('GET nested collection', () => {
+			test('should return a key-value object by id of nested items, from an api array', () => {
+				const fetchedAt = new Date()
+				const _Date = Date
+				global.Date = jest.fn(() => fetchedAt)
+
+				const gen = fetchData({
+					modelName: 'topLevelEntities.secondLevelEntities',
+					pathParams: [1]
+				})
+				const putFetchRequestEffect = gen.next()
+				const tokenAccessCall = gen.next()
+				const raceEffect = gen.next()
+				const resultReceivedEffect = gen.next({
+					fetchResult: [{ id: 1, name: 'foo' }, { id: 2, name: 'bar' }]
+				})
+				expect(resultReceivedEffect.value).toEqual(
+					put(
+						createAction(actions.FETCH_RESULT_RECEIVED, {
+							data: {
+								1: {
+									id: 1,
+									name: 'foo',
+									_metadata: {
+										isFetching: false,
+										hasError: false,
+										timedOut: false,
+										fetchedAt
+									}
+								},
+								2: {
+									id: 2,
+									name: 'bar',
+									_metadata: {
+										isFetching: false,
+										hasError: false,
+										timedOut: false,
+										fetchedAt
+									}
+								}
+							},
+							modelName: 'topLevelEntities.1.secondLevelEntities'
+						})
+					)
+				)
+				expect(gen.next().done).toEqual(true)
+			})
+
+			test('should return a key-value object by id of nested items, from a key-value api object', () => {
+				const fetchedAt = new Date()
+				const _Date = Date
+				global.Date = jest.fn(() => fetchedAt)
+
+				const gen = fetchData({
+					modelName: 'topLevelEntities.secondLevelEntities',
+					pathParams: [1]
+				})
+				const putFetchRequestEffect = gen.next()
+				const tokenAccessCall = gen.next()
+				const raceEffect = gen.next()
+				const resultReceivedEffect = gen.next({
+					fetchResult: { '1': { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
+				})
+				expect(resultReceivedEffect.value).toEqual(
+					put(
+						createAction(actions.FETCH_RESULT_RECEIVED, {
+							data: {
+								1: {
+									id: 1,
+									name: 'foo',
+									_metadata: {
+										isFetching: false,
+										hasError: false,
+										timedOut: false,
+										fetchedAt
+									}
+								},
+								2: {
+									id: 2,
+									name: 'bar',
+									_metadata: {
+										isFetching: false,
+										hasError: false,
+										timedOut: false,
+										fetchedAt
+									}
+								}
+							},
+							modelName: 'topLevelEntities.1.secondLevelEntities'
+						})
+					)
+				)
+				expect(gen.next().done).toEqual(true)
+			})
+		})
+
+		describe('GET item', () => {
+			test('should replace pathParams of "/{:id}" in path if "pathParams" array includes any values', () => {
+				const gen = fetchData({
+					modelName: 'topLevelEntities.secondLevelEntities',
+					pathParams: [1, 999]
+				})
+				const putFetchRequestEffect = gen.next()
+				const tokenAccessCall = gen.next()
+				const raceEffect = gen.next(getOauthToken())
+				expect(raceEffect.value).toEqual(
+					race({
+						fetchResult: call(doFetch, {
+							path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999',
+							headers: { Authorization: 'Bearer some-access-token' },
+							queryParams: {}
+						}),
+						timedOutResult: call(delay, 30000)
+					})
+				)
+			})
+
+			test('should add new single nested entity by id', () => {
+				const guid = uuid.v4()
+				const gen = fetchData({
+					modelName: 'topLevelEntities.secondLevelEntities',
+					pathParams: [2, 999],
+					guid
+				})
+				const putFetchRequestEffect = gen.next()
+				const tokenAccessCall = gen.next()
+				const raceEffect = gen.next()
+				const resultReceivedEffect = gen.next({
+					fetchResult: { id: 999, name: 'bar' }
+				})
+				expect(resultReceivedEffect.value).toEqual(
+					put(
+						createAction(actions.FETCH_RESULT_RECEIVED, {
+							data: { id: 999, name: 'bar', guid },
+							modelName: 'topLevelEntities.2.secondLevelEntities.999'
+						})
+					)
+				)
+				expect(gen.next().done).toEqual(true)
+			})
+		})
+
+		describe('POST item', () => {
+			test('should not append pathParam "/{:id}" onto path if action.method is "POST"', () => {
+				const gen = fetchData({
+					modelName: 'topLevelEntities.secondLevelEntities',
+					pathParams: [1],
+					method: 'POST'
+				})
+				const putFetchRequestEffect = gen.next()
+				const tokenAccessCall = gen.next()
+				const raceEffect = gen.next(getOauthToken())
+				expect(raceEffect.value).toEqual(
+					race({
+						fetchResult: call(doFetch, {
+							path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities',
+							headers: { Authorization: 'Bearer some-access-token' },
+							method: 'POST',
+							queryParams: {}
+						}),
+						timedOutResult: call(delay, 30000)
+					})
+				)
+			})
+
+			test('should store a temp item under "guid" key during request', () => {
+				const guid = uuid.v4()
+				const gen = fetchData({
+					modelName: 'topLevelEntities.secondLevelEntities',
+					pathParams: [1],
+					method: 'POST',
+					guid
+				})
+				const putFetchRequestEffect = gen.next()
+				expect(putFetchRequestEffect.value).toEqual(
+					put(
+						createAction(actions.FETCH_REQUESTED, {
+							modelName: `topLevelEntities.1.secondLevelEntities.${guid}`
+						})
+					)
+				)
+			})
+
+			test('should add new item by "id" key after request', () => {
+				const guid = uuid.v4()
+				const gen = fetchData({
+					modelName: 'topLevelEntities.secondLevelEntities',
+					pathParams: [1],
+					method: 'POST',
+					guid,
+					body: { name: 'baz' }
+				})
+				const putFetchRequestEffect = gen.next()
+				const tokenAccessCall = gen.next()
+				const raceEffect = gen.next()
+				const resultReceivedEffect = gen.next({
+					fetchResult: { id: 3, name: 'baz' }
+				})
+				expect(resultReceivedEffect.value).toEqual(
+					put(
+						createAction(actions.FETCH_RESULT_RECEIVED, {
+							data: { id: 3, name: 'baz', guid },
+							modelName: 'topLevelEntities.1.secondLevelEntities.3'
+						})
+					)
+				)
+			})
+
+			test('should remove temp item by "guid" key after request', () => {
+				const guid = uuid.v4()
+				const gen = fetchData({
+					modelName: 'topLevelEntities.secondLevelEntities',
+					pathParams: [1],
+					method: 'POST',
+					guid,
+					body: { name: 'baz' }
+				})
+				const putFetchRequestEffect = gen.next()
+				const tokenAccessCall = gen.next()
+				const raceEffect = gen.next()
+				const resultReceivedEffect = gen.next({
+					fetchResult: { id: 3, name: 'baz' }
+				})
+				const resultStoredEffect = gen.next()
+				expect(resultStoredEffect.value).toEqual(
+					put(
+						createAction(actions.KEY_REMOVAL_REQUESTED, {
+							modelName: `topLevelEntities.1.secondLevelEntities.${guid}`
+						})
+					)
+				)
+			})
+		})
+
+		describe('DELETE item', () => {
+			test('should append pathParam "/{:id}" onto path if "pathParams.id" exists', () => {
+				const gen = fetchData({
+					modelName: 'topLevelEntities.secondLevelEntities',
+					method: 'DELETE',
+					pathParams: [1, 999]
+				})
+				const putFetchRequestEffect = gen.next()
+				const tokenAccessCall = gen.next()
+				const raceEffect = gen.next(getOauthToken())
+				expect(raceEffect.value).toEqual(
+					race({
+						fetchResult: call(doFetch, {
+							path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999',
+							method: 'DELETE',
+							headers: { Authorization: 'Bearer some-access-token' },
+							queryParams: {}
+						}),
+						timedOutResult: call(delay, 30000)
+					})
+				)
+			})
+
+			test('should remove item by id', () => {
+				const guid = uuid.v4()
+				const gen = fetchData({
+					modelName: 'topLevelEntities.secondLevelEntities',
+					method: 'DELETE',
+					pathParams: [1, 2],
+					guid
+				})
+				const putFetchRequestEffect = gen.next()
+				const tokenAccessCall = gen.next()
+				const raceEffect = gen.next()
+				const resultReceivedEffect = gen.next({
+					fetchResult: 'success'
+				})
+				expect(resultReceivedEffect.value).toEqual(
+					put(
+						createAction(actions.KEY_REMOVAL_REQUESTED, {
+							data: { guid },
+							modelName: 'topLevelEntities.1.secondLevelEntities.2'
 						})
 					)
 				)

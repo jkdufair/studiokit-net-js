@@ -1,18 +1,26 @@
 // @flow
 
 import actions from './actions'
-import _ from 'lodash/fp'
+import _ from 'lodash'
+import _fp from 'lodash/fp'
 
 import type { Action } from 'redux'
 
 type FetchState = {}
 
-type ModelState = {
+type MetadataState = {
 	isFetching: boolean,
 	hasError: boolean,
 	timedOut: boolean,
-	data?: Object,
 	fetchedAt?: Date
+}
+
+type ModelState = {
+	_metadata: MetadataState
+}
+
+function getMetadata(state: FetchState, path: Array<string>): MetadataState {
+	return _.merge({}, _.get(state, path.concat('_metadata')))
 }
 
 /**
@@ -31,39 +39,38 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 		return state
 	}
 	const path: Array<string> = action.modelName.split('.')
-	const newValue = {}
-	newValue.data = _.get(path.concat('data'), state)
-	newValue.fetchedAt = _.get(_.union(['fetchedAt'], path), state)
+	let newValue = _.merge({}, _.get(state, path))
+	const metadata = getMetadata(state, path)
 
 	switch (action.type) {
 		case actions.FETCH_REQUESTED:
-			newValue.isFetching = true
-			newValue.hasError = false
-			newValue.timedOut = false
-			return _.set(path, newValue, state)
+			newValue._metadata = _.merge(metadata, {
+				isFetching: true,
+				hasError: false,
+				timedOut: false
+			})
+			return _fp.set(path, newValue, state)
 
 		case actions.FETCH_RESULT_RECEIVED:
-			newValue.data = action.data
-			newValue.isFetching = false
-			newValue.hasError = false
-			newValue.timedOut = false
-			newValue.fetchedAt = new Date()
-			return _.set(path, newValue, state)
+			newValue = action.data
+			newValue._metadata = _.merge(metadata, {
+				isFetching: false,
+				hasError: false,
+				timedOut: false,
+				fetchedAt: new Date()
+			})
+			return _fp.set(path, newValue, state)
 
 		case actions.FETCH_FAILED:
-			newValue.isFetching = false
-			newValue.hasError = true
-			newValue.timedOut = false
-			return _.set(path, newValue, state)
-
-		case actions.FETCH_TIMED_OUT:
-			newValue.isFetching = false
-			newValue.hasError = true
-			newValue.timedOut = true
-			return _.set(path, newValue, state)
+			newValue._metadata = _.merge(metadata, {
+				isFetching: false,
+				hasError: true,
+				timedOut: !!action.didTimeOut
+			})
+			return _fp.set(path, newValue, state)
 
 		case actions.KEY_REMOVAL_REQUESTED:
-			return _.unset(path, state)
+			return _fp.unset(path, state)
 
 		default:
 			return state

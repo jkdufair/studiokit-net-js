@@ -11,14 +11,14 @@ describe('fetchReducer', () => {
 		test('single level', () => {
 			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'test' })
 			expect(state).toEqual({
-				test: { isFetching: true, hasError: false, timedOut: false }
+				test: { _metadata: { isFetching: true, hasError: false, timedOut: false } }
 			})
 		})
 
 		test('nested level', () => {
 			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'user.test' })
 			expect(state).toEqual({
-				user: { test: { isFetching: true, hasError: false, timedOut: false } }
+				user: { test: { _metadata: { isFetching: true, hasError: false, timedOut: false } } }
 			})
 		})
 
@@ -29,7 +29,7 @@ describe('fetchReducer', () => {
 			)
 			expect(state).toEqual({
 				foo: 'bar',
-				user: { test: { isFetching: true, hasError: false, timedOut: false } }
+				user: { test: { _metadata: { isFetching: true, hasError: false, timedOut: false } } }
 			})
 		})
 
@@ -39,7 +39,10 @@ describe('fetchReducer', () => {
 				{ type: actions.FETCH_REQUESTED, modelName: 'user.test' }
 			)
 			expect(state).toEqual({
-				user: { foo: 'bar', test: { isFetching: true, hasError: false, timedOut: false } }
+				user: {
+					foo: 'bar',
+					test: { _metadata: { isFetching: true, hasError: false, timedOut: false } }
+				}
 			})
 		})
 
@@ -49,22 +52,26 @@ describe('fetchReducer', () => {
 			const state = fetchReducer(
 				{
 					test: {
-						data: { foo: 'bar' },
-						isFetching: false,
-						hasError: false,
-						timedOut: false,
-						fetchedAt: fetchedDate
+						foo: 'bar',
+						_metadata: {
+							isFetching: false,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedDate
+						}
 					}
 				},
 				{ type: actions.FETCH_REQUESTED, modelName: 'test' }
 			)
 			expect(state).toEqual({
 				test: {
-					data: { foo: 'bar' },
-					isFetching: true,
-					hasError: false,
-					timedOut: false,
-					fetchedAt: fetchedDate
+					foo: 'bar',
+					_metadata: {
+						isFetching: true,
+						hasError: false,
+						timedOut: false,
+						fetchedAt: fetchedDate
+					}
 				}
 			})
 		})
@@ -85,11 +92,13 @@ describe('fetchReducer', () => {
 			)
 			expect(state).toEqual({
 				test: {
-					isFetching: false,
-					hasError: false,
-					timedOut: false,
-					fetchedAt: fetchedAtDate,
-					data: { key: 'value' }
+					_metadata: {
+						isFetching: false,
+						hasError: false,
+						timedOut: false,
+						fetchedAt: fetchedAtDate
+					},
+					key: 'value'
 				}
 			})
 			global.Date = _Date
@@ -110,11 +119,13 @@ describe('fetchReducer', () => {
 			expect(state).toEqual({
 				user: {
 					test: {
-						isFetching: false,
-						hasError: false,
-						timedOut: false,
-						fetchedAt: fetchedAtDate,
-						data: { key: 'value' }
+						_metadata: {
+							isFetching: false,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedAtDate
+						},
+						key: 'value'
 					}
 				}
 			})
@@ -136,11 +147,13 @@ describe('fetchReducer', () => {
 				foo: 'bar',
 				user: {
 					test: {
-						isFetching: false,
-						hasError: false,
-						timedOut: false,
-						fetchedAt: fetchedAtDate,
-						data: { key: 'value' }
+						_metadata: {
+							isFetching: false,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedAtDate
+						},
+						key: 'value'
 					}
 				}
 			})
@@ -165,11 +178,13 @@ describe('fetchReducer', () => {
 			expect(state).toEqual({
 				user: {
 					test: {
-						isFetching: false,
-						hasError: false,
-						timedOut: false,
-						fetchedAt: fetchedAtDate,
-						data: { key: 'value' }
+						_metadata: {
+							isFetching: false,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedAtDate
+						},
+						key: 'value'
 					}
 				}
 			})
@@ -195,11 +210,13 @@ describe('fetchReducer', () => {
 				user: {
 					existingKey: { foo: 'bar' },
 					test: {
-						isFetching: false,
-						hasError: false,
-						timedOut: false,
-						fetchedAt: fetchedAtDate,
-						data: { key: 'value' }
+						_metadata: {
+							isFetching: false,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedAtDate
+						},
+						key: 'value'
 					}
 				}
 			})
@@ -214,11 +231,14 @@ describe('fetchReducer', () => {
 				{
 					user: {
 						test: {
-							isFetching: false,
-							hasError: false,
-							timedOut: false,
-							fetchedAt: fetchedAtDate,
-							data: { key: 'value', key2: 'value2' }
+							_metadata: {
+								isFetching: false,
+								hasError: false,
+								timedOut: false,
+								fetchedAt: fetchedAtDate
+							},
+							key: 'value',
+							key2: 'value2'
 						}
 					}
 				},
@@ -231,11 +251,13 @@ describe('fetchReducer', () => {
 			expect(state).toEqual({
 				user: {
 					test: {
-						isFetching: false,
-						hasError: false,
-						timedOut: false,
-						fetchedAt: fetchedAtDate,
-						data: { key: 'value' }
+						_metadata: {
+							isFetching: false,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedAtDate
+						},
+						key: 'value'
 					}
 				}
 			})
@@ -249,33 +271,34 @@ describe('fetchReducer', () => {
 			const state = fetchReducer(
 				{
 					groups: {
-						data: {
-							1: {
+						1: {
+							_metadata: {
 								isFetching: false,
 								hasError: false,
 								timedOut: false,
-								fetchedAt: fetchedAtDate,
-								data: { key: 'value', key2: 'value2' }
-							}
+								fetchedAt: fetchedAtDate
+							},
+							key: 'value',
+							key2: 'value2'
 						}
 					}
 				},
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
-					modelName: 'groups.data.1',
+					modelName: 'groups.1',
 					data: { key: 'value' }
 				}
 			)
 			expect(state).toEqual({
 				groups: {
-					data: {
-						1: {
+					1: {
+						_metadata: {
 							isFetching: false,
 							hasError: false,
 							timedOut: false,
-							fetchedAt: fetchedAtDate,
-							data: { key: 'value' }
-						}
+							fetchedAt: fetchedAtDate
+						},
+						key: 'value'
 					}
 				}
 			})
@@ -286,14 +309,24 @@ describe('fetchReducer', () => {
 		test('single level', () => {
 			const state = fetchReducer({}, { type: actions.FETCH_FAILED, modelName: 'test' })
 			expect(state).toEqual({
-				test: { isFetching: false, hasError: true, timedOut: false }
+				test: { _metadata: { isFetching: false, hasError: true, timedOut: false } }
+			})
+		})
+
+		test('single level, didTimeOut = true', () => {
+			const state = fetchReducer(
+				{},
+				{ type: actions.FETCH_FAILED, modelName: 'test', didTimeOut: true }
+			)
+			expect(state).toEqual({
+				test: { _metadata: { isFetching: false, hasError: true, timedOut: true } }
 			})
 		})
 
 		test('nested level', () => {
 			const state = fetchReducer({}, { type: actions.FETCH_FAILED, modelName: 'user.test' })
 			expect(state).toEqual({
-				user: { test: { isFetching: false, hasError: true, timedOut: false } }
+				user: { test: { _metadata: { isFetching: false, hasError: true, timedOut: false } } }
 			})
 		})
 
@@ -304,7 +337,7 @@ describe('fetchReducer', () => {
 			)
 			expect(state).toEqual({
 				foo: 'bar',
-				user: { test: { isFetching: false, hasError: true, timedOut: false } }
+				user: { test: { _metadata: { isFetching: false, hasError: true, timedOut: false } } }
 			})
 		})
 
@@ -314,7 +347,10 @@ describe('fetchReducer', () => {
 				{ type: actions.FETCH_FAILED, modelName: 'user.test' }
 			)
 			expect(state).toEqual({
-				user: { foo: 'bar', test: { isFetching: false, hasError: true, timedOut: false } }
+				user: {
+					foo: 'bar',
+					test: { _metadata: { isFetching: false, hasError: true, timedOut: false } }
+				}
 			})
 		})
 
@@ -325,9 +361,10 @@ describe('fetchReducer', () => {
 			const state = fetchReducer(
 				{
 					groups: {
-						data: {
-							1: {
-								data: { id: 1, foo: 'bar' },
+						1: {
+							id: 1,
+							foo: 'bar',
+							_metadata: {
 								isFetching: true,
 								hasError: false,
 								timedOut: false,
@@ -336,13 +373,14 @@ describe('fetchReducer', () => {
 						}
 					}
 				},
-				{ type: actions.FETCH_FAILED, modelName: 'groups.data.1' }
+				{ type: actions.FETCH_FAILED, modelName: 'groups.1' }
 			)
 			expect(state).toEqual({
 				groups: {
-					data: {
-						1: {
-							data: { id: 1, foo: 'bar' },
+					1: {
+						id: 1,
+						foo: 'bar',
+						_metadata: {
 							isFetching: false,
 							hasError: true,
 							timedOut: false,
@@ -350,43 +388,6 @@ describe('fetchReducer', () => {
 						}
 					}
 				}
-			})
-		})
-	})
-
-	describe('FETCH_TIMED_OUT', () => {
-		test('single level', () => {
-			const state = fetchReducer({}, { type: actions.FETCH_TIMED_OUT, modelName: 'test' })
-			expect(state).toEqual({
-				test: { isFetching: false, hasError: true, timedOut: true }
-			})
-		})
-
-		test('nested level', () => {
-			const state = fetchReducer({}, { type: actions.FETCH_TIMED_OUT, modelName: 'user.test' })
-			expect(state).toEqual({
-				user: { test: { isFetching: false, hasError: true, timedOut: true } }
-			})
-		})
-
-		test('nested level merge state', () => {
-			const state = fetchReducer(
-				{ foo: 'bar' },
-				{ type: actions.FETCH_TIMED_OUT, modelName: 'user.test' }
-			)
-			expect(state).toEqual({
-				foo: 'bar',
-				user: { test: { isFetching: false, hasError: true, timedOut: true } }
-			})
-		})
-
-		test('nested level replace state', () => {
-			const state = fetchReducer(
-				{ user: { foo: 'bar' } },
-				{ type: actions.FETCH_TIMED_OUT, modelName: 'user.test' }
-			)
-			expect(state).toEqual({
-				user: { foo: 'bar', test: { isFetching: false, hasError: true, timedOut: true } }
 			})
 		})
 	})
@@ -402,18 +403,18 @@ describe('fetchReducer', () => {
 
 		test('remove key nested', () => {
 			const state = fetchReducer(
-				{ test: 'foo', test2: 'bar' },
+				{ test: { foo: 'bar' }, test2: { baz: 'bat' } },
 				{ type: actions.KEY_REMOVAL_REQUESTED, modelName: 'test' }
 			)
-			expect(state).toEqual({ test2: 'bar' })
+			expect(state).toEqual({ test2: { baz: 'bat' } })
 		})
 
 		test('remove key collection nested', () => {
 			const state = fetchReducer(
-				{ groups: { data: { 1: { data: { id: 1, name: 'group name' } } } } },
-				{ type: actions.KEY_REMOVAL_REQUESTED, modelName: 'groups.data.1' }
+				{ groups: { 1: { id: 1, name: 'group name' } } },
+				{ type: actions.KEY_REMOVAL_REQUESTED, modelName: 'groups.1' }
 			)
-			expect(state).toEqual({ groups: { data: {} } })
+			expect(state).toEqual({ groups: {} })
 		})
 	})
 
@@ -422,7 +423,9 @@ describe('fetchReducer', () => {
 			const state = {}
 
 			const state2 = fetchReducer(state, { type: actions.FETCH_REQUESTED, modelName: 'test' })
-			expect(state2).toEqual({ test: { isFetching: true, hasError: false, timedOut: false } })
+			expect(state2).toEqual({
+				test: { _metadata: { isFetching: true, hasError: false, timedOut: false } }
+			})
 
 			const state3 = fetchReducer(state2, {
 				type: actions.FETCH_RESULT_RECEIVED,
@@ -434,11 +437,13 @@ describe('fetchReducer', () => {
 			global.Date = jest.fn(() => fetchedAtDate)
 			expect(state3).toEqual({
 				test: {
-					isFetching: false,
-					hasError: false,
-					timedOut: false,
-					data: { foo: 'bar' },
-					fetchedAt: fetchedAtDate
+					_metadata: {
+						isFetching: false,
+						hasError: false,
+						timedOut: false,
+						fetchedAt: fetchedAtDate
+					},
+					foo: 'bar'
 				}
 			})
 
@@ -450,11 +455,14 @@ describe('fetchReducer', () => {
 			})
 			expect(state4).toEqual({
 				test: {
-					isFetching: false,
-					hasError: false,
-					timedOut: false,
-					data: { baz: 'quux', bleb: 'fleb' },
-					fetchedAt: fetchedAtDate
+					_metadata: {
+						isFetching: false,
+						hasError: false,
+						timedOut: false,
+						fetchedAt: fetchedAtDate
+					},
+					baz: 'quux',
+					bleb: 'fleb'
 				}
 			})
 
@@ -464,13 +472,15 @@ describe('fetchReducer', () => {
 
 	describe('default action', () => {
 		test("don't do nada", () => {
-			const state = fetchReducer({ test: 'foo' }, { type: 'FOOBAR', modelName: 'test' })
-			expect(state).toEqual({ test: 'foo' })
+			const state = fetchReducer({ test: { foo: 'bar' } }, { type: 'FOOBAR', modelName: 'test' })
+			expect(state).toEqual({ test: { foo: 'bar' } })
 		})
 
 		test('no state parameter passed', () => {
 			const state = fetchReducer(undefined, { type: actions.FETCH_REQUESTED, modelName: 'test' })
-			expect(state).toEqual({ test: { isFetching: true, hasError: false, timedOut: false } })
+			expect(state).toEqual({
+				test: { _metadata: { isFetching: true, hasError: false, timedOut: false } }
+			})
 		})
 	})
 })

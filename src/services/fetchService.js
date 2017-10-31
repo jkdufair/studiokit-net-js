@@ -1,6 +1,7 @@
 // @flow
 
 import { call } from 'redux-saga/effects'
+import _ from 'lodash'
 
 type FetchConfig = {
 	queryParams: Object,
@@ -65,7 +66,7 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 	}
 
 	const method = config.method || 'GET'
-	const headers = Object.assign(
+	const headers = _.merge(
 		{},
 		{
 			'Content-Type': 'application/json; charset=utf-8'
@@ -80,5 +81,20 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 		headers: headers,
 		body
 	})
-	return response ? yield call(() => response.json()) : yield call(() => null)
+	if (!response) {
+		return null
+	}
+	const responseJson = yield call(() => response.json())
+	if (!response.ok) {
+		return _.merge(
+			{},
+			{
+				title: 'Error',
+				message: response.statusText,
+				code: response.status
+			},
+			responseJson
+		)
+	}
+	return responseJson
 }

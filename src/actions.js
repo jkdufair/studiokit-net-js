@@ -1,4 +1,5 @@
 // @flow
+import _ from 'lodash'
 
 // App-level request
 const DATA_REQUESTED = 'application/DATA_REQUESTED'
@@ -16,14 +17,13 @@ const KEY_REMOVAL_REQUESTED = 'net/KEY_REMOVAL_REQUESTED'
 
 // System responses to fetch requests
 const FETCH_RESULT_RECEIVED = 'net/FETCH_RESULT_RECEIVED'
-const TRANSIENT_FETCH_RESULT_RECEIVED = 'net/TRANSIENT_FETCH_RESULT_RECEIVED'
 const FETCH_FAILED = 'net/FETCH_FAILED'
-const FETCH_TIMED_OUT = 'net/FETCH_TIMED_OUT'
+const TRANSIENT_FETCH_RESULT_RECEIVED = 'net/TRANSIENT_FETCH_RESULT_RECEIVED'
 const TRANSIENT_FETCH_FAILED = 'net/TRANSIENT_FETCH_FAILED'
-const FETCH_TRY_FAILED = 'net/FETCH_TRY_FAILED'
+const TRY_FETCH_FAILED = 'net/TRY_FETCH_FAILED'
 
 export function createAction(type: string, payload: Object) {
-	return Object.assign({}, { type }, payload)
+	return _.merge({}, { type }, payload)
 }
 
 export default {
@@ -35,10 +35,9 @@ export default {
 	FETCH_REQUESTED,
 	TRANSIENT_FETCH_REQUESTED,
 	KEY_REMOVAL_REQUESTED,
-	FETCH_FAILED,
-	FETCH_TIMED_OUT,
-	TRANSIENT_FETCH_FAILED,
-	FETCH_TRY_FAILED,
 	FETCH_RESULT_RECEIVED,
-	TRANSIENT_FETCH_RESULT_RECEIVED
+	FETCH_FAILED,
+	TRANSIENT_FETCH_RESULT_RECEIVED,
+	TRANSIENT_FETCH_FAILED,
+	TRY_FETCH_FAILED
 }
