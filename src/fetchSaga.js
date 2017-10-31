@@ -159,24 +159,30 @@ function* fetchData(action: FetchAction) {
 	const pathParams = action.pathParams || []
 
 	// collection "fetchConfig.path" and "modelName"
-	if (modelConfig.isCollection) {
+	const modelNameLevels = modelName.split('.')
+	let lastModelLevel = models
+	const modelLevels = modelNameLevels.map(levelName => {
+		const modelLevel = _.get(lastModelLevel, levelName)
+		lastModelLevel = modelLevel
+		return modelLevel
+	})
+	const isAnyLevelCollection = modelLevels.some(
+		level => level._config && level._config.isCollection
+	)
+	if (isAnyLevelCollection) {
 		// construct modelName and path
-		const modelNameLevels = modelName.split('.')
 		if (modelNameLevels.length > 1) {
-			let lastModelLevel = models
-			modelNameLevels.forEach((levelName, index) => {
-				const currentModelLevel = _.get(lastModelLevel, levelName)
-				const currentModelConfig = _.merge({}, currentModelLevel._config)
+			modelLevels.forEach((modelLevel, index) => {
+				const levelName = modelNameLevels[index]
+				const currentModelConfig = _.merge({}, modelLevel._config)
 				const currentFetchConfig = _.merge({}, currentModelConfig.fetch)
 				if (index === 0) {
 					fetchConfig.path = currentFetchConfig.path || `/api/${levelName}`
 					modelName = levelName
-					lastModelLevel = currentModelLevel
 					return
 				}
 				fetchConfig.path = `${fetchConfig.path}/{:id}/${currentFetchConfig.path || levelName}`
 				modelName = `${modelName}.{:id}.${levelName}`
-				lastModelLevel = currentModelLevel
 			})
 		} else if (!fetchConfig.path) {
 			fetchConfig.path = `/api/${modelName}`
@@ -186,9 +192,9 @@ function* fetchData(action: FetchAction) {
 		const pathLevels = (fetchConfig.path.match(/{:.+}/g) || []).length
 
 		// GET, PUT, PATCH, DELETE => append '/{:id}'
-		isCollectionItemFetch = pathParams.length > pathLevels
+		isCollectionItemFetch = modelConfig.isCollection && pathParams.length > pathLevels
 		// POST
-		isCollectionItemCreate = fetchConfig.method === 'POST'
+		isCollectionItemCreate = modelConfig.isCollection && fetchConfig.method === 'POST'
 
 		// insert pathParam hooks into path and modelName
 		// track collection item requests by id (update, delete) or guid (create)
