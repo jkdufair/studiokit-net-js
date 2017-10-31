@@ -117,6 +117,21 @@ describe('fetchData', () => {
 						}
 					}
 				},
+				arrayBodyDefault: {
+					_config: {
+						fetch: {
+							path: 'http://news.ycombinator.com',
+							body: ['foo']
+						}
+					}
+				},
+				arrayBody: {
+					_config: {
+						fetch: {
+							path: 'http://news.ycombinator.com'
+						}
+					}
+				},
 				test4: {
 					_config: {
 						fetch: {
@@ -280,6 +295,60 @@ describe('fetchData', () => {
 							foo: 'bar',
 							baz: 'quux'
 						}
+					}),
+					timedOutResult: call(delay, 30000)
+				})
+			)
+		})
+
+		test('should merge body as JSON Array if body is JSON, with default body', () => {
+			const gen = fetchData({ modelName: 'arrayBodyDefault', body: ['bar'] })
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next(getOauthToken())
+			expect(raceEffect.value).toEqual(
+				race({
+					fetchResult: call(doFetch, {
+						path: 'http://news.ycombinator.com',
+						headers: { Authorization: 'Bearer some-access-token' },
+						queryParams: {},
+						body: ['foo', 'bar']
+					}),
+					timedOutResult: call(delay, 30000)
+				})
+			)
+		})
+
+		test('should send with default body', () => {
+			const gen = fetchData({ modelName: 'arrayBodyDefault' })
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next(getOauthToken())
+			expect(raceEffect.value).toEqual(
+				race({
+					fetchResult: call(doFetch, {
+						path: 'http://news.ycombinator.com',
+						headers: { Authorization: 'Bearer some-access-token' },
+						queryParams: {},
+						body: ['foo']
+					}),
+					timedOutResult: call(delay, 30000)
+				})
+			)
+		})
+
+		test('should keep body as JSON Array if body is JSON', () => {
+			const gen = fetchData({ modelName: 'arrayBody', body: ['bar'] })
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next(getOauthToken())
+			expect(raceEffect.value).toEqual(
+				race({
+					fetchResult: call(doFetch, {
+						path: 'http://news.ycombinator.com',
+						headers: { Authorization: 'Bearer some-access-token' },
+						queryParams: {},
+						body: ['bar']
 					}),
 					timedOutResult: call(delay, 30000)
 				})

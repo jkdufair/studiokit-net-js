@@ -143,13 +143,15 @@ function* fetchData(action: FetchAction) {
 	}
 
 	// set or merge "body"
-	if (action.body || fetchConfig.body) {
-		// If the body is a string, we are assuming it's an application/x-www-form-urlencoded
-		if (typeof action.body === 'string') {
-			fetchConfig.body = action.body
-		} else {
-			fetchConfig.body = _.merge({}, fetchConfig.body, action.body)
-		}
+	// If the body is a string, we are assuming it's an application/x-www-form-urlencoded
+	if (action.body && typeof action.body === 'string') {
+		fetchConfig.body = action.body
+	} else if (fetchConfig.body || action.body) {
+		const isBodyArray =
+			(fetchConfig.body && _.isArray(fetchConfig.body)) || (action.body && _.isArray(action.body))
+		fetchConfig.body = isBodyArray
+			? _.union([], fetchConfig.body, action.body)
+			: _.merge({}, fetchConfig.body, action.body)
 	}
 
 	let modelName: string = action.modelName
