@@ -169,6 +169,21 @@ describe('fetchData', () => {
 					secondLevelEntities: {
 						_config: {
 							isCollection: true
+						},
+						entityAction: {
+							_config: {
+								fetch: {
+									path: 'entityAction'
+								}
+							}
+						}
+					},
+					entityAction: {
+						_config: {
+							fetch: {
+								path: 'entityAction',
+								method: 'POST'
+							}
 						}
 					}
 				}
@@ -426,6 +441,44 @@ describe('fetchData', () => {
 				race({
 					fetchResult: call(doFetch, {
 						path: '/api/topLevelEntitiesNoPath/1/secondLevelEntities',
+						headers: { Authorization: 'Bearer some-access-token' },
+						queryParams: {}
+					}),
+					timedOutResult: call(delay, 30000)
+				})
+			)
+		})
+
+		test('should construct path from modelName for collection item action, single level, with pathParams', () => {
+			const gen = fetchData({ modelName: 'topLevelEntitiesNoPath.entityAction', pathParams: [1] })
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next(getOauthToken())
+			expect(raceEffect.value).toEqual(
+				race({
+					fetchResult: call(doFetch, {
+						path: '/api/topLevelEntitiesNoPath/1/entityAction',
+						method: 'POST',
+						headers: { Authorization: 'Bearer some-access-token' },
+						queryParams: {}
+					}),
+					timedOutResult: call(delay, 30000)
+				})
+			)
+		})
+
+		test('should construct path from modelName for collection item action, nested level, with pathParams', () => {
+			const gen = fetchData({
+				modelName: 'topLevelEntitiesNoPath.secondLevelEntities.entityAction',
+				pathParams: [1, 999]
+			})
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next(getOauthToken())
+			expect(raceEffect.value).toEqual(
+				race({
+					fetchResult: call(doFetch, {
+						path: '/api/topLevelEntitiesNoPath/1/secondLevelEntities/999/entityAction',
 						headers: { Authorization: 'Bearer some-access-token' },
 						queryParams: {}
 					}),
