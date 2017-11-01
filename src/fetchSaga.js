@@ -284,7 +284,11 @@ function* fetchData(action: FetchAction) {
 				fetchResult: call(doFetch, fetchConfig),
 				timedOutResult: call(delay, action.timeLimit ? action.timeLimit : 30000)
 			})
-			if (fetchResult && !(fetchResult.title && fetchResult.title === 'Error')) {
+			if (
+				fetchResult &&
+				!(fetchResult.title && fetchResult.title === 'Error') &&
+				!(fetchResult.code && fetchResult.code >= 400)
+			) {
 				let storeAction = action.noStore
 					? actions.TRANSIENT_FETCH_RESULT_RECEIVED
 					: actions.FETCH_RESULT_RECEIVED

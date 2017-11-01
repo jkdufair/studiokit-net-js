@@ -708,12 +708,25 @@ describe('fetchData', () => {
 			)
 		})
 
-		test('should retry on fetch error', () => {
+		test('should retry on fetch error title', () => {
 			const gen = fetchData({ modelName: 'test' })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
 			const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error' } })
+			const putTryFailedEffect = gen.next()
+			const delayAndPutAgainEffect = gen.next()
+			expect(delayAndPutAgainEffect.value).toEqual(
+				put(createAction(actions.FETCH_REQUESTED, { modelName: 'test' }))
+			)
+		})
+
+		test('should retry on fetch error code', () => {
+			const gen = fetchData({ modelName: 'test' })
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next(getOauthToken())
+			const fetchTryFailedEffect = gen.next({ fetchResult: { code: 500 } })
 			const putTryFailedEffect = gen.next()
 			const delayAndPutAgainEffect = gen.next()
 			expect(delayAndPutAgainEffect.value).toEqual(
