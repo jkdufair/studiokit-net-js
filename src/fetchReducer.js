@@ -75,7 +75,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			newValue._metadata = _.merge(metadata, {
 				isFetching: false,
 				hasError: true,
-				lastFetchError: action.lastFetchError,
+				lastFetchError: action.errorData,
 				timedOut: !!action.didTimeOut
 			})
 			return _fp.set(path, newValue, state)
