@@ -12,8 +12,7 @@ type FetchError = {
 	modelName: string,
 	errorData: {
 		didTimeOut: boolean
-	},
-	fetchResult: any
+	}
 }
 
 type MetadataState = {
