@@ -341,7 +341,7 @@ describe('fetchReducer', () => {
 		test('single level with fetch error data', () => {
 			const state = fetchReducer(
 				{},
-				{ type: actions.FETCH_FAILED, modelName: 'test', lastFetchError: 'server fire' }
+				{ type: actions.FETCH_FAILED, modelName: 'test', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				test: {
@@ -382,7 +382,7 @@ describe('fetchReducer', () => {
 		test('nested level', () => {
 			const state = fetchReducer(
 				{},
-				{ type: actions.FETCH_FAILED, modelName: 'user.test', lastFetchError: 'server fire' }
+				{ type: actions.FETCH_FAILED, modelName: 'user.test', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				user: {
@@ -401,7 +401,7 @@ describe('fetchReducer', () => {
 		test('nested level merge state', () => {
 			const state = fetchReducer(
 				{ foo: 'bar' },
-				{ type: actions.FETCH_FAILED, modelName: 'user.test', lastFetchError: 'server fire' }
+				{ type: actions.FETCH_FAILED, modelName: 'user.test', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				foo: 'bar',
@@ -421,7 +421,7 @@ describe('fetchReducer', () => {
 		test('nested level replace state', () => {
 			const state = fetchReducer(
 				{ user: { foo: 'bar' } },
-				{ type: actions.FETCH_FAILED, modelName: 'user.test', lastFetchError: 'server fire' }
+				{ type: actions.FETCH_FAILED, modelName: 'user.test', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				user: {
@@ -457,7 +457,7 @@ describe('fetchReducer', () => {
 						}
 					}
 				},
-				{ type: actions.FETCH_FAILED, modelName: 'groups.1', lastFetchError: 'server fire' }
+				{ type: actions.FETCH_FAILED, modelName: 'groups.1', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				groups: {
