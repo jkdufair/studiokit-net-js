@@ -11,14 +11,30 @@ describe('fetchReducer', () => {
 		test('single level', () => {
 			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'test' })
 			expect(state).toEqual({
-				test: { _metadata: { isFetching: true, hasError: false, timedOut: false } }
+				test: {
+					_metadata: {
+						isFetching: true,
+						hasError: false,
+						lastFetchError: undefined,
+						timedOut: false
+					}
+				}
 			})
 		})
 
 		test('nested level', () => {
 			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'user.test' })
 			expect(state).toEqual({
-				user: { test: { _metadata: { isFetching: true, hasError: false, timedOut: false } } }
+				user: {
+					test: {
+						_metadata: {
+							isFetching: true,
+							hasError: false,
+							lastFetchError: undefined,
+							timedOut: false
+						}
+					}
+				}
 			})
 		})
 
@@ -29,7 +45,16 @@ describe('fetchReducer', () => {
 			)
 			expect(state).toEqual({
 				foo: 'bar',
-				user: { test: { _metadata: { isFetching: true, hasError: false, timedOut: false } } }
+				user: {
+					test: {
+						_metadata: {
+							isFetching: true,
+							hasError: false,
+							lastFetchError: undefined,
+							timedOut: false
+						}
+					}
+				}
 			})
 		})
 
@@ -41,7 +66,14 @@ describe('fetchReducer', () => {
 			expect(state).toEqual({
 				user: {
 					foo: 'bar',
-					test: { _metadata: { isFetching: true, hasError: false, timedOut: false } }
+					test: {
+						_metadata: {
+							isFetching: true,
+							hasError: false,
+							lastFetchError: undefined,
+							timedOut: false
+						}
+					}
 				}
 			})
 		})
@@ -306,10 +338,34 @@ describe('fetchReducer', () => {
 	})
 
 	describe('FETCH_FAILED', () => {
-		test('single level', () => {
+		test('single level with fetch error data', () => {
+			const state = fetchReducer(
+				{},
+				{ type: actions.FETCH_FAILED, modelName: 'test', lastFetchError: 'server fire' }
+			)
+			expect(state).toEqual({
+				test: {
+					_metadata: {
+						isFetching: false,
+						hasError: true,
+						lastFetchError: 'server fire',
+						timedOut: false
+					}
+				}
+			})
+		})
+
+		test('single level no fetch error data', () => {
 			const state = fetchReducer({}, { type: actions.FETCH_FAILED, modelName: 'test' })
 			expect(state).toEqual({
-				test: { _metadata: { isFetching: false, hasError: true, timedOut: false } }
+				test: {
+					_metadata: {
+						isFetching: false,
+						hasError: true,
+						lastFetchError: undefined,
+						timedOut: false
+					}
+				}
 			})
 		})
 
@@ -324,32 +380,60 @@ describe('fetchReducer', () => {
 		})
 
 		test('nested level', () => {
-			const state = fetchReducer({}, { type: actions.FETCH_FAILED, modelName: 'user.test' })
+			const state = fetchReducer(
+				{},
+				{ type: actions.FETCH_FAILED, modelName: 'user.test', lastFetchError: 'server fire' }
+			)
 			expect(state).toEqual({
-				user: { test: { _metadata: { isFetching: false, hasError: true, timedOut: false } } }
+				user: {
+					test: {
+						_metadata: {
+							isFetching: false,
+							hasError: true,
+							lastFetchError: 'server fire',
+							timedOut: false
+						}
+					}
+				}
 			})
 		})
 
 		test('nested level merge state', () => {
 			const state = fetchReducer(
 				{ foo: 'bar' },
-				{ type: actions.FETCH_FAILED, modelName: 'user.test' }
+				{ type: actions.FETCH_FAILED, modelName: 'user.test', lastFetchError: 'server fire' }
 			)
 			expect(state).toEqual({
 				foo: 'bar',
-				user: { test: { _metadata: { isFetching: false, hasError: true, timedOut: false } } }
+				user: {
+					test: {
+						_metadata: {
+							isFetching: false,
+							hasError: true,
+							lastFetchError: 'server fire',
+							timedOut: false
+						}
+					}
+				}
 			})
 		})
 
 		test('nested level replace state', () => {
 			const state = fetchReducer(
 				{ user: { foo: 'bar' } },
-				{ type: actions.FETCH_FAILED, modelName: 'user.test' }
+				{ type: actions.FETCH_FAILED, modelName: 'user.test', lastFetchError: 'server fire' }
 			)
 			expect(state).toEqual({
 				user: {
 					foo: 'bar',
-					test: { _metadata: { isFetching: false, hasError: true, timedOut: false } }
+					test: {
+						_metadata: {
+							isFetching: false,
+							hasError: true,
+							lastFetchError: 'server fire',
+							timedOut: false
+						}
+					}
 				}
 			})
 		})
@@ -373,7 +457,7 @@ describe('fetchReducer', () => {
 						}
 					}
 				},
-				{ type: actions.FETCH_FAILED, modelName: 'groups.1' }
+				{ type: actions.FETCH_FAILED, modelName: 'groups.1', lastFetchError: 'server fire' }
 			)
 			expect(state).toEqual({
 				groups: {
@@ -383,6 +467,7 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: true,
+							lastFetchError: 'server fire',
 							timedOut: false,
 							fetchedAt
 						}
@@ -424,7 +509,14 @@ describe('fetchReducer', () => {
 
 			const state2 = fetchReducer(state, { type: actions.FETCH_REQUESTED, modelName: 'test' })
 			expect(state2).toEqual({
-				test: { _metadata: { isFetching: true, hasError: false, timedOut: false } }
+				test: {
+					_metadata: {
+						isFetching: true,
+						hasError: false,
+						lastFetchError: undefined,
+						timedOut: false
+					}
+				}
 			})
 
 			const state3 = fetchReducer(state2, {
@@ -479,7 +571,14 @@ describe('fetchReducer', () => {
 		test('no state parameter passed', () => {
 			const state = fetchReducer(undefined, { type: actions.FETCH_REQUESTED, modelName: 'test' })
 			expect(state).toEqual({
-				test: { _metadata: { isFetching: true, hasError: false, timedOut: false } }
+				test: {
+					_metadata: {
+						isFetching: true,
+						hasError: false,
+						lastFetchError: undefined,
+						timedOut: false
+					}
+				}
 			})
 		})
 	})

@@ -8,9 +8,17 @@ import type { Action } from 'redux'
 
 type FetchState = {}
 
+type FetchError = {
+	modelName: string,
+	errorData: {
+		didTimeOut: boolean
+	}
+}
+
 type MetadataState = {
 	isFetching: boolean,
 	hasError: boolean,
+	lastFetchError: FetchError,
 	timedOut: boolean,
 	fetchedAt?: Date
 }
@@ -47,6 +55,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			newValue._metadata = _.merge(metadata, {
 				isFetching: true,
 				hasError: false,
+				lastFetchError: undefined,
 				timedOut: false
 			})
 			return _fp.set(path, newValue, state)
@@ -56,6 +65,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			newValue._metadata = _.merge(metadata, {
 				isFetching: false,
 				hasError: false,
+				lastFetchError: undefined,
 				timedOut: false,
 				fetchedAt: new Date()
 			})
@@ -65,6 +75,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			newValue._metadata = _.merge(metadata, {
 				isFetching: false,
 				hasError: true,
+				lastFetchError: action.lastFetchError,
 				timedOut: !!action.didTimeOut
 			})
 			return _fp.set(path, newValue, state)
