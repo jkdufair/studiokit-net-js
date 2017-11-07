@@ -207,7 +207,6 @@ function* fetchData(action: FetchAction) {
 			modelName = `${modelName}.${action.guid || uuid.v4()}`
 		}
 	}
-
 	// substitute any pathParams in path, e.g. /api/group/{:id}
 	if (/{:.+}/.test(fetchConfig.path)) {
 		let index = 0
@@ -264,7 +263,6 @@ function* fetchData(action: FetchAction) {
 	let didFail: boolean = false
 	let lastFetchError: ?FetchError
 	let lastError: ?Error
-
 	// Run retry loop
 	do {
 		didFail = false
@@ -293,7 +291,6 @@ function* fetchData(action: FetchAction) {
 					? actions.TRANSIENT_FETCH_RESULT_RECEIVED
 					: actions.FETCH_RESULT_RECEIVED
 				let data = fetchResult
-
 				if (modelConfig.isCollection) {
 					data = {}
 					if (fetchConfig.method === 'DELETE') {
