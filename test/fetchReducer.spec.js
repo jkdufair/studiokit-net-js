@@ -38,6 +38,42 @@ describe('fetchReducer', () => {
 			})
 		})
 
+		test('nested level with numbers', () => {
+			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'user.1' })
+			expect(state).toEqual({
+				user: {
+					'1': {
+						_metadata: {
+							isFetching: true,
+							hasError: false,
+							lastFetchError: undefined,
+							timedOut: false
+						}
+					}
+				}
+			})
+		})
+
+		test('nested level with multiple level numbers', () => {
+			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'user.1.info.2' })
+			expect(state).toEqual({
+				user: {
+					'1': {
+						info: {
+							'2': {
+								_metadata: {
+									isFetching: true,
+									hasError: false,
+									lastFetchError: undefined,
+									timedOut: false
+								}
+							}
+						}
+					}
+				}
+			})
+		})
+
 		test('nested level merge state', () => {
 			const state = fetchReducer(
 				{ foo: 'bar' },

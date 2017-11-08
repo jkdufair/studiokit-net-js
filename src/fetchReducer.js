@@ -46,7 +46,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 	if (!action.modelName) {
 		return state
 	}
-	const path: Array<string> = action.modelName.split('.')
+	let path: Array<string> = action.modelName.split('.')
 	let newValue = _.merge({}, _.get(state, path))
 	const metadata = getMetadata(state, path)
 
@@ -58,6 +58,14 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 				lastFetchError: undefined,
 				timedOut: false
 			})
+			//check if the path has numbers
+			if (path.some(e => !isNaN(e))) {
+				//create an object without the first top level
+				let tempPath = path.slice(1)
+				newValue = _.setWith({}, tempPath, newValue, Object)
+				//set the path to just the top level, and then assign the newValue created to the top level
+				path = path[0]
+			}
 			return _fp.set(path, newValue, state)
 
 		case actions.FETCH_RESULT_RECEIVED:
