@@ -61,8 +61,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			//check if the path has numbers
 			if (path.some(e => !isNaN(e))) {
 				//create an object without the first top level
-				let tempPath = path.slice(0)
-				tempPath.shift()
+				let tempPath = path.slice(1)
 				newValue = _.setWith({}, tempPath, newValue, Object)
 				//set the path to just the top level, and then assign the newValue created to the top level
 				path = path[0]
