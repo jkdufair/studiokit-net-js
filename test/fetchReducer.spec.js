@@ -143,6 +143,52 @@ describe('fetchReducer', () => {
 				}
 			})
 		})
+
+		test('should preserve data in nested level', () => {
+			const fetchedDate = new Date()
+
+			const state = fetchReducer(
+				{
+					test: {
+						foo: {
+							bar: 'baz'
+						},
+						_metadata: {
+							isFetching: false,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedDate
+						}
+					}
+				},
+				{ type: actions.FETCH_REQUESTED, modelName: 'test.qux.1.corge' }
+			)
+			expect(state).toEqual({
+				test: {
+					foo: {
+						bar: 'baz'
+					},
+					qux: {
+						'1': {
+							corge: {
+								_metadata: {
+									isFetching: true,
+									hasError: false,
+									timedOut: false,
+									lastFetchError: undefined
+								}
+							}
+						}
+					},
+					_metadata: {
+						isFetching: false,
+						hasError: false,
+						timedOut: false,
+						fetchedAt: fetchedDate
+					}
+				}
+			})
+		})
 	})
 
 	describe('FETCH_RESULT_RECEIVED', () => {
@@ -367,6 +413,69 @@ describe('fetchReducer', () => {
 							fetchedAt: fetchedAtDate
 						},
 						key: 'value'
+					}
+				}
+			})
+		})
+
+		test('should preserve data in nested level', () => {
+			const fetchedDate = new Date()
+
+			const state = fetchReducer(
+				{
+					test: {
+						foo: {
+							bar: 'baz'
+						},
+						qux: {
+							'1': {
+								corge: {
+									_metadata: {
+										isFetching: true,
+										hasError: false,
+										timedOut: false,
+										lastFetchError: undefined
+									}
+								}
+							}
+						},
+						_metadata: {
+							isFetching: false,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedDate
+						}
+					}
+				},
+				{
+					type: actions.FETCH_RESULT_RECEIVED,
+					modelName: 'test.qux.1.corge',
+					data: { key: 'value' }
+				}
+			)
+			expect(state).toEqual({
+				test: {
+					foo: {
+						bar: 'baz'
+					},
+					qux: {
+						'1': {
+							corge: {
+								key: 'value',
+								_metadata: {
+									isFetching: false,
+									hasError: false,
+									timedOut: false,
+									fetchedAt: fetchedDate
+								}
+							}
+						}
+					},
+					_metadata: {
+						isFetching: false,
+						hasError: false,
+						timedOut: false,
+						fetchedAt: fetchedDate
 					}
 				}
 			})
