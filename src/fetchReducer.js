@@ -60,11 +60,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			})
 			//check if the path has numbers
 			if (path.some(e => !isNaN(e))) {
-				//create an object without the first top level
-				let tempPath = path.slice(1)
-				newValue = _.setWith({}, tempPath, newValue, Object)
-				//set the path to just the top level, and then assign the newValue created to the top level
-				path = path[0]
+				return _fp.setWith(Object, path, newValue, state)
 			}
 			return _fp.set(path, newValue, state)
 
@@ -77,6 +73,9 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 				timedOut: false,
 				fetchedAt: new Date()
 			})
+			if (path.some(e => !isNaN(e))) {
+				return _fp.setWith(Object, path, newValue, state)
+			}
 			return _fp.set(path, newValue, state)
 
 		case actions.FETCH_FAILED:
@@ -86,6 +85,9 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 				lastFetchError: action.errorData,
 				timedOut: !!action.didTimeOut
 			})
+			if (path.some(e => !isNaN(e))) {
+				return _fp.setWith(Object, path, newValue, state)
+			}
 			return _fp.set(path, newValue, state)
 
 		case actions.KEY_REMOVAL_REQUESTED:
