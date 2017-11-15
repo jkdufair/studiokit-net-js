@@ -31,10 +31,10 @@ function getMetadata(state: FetchState, path: Array<string>): MetadataState {
 	return _.merge({}, _.get(state, path.concat('_metadata')))
 }
 
-function convertToObject(state) {
+function convertArrayToObject(state) {
 	_.forEach(state, function(value, key) {
 		if (_.isObject(value)) {
-			convertToObject(value)
+			convertArrayToObject(value)
 		}
 		if (_.isArray(value)) {
 			const val = _.keyBy(value, 'id')
@@ -85,7 +85,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 				timedOut: false,
 				fetchedAt: new Date()
 			})
-			convertToObject(newValue)
+			convertArrayToObject(newValue)
 			if (path.some(e => !isNaN(e))) {
 				return _fp.setWith(Object, path, newValue, state)
 			}
