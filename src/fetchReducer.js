@@ -31,6 +31,18 @@ function getMetadata(state: FetchState, path: Array<string>): MetadataState {
 	return _.merge({}, _.get(state, path.concat('_metadata')))
 }
 
+function convertToObject(state) {
+	_.forEach(state, function(value, key) {
+		if (_.isObject(value)) {
+			convertToObject(value)
+		}
+		if (_.isArray(value)) {
+			const val = _.keyBy(value, 'id')
+			state[key] = val
+		}
+	})
+}
+
 /**
  * Reducer for fetching. Fetching state updated with every action. Data updated on result received.
  * Data and fetchedDate NOT deleted on failed request. All data at key removed on KEY_REMOVAL_REQUESTED
@@ -73,6 +85,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 				timedOut: false,
 				fetchedAt: new Date()
 			})
+			convertToObject(newValue)
 			if (path.some(e => !isNaN(e))) {
 				return _fp.setWith(Object, path, newValue, state)
 			}

@@ -480,6 +480,94 @@ describe('fetchReducer', () => {
 				}
 			})
 		})
+
+		test('should convert the incoming data from arrays to object', () => {
+			const fetchedDate = new Date()
+
+			const state = fetchReducer(
+				{
+					test: {
+						foo: {
+							bar: 'baz'
+						},
+						qux: {
+							'1': {
+								corge: {
+									_metadata: {
+										isFetching: true,
+										hasError: false,
+										timedOut: false,
+										lastFetchError: undefined
+									}
+								}
+							}
+						},
+						_metadata: {
+							isFetching: false,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedDate
+						}
+					}
+				},
+				{
+					type: actions.FETCH_RESULT_RECEIVED,
+					modelName: 'test.qux.1.corge',
+					data: {
+						test: [
+							{
+								foo: [
+									{
+										bar: '2',
+										id: '112'
+									}
+								],
+								id: '322'
+							}
+						],
+						emptyArray: []
+					}
+				}
+			)
+			expect(state).toEqual({
+				test: {
+					foo: {
+						bar: 'baz'
+					},
+					qux: {
+						'1': {
+							corge: {
+								test: {
+									'322': {
+										foo: {
+											'112': {
+												bar: '2',
+												id: '112'
+											}
+										},
+										id: '322'
+									}
+								},
+								emptyArray: {},
+								_metadata: {
+									isFetching: false,
+									hasError: false,
+									timedOut: false,
+									lastFetchError: undefined,
+									fetchedAt: fetchedDate
+								}
+							}
+						}
+					},
+					_metadata: {
+						isFetching: false,
+						hasError: false,
+						timedOut: false,
+						fetchedAt: fetchedDate
+					}
+				}
+			})
+		})
 	})
 
 	describe('FETCH_FAILED', () => {
