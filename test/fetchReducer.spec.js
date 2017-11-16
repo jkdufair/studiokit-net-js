@@ -481,56 +481,7 @@ describe('fetchReducer', () => {
 			})
 		})
 
-		test('should convert the incoming data from arrays to object 1', () => {
-			const fetchedDate = new Date()
-
-			const state = fetchReducer(
-				{
-					test: {
-						foo: {}
-					}
-				},
-				{
-					type: actions.FETCH_RESULT_RECEIVED,
-					modelName: 'test.foo.100',
-					data: {
-						bar: [
-							{
-								baz: 'quz',
-								id: '200'
-							}
-						],
-						empty: [],
-						id: '100'
-					}
-				}
-			)
-			expect(state).toEqual({
-				test: {
-					foo: {
-						'100': {
-							_metadata: {
-								isFetching: false,
-								hasError: false,
-								timedOut: false,
-								fetchedAt: fetchedDate,
-								lastFetchError: undefined
-							},
-							bar: {
-								'200': {
-									baz: 'quz',
-									id: '200'
-								}
-							},
-							empty: {},
-							id: '100'
-						}
-					}
-				}
-			})
-		})
-
-		test('should convert the incoming data from arrays to object 2', () => {
+		test('should convert the incoming data from arrays to object', () => {
 			const fetchedDate = new Date()
 
 			const state = fetchReducer(
@@ -574,7 +525,20 @@ describe('fetchReducer', () => {
 								id: '322'
 							}
 						],
-						emptyArray: []
+						emptyObject: {},
+						emptyArray: [],
+						nonObjectArray: ['1', 2, 'bar'],
+						nonIdObjects: [
+							{
+								val: 'a'
+							},
+							{
+								val: 'b'
+							},
+							{
+								val: 'b'
+							}
+						]
 					}
 				}
 			)
@@ -597,7 +561,20 @@ describe('fetchReducer', () => {
 										id: '322'
 									}
 								},
+								emptyObject: {},
 								emptyArray: {},
+								nonObjectArray: ['1', 2, 'bar'],
+								nonIdObjects: {
+									'0': {
+										val: 'a'
+									},
+									'1': {
+										val: 'b'
+									},
+									'2': {
+										val: 'b'
+									}
+								},
 								_metadata: {
 									isFetching: false,
 									hasError: false,
