@@ -493,11 +493,13 @@ describe('fetchReducer', () => {
 						qux: {
 							'1': {
 								corge: {
-									_metadata: {
-										isFetching: true,
-										hasError: false,
-										timedOut: false,
-										lastFetchError: undefined
+									'17': {
+										_metadata: {
+											isFetching: true,
+											hasError: false,
+											timedOut: false,
+											lastFetchError: undefined
+										}
 									}
 								}
 							}
@@ -512,7 +514,7 @@ describe('fetchReducer', () => {
 				},
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
-					modelName: 'test.qux.1.corge',
+					modelName: 'test.qux.1.corge.17',
 					data: {
 						test: [
 							{
@@ -550,37 +552,39 @@ describe('fetchReducer', () => {
 					qux: {
 						'1': {
 							corge: {
-								test: {
-									'322': {
-										foo: {
-											'112': {
-												bar: '2',
-												id: '112'
-											}
+								'17': {
+									test: {
+										'322': {
+											foo: {
+												'112': {
+													bar: '2',
+													id: '112'
+												}
+											},
+											id: '322'
+										}
+									},
+									emptyObject: {},
+									emptyArray: {},
+									nonObjectArray: ['1', 2, 'bar'],
+									nonIdObjects: {
+										'0': {
+											val: 'a'
 										},
-										id: '322'
-									}
-								},
-								emptyObject: {},
-								emptyArray: {},
-								nonObjectArray: ['1', 2, 'bar'],
-								nonIdObjects: {
-									'0': {
-										val: 'a'
+										'1': {
+											val: 'b'
+										},
+										'2': {
+											val: 'b'
+										}
 									},
-									'1': {
-										val: 'b'
-									},
-									'2': {
-										val: 'b'
+									_metadata: {
+										isFetching: false,
+										hasError: false,
+										timedOut: false,
+										lastFetchError: undefined,
+										fetchedAt: fetchedDate
 									}
-								},
-								_metadata: {
-									isFetching: false,
-									hasError: false,
-									timedOut: false,
-									lastFetchError: undefined,
-									fetchedAt: fetchedDate
 								}
 							}
 						}

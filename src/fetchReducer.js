@@ -104,9 +104,6 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 				fetchedAt: new Date()
 			})
 			convertArraysToObject(newValue)
-			if (path.some(e => !isNaN(e))) {
-				return _fp.setWith(Object, path, newValue, state)
-			}
 			return _fp.set(path, newValue, state)
 
 		case actions.FETCH_FAILED:
