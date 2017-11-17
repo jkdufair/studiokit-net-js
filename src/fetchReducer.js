@@ -32,6 +32,36 @@ function getMetadata(state: FetchState, path: Array<string>): MetadataState {
 }
 
 /**
+ * Converts any arrays in a object into objects itself recursively.
+ * If all the elements in an array are plain objects, then set their keys by:
+ * 1. the property ID, if any
+ * 2. else from 0 to length of the array
+ * If not all elements in the array are plain objects, then leave it as an array
+ * 
+ * @param data - the data object
+ * @returns data and its array elements converted into objects if needed
+ */
+function convertArraysToObject(data) {
+	_.forEach(data, function(value, key) {
+		if (_.isObject(value)) {
+			convertArraysToObject(value)
+		}
+		if (_.isArray(value)) {
+			if (value.every(e => _.isPlainObject(e))) {
+				let indexKey = 0
+				const newValue = value.every(e => e.hasOwnProperty('id'))
+					? _.keyBy(value, 'id')
+					: _.keyBy(value, function() {
+							return indexKey++
+						})
+
+				data[key] = newValue
+			}
+		}
+	})
+}
+
+/**
  * Reducer for fetching. Fetching state updated with every action. Data updated on result received.
  * Data and fetchedDate NOT deleted on failed request. All data at key removed on KEY_REMOVAL_REQUESTED
  * All actions require a modelName key to function with this reducer
@@ -73,9 +103,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 				timedOut: false,
 				fetchedAt: new Date()
 			})
-			if (path.some(e => !isNaN(e))) {
-				return _fp.setWith(Object, path, newValue, state)
-			}
+			convertArraysToObject(newValue)
 			return _fp.set(path, newValue, state)
 
 		case actions.FETCH_FAILED:
