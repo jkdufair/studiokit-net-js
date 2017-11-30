@@ -9,7 +9,8 @@ type FetchConfig = {
 	path: string,
 	method: string,
 	headers: Object,
-	body: Object
+	body: Object,
+	contentType: string
 }
 
 let apiRoot: string

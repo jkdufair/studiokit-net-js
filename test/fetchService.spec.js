@@ -103,6 +103,22 @@ describe('doFetch', () => {
 		global.fetch = _fetch
 	})
 
+	test('Basic POST w/ form data', () => {
+		const _fetch = global.fetch
+		global.fetch = jest.fn(() => {})
+		const gen = doFetch({
+			path: 'http://www.google.com',
+			method: 'POST',
+			body: new FormData(),
+			contentType: 'multipart/form-data'
+		})
+		const response = gen.next()
+		expect(response.value.CALL.args[1].method).toEqual('POST')
+		expect(response.value.CALL.args[1].headers).toEqual({})
+		expect(response.value.CALL.args[1].body).toBeInstanceOf(FormData)
+		global.fetch = _fetch
+	})
+
 	test('Basic GET w/ headers & form urlencoded', () => {
 		const _fetch = global.fetch
 		global.fetch = jest.fn(() => {})
