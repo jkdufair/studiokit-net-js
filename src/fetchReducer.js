@@ -96,6 +96,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 
 		case actions.FETCH_RESULT_RECEIVED:
 			newValue = action.data
+			if (typeof newValue === 'string') newValue = { response: newValue }
 			newValue._metadata = _.merge(metadata, {
 				isFetching: false,
 				hasError: false,

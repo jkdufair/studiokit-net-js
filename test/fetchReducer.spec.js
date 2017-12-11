@@ -598,6 +598,31 @@ describe('fetchReducer', () => {
 				}
 			})
 		})
+
+		test('handle string response', () => {
+			const fetchedAtDate = new Date()
+			const _Date = Date
+			global.Date = jest.fn(() => fetchedAtDate)
+			const state = fetchReducer(
+				{},
+				{
+					type: actions.FETCH_RESULT_RECEIVED,
+					modelName: 'class',
+					data: 'value'
+				}
+			)
+			expect(state).toEqual({
+				class: {
+					_metadata: {
+						isFetching: false,
+						hasError: false,
+						timedOut: false,
+						fetchedAt: fetchedAtDate
+					},
+					response: 'value'
+				}
+			})
+		})
 	})
 
 	describe('FETCH_FAILED', () => {
