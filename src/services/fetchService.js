@@ -92,7 +92,12 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 	if (!response) {
 		return null
 	}
-	const responseJson = response.status == 204 ? null : yield call(() => response.json())
+
+	// If the request was a 204, use the body that was PUT in the request as the "response"
+	// so it gets incorporated correctly into Redux
+	// 200/201 should return a representation of the entity.
+	// (https://tools.ietf.org/html/rfc7231#section-6.3.1)
+	const responseJson = response.status === 204 ? config.body : yield call(() => response.json())
 	if (!response.ok) {
 		return _.merge(
 			{},
