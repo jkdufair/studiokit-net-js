@@ -92,7 +92,7 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 	if (!response) {
 		return null
 	}
-	const responseJson = response.status == 204 ? {} : yield call(() => response.json())
+	const responseJson = response.status == 204 ? null : yield call(() => response.json())
 	if (!response.ok) {
 		return _.merge(
 			{},

@@ -217,7 +217,7 @@ describe('doFetch', () => {
 			statusText: 'NoContent'
 		}
 		const callResponseJsonEffect = gen.next(response)
-		expect(callResponseJsonEffect.value).toEqual({})
+		expect(callResponseJsonEffect.value).toEqual(null)
 		const sagaDone = gen.next()
 		expect(sagaDone.value).toEqual(undefined)
 		expect(sagaDone.done).toEqual(true)
