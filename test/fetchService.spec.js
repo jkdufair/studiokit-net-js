@@ -195,4 +195,33 @@ describe('doFetch', () => {
 		expect(sagaDone.done).toEqual(true)
 		global.fetch = _fetch
 	})
+
+	test('PUT with 204 response', () => {
+		const _fetch = global.fetch
+		global.fetch = jest.fn(() => {})
+		const putBody = { foo: 'bar', baz: 'quux' }
+		const gen = doFetch({ path: 'http://www.google.com', method: 'PUT', body: putBody })
+		const callFetchEffect = gen.next()
+		expect(callFetchEffect.value.CALL.args).toEqual([
+			'http://www.google.com',
+			{
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json; charset=utf-8'
+				},
+				body: JSON.stringify(putBody)
+			}
+		])
+		const response = {
+			ok: true,
+			status: 204,
+			statusText: 'NoContent'
+		}
+		const callResponseJsonEffect = gen.next(response)
+		expect(callResponseJsonEffect.value).toEqual(putBody)
+		const sagaDone = gen.next()
+		expect(sagaDone.value).toEqual(undefined)
+		expect(sagaDone.done).toEqual(true)
+		global.fetch = _fetch
+	})
 })
