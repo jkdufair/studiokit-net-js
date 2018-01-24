@@ -457,6 +457,26 @@ POST https://myapp.com/api/createSomeThing
 
 Same as basic fetch above, with the `data` key containing the response data from the `POST` request
 
+### Post with form data:
+*dispatch*
+```js
+store.dispatch({
+	type: netActions.DATA_REQUESTED,
+	modelName: 'basicPost',
+	body: new FormData(),
+	contentType: 'multipart/form-data'
+})
+```
+*request generated*
+```http
+Content-Type: multipart/form-data; XXX boundary--------
+POST https://myapp.com/api/createSomeThing
+(formData values)
+```
+*resulting redux*
+
+Same as basic fetch above, but with Content-Type equals to multipart/form-data
+
 #
 
 ### Collections

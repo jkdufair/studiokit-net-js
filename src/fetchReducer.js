@@ -37,7 +37,35 @@ function getMetadata(state: FetchState, path: Array<string>): MetadataState {
  * 1. the property ID, if any
  * 2. else from 0 to length of the array
  * If not all elements in the array are plain objects, then leave it as an array
- * 
+ *
+ * @param data - the data object
+ * @returns data and its array elements converted into objects if needed
+ */
+function convertArraysToObject(data) {
+	_.forEach(data, function(value, key) {
+		if (_.isObject(value)) {
+			convertArraysToObject(value)
+		}
+		if (_.isArray(value)) {
+			if (value.every(e => _.isPlainObject(e))) {
+				let indexKey = 0
+				const newValue = value.every(e => e.hasOwnProperty('id'))
+					? _.keyBy(value, 'id')
+					: _.keyBy(value, function() {
+							return indexKey++
+						})
+
+				data[key] = newValue
+			}
+		}
+	})
+}
+
+/**
+ * Reducer for fetching. Fetching state updated with every action. Data updated on result received.
+ * Data and fetchedDate NOT deleted on failed request. All data at key removed on KEY_REMOVAL_REQUESTED
+ * All actions require a modelName key to function with this reducer
+ *
  * @param data - the data object
  * @returns data and its array elements converted into objects if needed
  */
@@ -84,20 +112,18 @@ function nonScalars(obj) {
  * All actions require a modelName key to function with this reducer.
  * Arrays are converted to objects that represent a dictionary with the numeric id of the object used
  * as the key and the entire object used as the value
- * 
+ *
  * @export
  * @param {FetchState} [state={}] - The state of the models. Initially empty
  * @param {Action} action - The action upon which we dispatch
- * @returns 
+ * @returns
  */
 export default function fetchReducer(state: FetchState = {}, action: Action) {
 	if (!action.modelName) {
 		return state
 	}
-	// the path into the entire state, navigation separated by '.'
 	let path: Array<string> = action.modelName.split('.')
-	// the object value at the specified path
-	let valueAtPath = _.get(state, path)
+	let newValue = _.merge({}, _.get(state, path))
 	const metadata = getMetadata(state, path)
 
 	switch (action.type) {
