@@ -153,7 +153,6 @@ describe('doFetch', () => {
 		})
 		const response = gen.next()
 		expect(response.value.CALL.args[1].method).toEqual('POST')
-		expect(response.value.CALL.args[1].headers).toEqual({ 'Content-Type': 'multipart/form-data' })
 		expect(response.value.CALL.args[1].body).toBeInstanceOf(FormData)
 		global.fetch = _fetch
 	})
@@ -298,7 +297,8 @@ describe('doFetch', () => {
 		const callResponseJsonEffect = gen.next(response)
 		expect(callResponseJsonEffect.value).toEqual({
 			ok: true,
-			status: 204
+			status: 204,
+			data: undefined
 		})
 		const sagaDone = gen.next()
 		expect(sagaDone.value).toEqual()
