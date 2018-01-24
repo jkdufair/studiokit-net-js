@@ -88,24 +88,33 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 		body
 	})
 	if (!response) {
-		return null
+		return undefined
 	}
 
-	// If the request was a 204, use the body that was PUT in the request as the "response"
+	// construct a subset of the response object to return
+	const result = {
+		ok: response.ok,
+		status: response.status,
+		data: undefined
+	}
+
+	// If the request was a 204, use the body (if any) that was PUT in the request as the "response"
 	// so it gets incorporated correctly into Redux
 	// 200/201 should return a representation of the entity.
 	// (https://tools.ietf.org/html/rfc7231#section-6.3.1)
-	const responseJson = response.status === 204 ? config.body : yield call(() => response.json())
+	result.data = response.status === 204 ? config.body : yield call(() => response.json())
+
 	if (!response.ok) {
-		return _.merge(
+		result.data = _.merge(
 			{},
 			{
 				title: 'Error',
 				message: response.statusText,
 				code: response.status
 			},
-			responseJson
+			result.data
 		)
 	}
-	return responseJson
+
+	return result
 }
