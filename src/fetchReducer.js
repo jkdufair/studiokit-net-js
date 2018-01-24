@@ -73,8 +73,10 @@ function convertArraysToObject(data) {
 **/
 function nonScalars(obj) {
 	return Object.keys(obj).reduce((prev, k) => {
-		if (_.isArray(obj[k]) || _.isObject(obj[k])) return _.assign({}, prev, { [`${k}`]: obj[k] })
-		else return prev
+		if (_.isArray(obj[k]) || _.isPlainObject(obj[k])) {
+			prev[k] = obj[k]
+		}
+		return prev
 	}, {})
 }
 
