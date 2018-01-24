@@ -70,18 +70,23 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 	const method = config.method || 'GET'
 
 	const headers =
+		// setting FormData as the body will set "Content-Type", including "boundary"
+		// do not interfere
 		config.contentType === 'multipart/form-data'
 			? _.merge({}, config.headers)
 			: _.merge(
 					{},
 					{
-						'Content-Type': 'application/json; charset=utf-8'
+						'Content-Type': !!config.contentType
+							? config.contentType
+							: 'application/json; charset=utf-8'
 					},
 					config.headers
 				)
 	const body =
 		!headers['Content-Type'] ||
-		headers['Content-Type'].includes('application/x-www-form-urlencoded')
+		headers['Content-Type'].includes('application/x-www-form-urlencoded') ||
+		headers['Content-Type'].includes('multipart/form-data')
 			? config.body
 			: JSON.stringify(config.body)
 	const response = yield call(fetch, constructPath(config), {
@@ -90,24 +95,33 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 		body
 	})
 	if (!response) {
-		return null
+		return undefined
 	}
 
-	// If the request was a 204, use the body that was PUT in the request as the "response"
+	// construct a subset of the response object to return
+	const result = {
+		ok: response.ok,
+		status: response.status,
+		data: undefined
+	}
+
+	// If the request was a 204, use the body (if any) that was PUT in the request as the "response"
 	// so it gets incorporated correctly into Redux
 	// 200/201 should return a representation of the entity.
 	// (https://tools.ietf.org/html/rfc7231#section-6.3.1)
-	const responseJson = response.status === 204 ? config.body : yield call(() => response.json())
+	result.data = response.status === 204 ? config.body : yield call(() => response.json())
+
 	if (!response.ok) {
-		return _.merge(
+		result.data = _.merge(
 			{},
 			{
 				title: 'Error',
 				message: response.statusText,
 				code: response.status
 			},
-			responseJson
+			result.data
 		)
 	}
-	return responseJson
+
+	return result
 }

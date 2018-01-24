@@ -144,21 +144,23 @@ function* fetchData(action: FetchAction) {
 		fetchConfig.method = action.method
 	}
 
-	//set "contentType" if defined
-	if (action.contentType && typeof action.contentType === 'string') {
-		fetchConfig.contentType = action.contentType
-	}
-
 	// set or merge "body"
 	// If the body is a string, we are assuming it's an application/x-www-form-urlencoded
 	if (action.body && (typeof action.body === 'string' || action.body instanceof FormData)) {
 		fetchConfig.body = action.body
+		fetchConfig.contentType = 'application/x-www-form-urlencoded'
 	} else if (fetchConfig.body || action.body) {
 		const isBodyArray =
 			(fetchConfig.body && _.isArray(fetchConfig.body)) || (action.body && _.isArray(action.body))
 		fetchConfig.body = isBodyArray
 			? _.union([], fetchConfig.body, action.body)
 			: _.merge({}, fetchConfig.body, action.body)
+	}
+
+	// set "contentType" if defined, overriding the default application/x-www-form-urlencoded
+	// that may have been set previously
+	if (action.contentType && typeof action.contentType === 'string') {
+		fetchConfig.contentType = action.contentType
 	}
 
 	let modelName: string = action.modelName
@@ -287,26 +289,22 @@ function* fetchData(action: FetchAction) {
 				fetchResult: call(doFetch, fetchConfig),
 				timedOutResult: call(delay, action.timeLimit ? action.timeLimit : 30000)
 			})
-			if (
-				fetchResult &&
-				!(fetchResult.title && fetchResult.title === 'Error') &&
-				!(fetchResult.code && fetchResult.code >= 400)
-			) {
+			if (fetchResult && fetchResult.ok) {
 				let storeAction = action.noStore
 					? actions.TRANSIENT_FETCH_RESULT_RECEIVED
 					: actions.FETCH_RESULT_RECEIVED
-				let data = fetchResult
+				let data = fetchResult.data
 				if (modelConfig.isCollection) {
 					data = {}
 					if (fetchConfig.method === 'DELETE') {
 						storeAction = actions.KEY_REMOVAL_REQUESTED
 					} else if (isCollectionItemFetch || isCollectionItemCreate) {
-						data = fetchResult
+						data = fetchResult.data
 					} else {
 						const fetchedAt = new Date()
-						const resultsArray = !_.isArray(fetchResult)
-							? Object.keys(fetchResult).map(key => fetchResult[key])
-							: fetchResult
+						const resultsArray = !_.isArray(fetchResult.data)
+							? Object.keys(fetchResult.data).map(key => fetchResult.data[key])
+							: fetchResult.data
 						resultsArray.forEach(item => {
 							data[item.id] = _.merge({}, item, {
 								_metadata: {
@@ -355,7 +353,7 @@ function* fetchData(action: FetchAction) {
 						{
 							didTimeOut: !!timedOutResult
 						},
-						fetchResult
+						fetchResult && fetchResult.data ? fetchResult.data : {}
 					)
 				}
 				throw new Error(JSON.stringify(lastFetchError))

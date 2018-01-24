@@ -1,5 +1,102 @@
-import fetchReducer from '../src/fetchReducer'
+import fetchReducer, { __RewireAPI__ as FetchReducerRewireAPI } from '../src/fetchReducer'
 import actions from '../src/actions'
+import _ from 'lodash'
+
+const nonScalars = FetchReducerRewireAPI.__get__('nonScalars')
+const convertArraysToObjects = FetchReducerRewireAPI.__get__('convertArraysToObjects')
+const getMetadata = FetchReducerRewireAPI.__get__('getMetadata')
+
+describe('supporting functions', () => {
+	describe('nonScalars', () => {
+		test('should remove scalars from object', () => {
+			const obj = { foo: 'bar', baz: { quux: 7 }, bleb: 4, boop: [1, 2, { three: 4 }] }
+			const result = nonScalars(obj)
+			expect(result).toEqual({ baz: { quux: 7 }, boop: [1, 2, { three: 4 }] })
+		})
+
+		test('should return itself for non-objects', () => {
+			expect(nonScalars('foo')).toEqual('foo')
+			expect(nonScalars([1, 2, 3])).toEqual([1, 2, 3])
+		})
+
+		test('should return empty obj for an object with no children', () => {
+			const obj = { foo: 'bar', baz: 'quux' }
+			expect(nonScalars(obj)).toEqual({})
+		})
+
+		test('should return self for object with no scalars', () => {
+			const obj = { foo: { bar: 'baz', quux: [1, 2, 3] } }
+			expect(nonScalars(obj)).toEqual(obj)
+		})
+	})
+
+	describe('convertArraysToObject', () => {
+		test('should convert object with array prop to dictionary style object prop', () => {
+			let obj = {
+				id: 1,
+				name: 'Alton Brown',
+				unitaskers: [{ id: 1, function: 'garlic peeler' }, { id: 2, function: 'herb scissors' }]
+			}
+			const result = convertArraysToObjects(obj)
+			expect(result).toEqual({
+				id: 1,
+				name: 'Alton Brown',
+				unitaskers: {
+					1: {
+						id: 1,
+						function: 'garlic peeler'
+					},
+					2: {
+						id: 2,
+						function: 'herb scissors'
+					}
+				}
+			})
+		})
+
+		test('should return same object when no array props present', () => {
+			let obj = { id: 1, name: 'Alton Brown' }
+			const result = convertArraysToObjects(obj)
+			expect(result).toEqual(obj)
+		})
+
+		test('should return same object when no array props present', () => {
+			let obj = {
+				id: 1,
+				name: 'Alton Brown',
+				unitaskers: {
+					1: {
+						id: 1,
+						function: 'garlic peeler'
+					},
+					2: {
+						id: 2,
+						function: 'herb scissors'
+					}
+				}
+			}
+			const result = convertArraysToObjects(obj)
+			expect(result).toEqual(obj)
+		})
+	})
+
+	describe('getMetadata', () => {
+		test('can get metadata entity', () => {
+			const state = { foo: { bar: 'bar', _metadata: { baz: 'quux' } } }
+			expect(getMetadata(state, ['foo'])).toEqual({ baz: 'quux' })
+		})
+
+		test('should return empty object for no metadata', () => {
+			const state = { foo: { bar: 'bar' } }
+			expect(getMetadata(state, ['foo'])).toEqual({})
+		})
+
+		test('should return empty object for nonexistent path', () => {
+			const state = { foo: { bar: 'bar' } }
+			expect(getMetadata(state, ['nada'])).toEqual({})
+		})
+	})
+})
 
 describe('fetchReducer', () => {
 	test('Do nothing without action.modelName', () => {
@@ -620,6 +717,115 @@ describe('fetchReducer', () => {
 						fetchedAt: fetchedAtDate
 					},
 					response: 'value'
+				}
+			})
+		})
+
+		test('any level preserve children', () => {
+			const fetchedAtDate = new Date()
+			const _Date = Date
+			global.Date = jest.fn(() => fetchedAtDate)
+			let state = fetchReducer(
+				{
+					user: {
+						testChildren: {
+							_metadata: {
+								isFetching: false,
+								lastFetchError: undefined,
+								hasError: false,
+								timedOut: false,
+								fetchedAt: fetchedAtDate
+							},
+							key: 'value',
+							child1: [1, 2, 3],
+							child2: {
+								eeny: 'meeny',
+								miney: 'mo'
+							}
+						}
+					}
+				},
+				{
+					type: actions.FETCH_RESULT_RECEIVED,
+					modelName: 'user.testChildren',
+					data: {
+						key: 'new value'
+					}
+				}
+			)
+			expect(state).toEqual({
+				user: {
+					testChildren: {
+						_metadata: {
+							isFetching: false,
+							lastFetchError: undefined,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedAtDate
+						},
+						key: 'new value',
+						child1: [1, 2, 3],
+						child2: {
+							eeny: 'meeny',
+							miney: 'mo'
+						}
+					}
+				}
+			})
+		})
+
+		test('should convert arrays to objects from request', () => {
+			const fetchedAtDate = new Date()
+			const _Date = Date
+			global.Date = jest.fn(() => fetchedAtDate)
+			let state = fetchReducer(
+				{
+					user: {
+						testChildrenWithArraysOfObjects: {
+							_metadata: {
+								isFetching: false,
+								lastFetchError: undefined,
+								hasError: false,
+								timedOut: false,
+								fetchedAt: fetchedAtDate
+							},
+							key: 'value',
+							child1: [1, 2, 3],
+							child2: {
+								eeny: 'meeny',
+								miney: 'mo'
+							}
+						}
+					}
+				},
+				{
+					type: actions.FETCH_RESULT_RECEIVED,
+					modelName: 'user.testChildrenWithArraysOfObjects',
+					data: {
+						key: [{ id: 1, name: 'Alton' }, { id: 2, name: 'Giada' }]
+					}
+				}
+			)
+			expect(state).toEqual({
+				user: {
+					testChildrenWithArraysOfObjects: {
+						_metadata: {
+							isFetching: false,
+							lastFetchError: undefined,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedAtDate
+						},
+						key: {
+							'1': { id: 1, name: 'Alton' },
+							'2': { id: 2, name: 'Giada' }
+						},
+						child1: [1, 2, 3],
+						child2: {
+							eeny: 'meeny',
+							miney: 'mo'
+						}
+					}
 				}
 			})
 		})

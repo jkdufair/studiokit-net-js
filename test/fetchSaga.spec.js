@@ -271,6 +271,7 @@ describe('fetchData', () => {
 				race({
 					fetchResult: call(doFetch, {
 						path: 'http://news.ycombinator.com',
+						contentType: 'application/x-www-form-urlencoded',
 						headers: { Authorization: 'Bearer some-access-token' },
 						queryParams: {},
 						body: 'body'
@@ -620,7 +621,25 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next()
-			const resultReceivedEffect = gen.next({ fetchResult: { foo: 'bar' } })
+			const resultReceivedEffect = gen.next({
+				fetchResult: { ok: true, status: 200, data: { foo: 'bar' } }
+			})
+			expect(resultReceivedEffect.value).toEqual(
+				put(
+					createAction(actions.FETCH_RESULT_RECEIVED, { data: { foo: 'bar' }, modelName: 'test' })
+				)
+			)
+			expect(gen.next().done).toEqual(true)
+		})
+
+		test('should execute basic fetch with content-type', () => {
+			const gen = fetchData({ modelName: 'test', contentType: 'text/html; charset=utf-8' })
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next()
+			const resultReceivedEffect = gen.next({
+				fetchResult: { ok: true, status: 200, data: { foo: 'bar' } }
+			})
 			expect(resultReceivedEffect.value).toEqual(
 				put(
 					createAction(actions.FETCH_RESULT_RECEIVED, { data: { foo: 'bar' }, modelName: 'test' })
@@ -634,7 +653,9 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
-			const resultReceivedEffect = gen.next({ fetchResult: { foo: 'bar' } })
+			const resultReceivedEffect = gen.next({
+				fetchResult: { ok: true, status: 200, data: { foo: 'bar' } }
+			})
 			expect(resultReceivedEffect.value).toEqual(
 				put(
 					createAction(actions.TRANSIENT_FETCH_RESULT_RECEIVED, {
@@ -652,7 +673,9 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next()
-			const resultReceivedEffect = gen.next({ fetchResult: { foo: 'bar' } })
+			const resultReceivedEffect = gen.next({
+				fetchResult: { ok: true, status: 200, data: { foo: 'bar' } }
+			})
 			expect(resultReceivedEffect.value).toEqual(
 				put(
 					createAction(actions.FETCH_RESULT_RECEIVED, {
@@ -740,7 +763,9 @@ describe('fetchData', () => {
 			for (let i = 0; i <= 3; i++) {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next(getOauthToken())
-				const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error' } })
+				const fetchTryFailedEffect = gen.next({
+					fetchResult: { ok: false, status: 500, data: { title: 'Error' } }
+				})
 				const putTryFailedEffect = gen.next()
 				if (i < 3) {
 					const delayAndPutAgainEffect = gen.next()
@@ -796,7 +821,9 @@ describe('fetchData', () => {
 			for (let i = 0; i <= 3; i++) {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next(getOauthToken())
-				const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error' } })
+				const fetchTryFailedEffect = gen.next({
+					fetchResult: { ok: false, status: 500, data: { title: 'Error' } }
+				})
 				const putTryFailedEffect = gen.next()
 				if (i < 3) {
 					const delayAndPutAgainEffect = gen.next()
@@ -824,7 +851,9 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
-			const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error', code: 401 } })
+			const fetchTryFailedEffect = gen.next({
+				fetchResult: { ok: false, status: 401, data: { title: 'Error', code: 401 } }
+			})
 			const putTryFailedEffect = gen.next()
 			const delayEffect = gen.next()
 			expect(errorOutput).toEqual(null)
@@ -863,7 +892,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: [{ id: 1, name: 'foo' }, { id: 2, name: 'bar' }]
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: [{ id: 1, name: 'foo' }, { id: 2, name: 'bar' }]
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -907,7 +940,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { '1': { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { '1': { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -974,7 +1011,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { id: 2, name: 'bar' }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { id: 2, name: 'bar' }
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1032,7 +1073,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { id: 3, name: 'baz' }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { id: 3, name: 'baz' }
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1056,7 +1101,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { id: 3, name: 'baz' }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { id: 3, name: 'baz' }
+					}
 				})
 				const resultStoredEffect = gen.next()
 				expect(resultStoredEffect.value).toEqual(
@@ -1104,7 +1153,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: 'success'
+					fetchResult: {
+						ok: true,
+						status: 204,
+						data: undefined
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1151,7 +1204,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { foo: 'bar' }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { foo: 'bar' }
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1181,7 +1238,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: [{ id: 1, name: 'foo' }, { id: 2, name: 'bar' }]
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: [{ id: 1, name: 'foo' }, { id: 2, name: 'bar' }]
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1228,7 +1289,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { '1': { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { '1': { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1295,7 +1360,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { id: 999, name: 'bar' }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { id: 999, name: 'bar' }
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1363,7 +1432,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { id: 3, name: 'baz' }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { id: 3, name: 'baz' }
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1388,7 +1461,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { id: 3, name: 'baz' }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { id: 3, name: 'baz' }
+					}
 				})
 				const resultStoredEffect = gen.next()
 				expect(resultStoredEffect.value).toEqual(
@@ -1436,7 +1513,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: 'success'
+					fetchResult: {
+						ok: true,
+						status: 204,
+						data: undefined
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1482,7 +1563,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { foo: 'bar' }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { foo: 'bar' }
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
