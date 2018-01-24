@@ -623,6 +623,59 @@ describe('fetchReducer', () => {
 				}
 			})
 		})
+
+		test('any level preserve children', () => {
+			const fetchedAtDate = new Date()
+			const _Date = Date
+			global.Date = jest.fn(() => fetchedAtDate)
+			let state = fetchReducer(
+				{
+					user: {
+						testChildren: {
+							_metadata: {
+								isFetching: false,
+								lastFetchError: undefined,
+								hasError: false,
+								timedOut: false,
+								fetchedAt: fetchedAtDate
+							},
+							key: 'value',
+							child1: [1, 2, 3],
+							child2: {
+								eeny: 'meeny',
+								miney: 'mo'
+							}
+						}
+					}
+				},
+				{
+					type: actions.FETCH_RESULT_RECEIVED,
+					modelName: 'user.testChildren',
+					data: {
+						key: 'new value'
+					}
+				}
+			)
+			expect(state).toEqual({
+				user: {
+					testChildren: {
+						_metadata: {
+							isFetching: false,
+							lastFetchError: undefined,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedAtDate
+						},
+						key: 'new value',
+						child1: [1, 2, 3],
+						child2: {
+							eeny: 'meeny',
+							miney: 'mo'
+						}
+					}
+				}
+			})
+		})
 	})
 
 	describe('FETCH_FAILED', () => {

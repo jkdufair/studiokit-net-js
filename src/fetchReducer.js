@@ -62,34 +62,6 @@ function convertArraysToObject(data) {
 }
 
 /**
- * Reducer for fetching. Fetching state updated with every action. Data updated on result received.
- * Data and fetchedDate NOT deleted on failed request. All data at key removed on KEY_REMOVAL_REQUESTED
- * All actions require a modelName key to function with this reducer
- *
- * @param data - the data object
- * @returns data and its array elements converted into objects if needed
- */
-function convertArraysToObject(data) {
-	_.forEach(data, function(value, key) {
-		if (_.isObject(value)) {
-			convertArraysToObject(value)
-		}
-		if (_.isArray(value)) {
-			if (value.every(e => _.isPlainObject(e))) {
-				let indexKey = 0
-				const newValue = value.every(e => e.hasOwnProperty('id'))
-					? _.keyBy(value, 'id')
-					: _.keyBy(value, function() {
-							return indexKey++
-						})
-
-				data[key] = newValue
-			}
-		}
-	})
-}
-
-/**
  * Given a plain object, return an object whos own properties
  * are only the properties of obj whose values are arrays
  * or plain objects
@@ -100,7 +72,7 @@ function convertArraysToObject(data) {
  * @returns A plain JS object with scalar-valued properties removed
 **/
 function nonScalars(obj) {
-	Object.keys(obj).reduce((prev, k) => {
+	return Object.keys(obj).reduce((prev, k) => {
 		if (_.isArray(obj[k]) || _.isObject(obj[k])) return _.assign({}, prev, { [`${k}`]: obj[k] })
 		else return prev
 	}, {})
@@ -123,7 +95,8 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 		return state
 	}
 	let path: Array<string> = action.modelName.split('.')
-	let newValue = _.merge({}, _.get(state, path))
+	// the object value at the specified path
+	let valueAtPath = _.merge({}, _.get(state, path))
 	const metadata = getMetadata(state, path)
 
 	switch (action.type) {
@@ -136,22 +109,17 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 				lastFetchError: undefined,
 				timedOut: false
 			})
-			// If the path includes numbers, then call _.setWith using
-			// Object ctor as the customizer due to the way _.set handles numeric
-			// keys.
-			if (path.some(e => !isNaN(e))) {
-				return _fp.setWith(Object, path, valueAtPath, state)
-			}
-			return _fp.set(path, valueAtPath, state)
+			return _fp.setWith(Object, path, valueAtPath, state)
 
 		case actions.FETCH_RESULT_RECEIVED:
-			// Replace the object, preserve the children,
-			// update the metadata to reflect fetch is complete.
-			// Preserve the children by copying references to the non-scalar
+			// Replace the object, preserving any children.
+			// Update the metadata to reflect fetch is complete.
+			// Children are preserved by copying references to the non-scalar
 			// values (i.e. relations), and then setting the scalar values
 			// from the response.
-			valueAtPath = _.assign({}, nonScalars(valueAtPath), action.data)
-			if (typeof valueAtPath === 'string') valueAtPath = { response: valueAtPath }
+			const replacementValue =
+				typeof action.data !== 'object' ? { response: action.data } : action.data
+			valueAtPath = _.assign({}, nonScalars(valueAtPath), replacementValue)
 			valueAtPath._metadata = _.merge(metadata, {
 				isFetching: false,
 				hasError: false,
@@ -160,7 +128,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 				fetchedAt: new Date()
 			})
 			convertArraysToObject(valueAtPath)
-			return _fp.set(path, valueAtPath, state)
+			return _fp.setWith(Object, path, valueAtPath, state)
 
 		case actions.FETCH_FAILED:
 			// Retain the object, update the metadata to reflect the fact
@@ -171,10 +139,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 				lastFetchError: action.errorData,
 				timedOut: !!action.didTimeOut
 			})
-			if (path.some(e => !isNaN(e))) {
-				return _fp.setWith(Object, path, valueAtPath, state)
-			}
-			return _fp.set(path, valueAtPath, state)
+			return _fp.setWith(Object, path, valueAtPath, state)
 
 		case actions.KEY_REMOVAL_REQUESTED:
 			// Completely remove the object at the path from
