@@ -271,6 +271,7 @@ describe('fetchData', () => {
 				race({
 					fetchResult: call(doFetch, {
 						path: 'http://news.ycombinator.com',
+						contentType: 'application/x-www-form-urlencoded',
 						headers: { Authorization: 'Bearer some-access-token' },
 						queryParams: {},
 						body: 'body'
@@ -617,6 +618,20 @@ describe('fetchData', () => {
 	describe('successful fetch', () => {
 		test('should execute basic fetch', () => {
 			const gen = fetchData({ modelName: 'test' })
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next()
+			const resultReceivedEffect = gen.next({ fetchResult: { foo: 'bar' } })
+			expect(resultReceivedEffect.value).toEqual(
+				put(
+					createAction(actions.FETCH_RESULT_RECEIVED, { data: { foo: 'bar' }, modelName: 'test' })
+				)
+			)
+			expect(gen.next().done).toEqual(true)
+		})
+
+		test('should execute basic fetch with content-type', () => {
+			const gen = fetchData({ modelName: 'test', contentType: 'text/html; charset=utf-8' })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next()

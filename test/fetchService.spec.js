@@ -85,6 +85,45 @@ describe('doFetch', () => {
 		global.fetch = _fetch
 	})
 
+	test('Basic GET with contentType', () => {
+		const _fetch = global.fetch
+		global.fetch = jest.fn(() => {})
+		const gen = doFetch({ path: 'http://www.google.com', contentType: 'text/html; charset=utf-8' })
+		const response = gen.next()
+		expect(response.value.CALL.args).toEqual([
+			'http://www.google.com',
+			{
+				method: 'GET',
+				headers: {
+					'Content-Type': 'text/html; charset=utf-8'
+				}
+			}
+		])
+		global.fetch = _fetch
+	})
+
+	test('Basic GET with contentType and other headers', () => {
+		const _fetch = global.fetch
+		global.fetch = jest.fn(() => {})
+		const gen = doFetch({
+			path: 'http://www.google.com',
+			contentType: 'text/html; charset=utf-8',
+			headers: { 'some-header': 'some-header-value' }
+		})
+		const response = gen.next()
+		expect(response.value.CALL.args).toEqual([
+			'http://www.google.com',
+			{
+				method: 'GET',
+				headers: {
+					'Content-Type': 'text/html; charset=utf-8',
+					'some-header': 'some-header-value'
+				}
+			}
+		])
+		global.fetch = _fetch
+	})
+
 	test('Basic POST w/ headers', () => {
 		const _fetch = global.fetch
 		global.fetch = jest.fn(() => {})
@@ -114,7 +153,7 @@ describe('doFetch', () => {
 		})
 		const response = gen.next()
 		expect(response.value.CALL.args[1].method).toEqual('POST')
-		expect(response.value.CALL.args[1].headers).toEqual({})
+		expect(response.value.CALL.args[1].headers).toEqual({ 'Content-Type': 'multipart/form-data' })
 		expect(response.value.CALL.args[1].body).toBeInstanceOf(FormData)
 		global.fetch = _fetch
 	})
