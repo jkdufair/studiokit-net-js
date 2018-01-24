@@ -27,6 +27,13 @@ type ModelState = {
 	_metadata: MetadataState
 }
 
+/**
+ * Given the state and a path into that state object, return the prop that
+ * is named "_metadata"
+ * 
+ * @param {FetchState} state - The redux state object
+ * @param {Array<string>} path - An array of keys that represent the path to the entity in question
+ */
 function getMetadata(state: FetchState, path: Array<string>): MetadataState {
 	return _.merge({}, _.get(state, path.concat('_metadata')))
 }
@@ -41,10 +48,11 @@ function getMetadata(state: FetchState, path: Array<string>): MetadataState {
  * @param data - the data object
  * @returns data and its array elements converted into objects if needed
  */
-function convertArraysToObject(data) {
-	_.forEach(data, function(value, key) {
+function convertArraysToObjects(data) {
+	var localData = data
+	return _.forEach(localData, function(value, key) {
 		if (_.isObject(value)) {
-			convertArraysToObject(value)
+			convertArraysToObjects(value)
 		}
 		if (_.isArray(value)) {
 			if (value.every(e => _.isPlainObject(e))) {
@@ -55,7 +63,7 @@ function convertArraysToObject(data) {
 							return indexKey++
 						})
 
-				data[key] = newValue
+				localData[key] = newValue
 			}
 		}
 	})
@@ -66,12 +74,13 @@ function convertArraysToObject(data) {
  * are only the properties of obj whose values are arrays
  * or plain objects
  * i.e.: {'foo': 'bar', 'baz': {'quux': 7}, 'bleb': 4, 'boop':[1, 2, {'three': 4}]}
- * returns {baz': {'quux': 7}, 'boop':[1, 2, {'three': 4}]}
+ * returns {'baz': {'quux': 7}, 'boop':[1, 2, {'three': 4}]}
  *
  * @param obj A plain JS object
  * @returns A plain JS object with scalar-valued properties removed
 **/
 function nonScalars(obj) {
+	if (!_.isPlainObject(obj)) return obj
 	return Object.keys(obj).reduce((prev, k) => {
 		if (_.isArray(obj[k]) || _.isPlainObject(obj[k])) {
 			prev[k] = obj[k]
@@ -119,8 +128,9 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			// Children are preserved by copying references to the non-scalar
 			// values (i.e. relations), and then setting the scalar values
 			// from the response.
-			const replacementValue =
+			const replacementValue = convertArraysToObjects(
 				typeof action.data !== 'object' ? { response: action.data } : action.data
+			)
 			valueAtPath = _.assign({}, nonScalars(valueAtPath), replacementValue)
 			valueAtPath._metadata = _.merge(metadata, {
 				isFetching: false,
@@ -129,7 +139,6 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 				timedOut: false,
 				fetchedAt: new Date()
 			})
-			convertArraysToObject(valueAtPath)
 			return _fp.setWith(Object, path, valueAtPath, state)
 
 		case actions.FETCH_FAILED:
