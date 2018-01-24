@@ -38,6 +38,42 @@ describe('fetchReducer', () => {
 			})
 		})
 
+		test('nested level with numbers', () => {
+			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'user.1' })
+			expect(state).toEqual({
+				user: {
+					'1': {
+						_metadata: {
+							isFetching: true,
+							hasError: false,
+							lastFetchError: undefined,
+							timedOut: false
+						}
+					}
+				}
+			})
+		})
+
+		test('nested level with multiple level numbers', () => {
+			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'user.1.info.2' })
+			expect(state).toEqual({
+				user: {
+					'1': {
+						info: {
+							'2': {
+								_metadata: {
+									isFetching: true,
+									hasError: false,
+									lastFetchError: undefined,
+									timedOut: false
+								}
+							}
+						}
+					}
+				}
+			})
+		})
+
 		test('nested level merge state', () => {
 			const state = fetchReducer(
 				{ foo: 'bar' },
@@ -100,6 +136,52 @@ describe('fetchReducer', () => {
 					foo: 'bar',
 					_metadata: {
 						isFetching: true,
+						hasError: false,
+						timedOut: false,
+						fetchedAt: fetchedDate
+					}
+				}
+			})
+		})
+
+		test('should preserve data in nested level', () => {
+			const fetchedDate = new Date()
+
+			const state = fetchReducer(
+				{
+					test: {
+						foo: {
+							bar: 'baz'
+						},
+						_metadata: {
+							isFetching: false,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedDate
+						}
+					}
+				},
+				{ type: actions.FETCH_REQUESTED, modelName: 'test.qux.1.corge' }
+			)
+			expect(state).toEqual({
+				test: {
+					foo: {
+						bar: 'baz'
+					},
+					qux: {
+						'1': {
+							corge: {
+								_metadata: {
+									isFetching: true,
+									hasError: false,
+									timedOut: false,
+									lastFetchError: undefined
+								}
+							}
+						}
+					},
+					_metadata: {
+						isFetching: false,
 						hasError: false,
 						timedOut: false,
 						fetchedAt: fetchedDate
@@ -335,13 +417,219 @@ describe('fetchReducer', () => {
 				}
 			})
 		})
+
+		test('should preserve data in nested level', () => {
+			const fetchedDate = new Date()
+
+			const state = fetchReducer(
+				{
+					test: {
+						foo: {
+							bar: 'baz'
+						},
+						qux: {
+							'1': {
+								corge: {
+									_metadata: {
+										isFetching: true,
+										hasError: false,
+										timedOut: false,
+										lastFetchError: undefined
+									}
+								}
+							}
+						},
+						_metadata: {
+							isFetching: false,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedDate
+						}
+					}
+				},
+				{
+					type: actions.FETCH_RESULT_RECEIVED,
+					modelName: 'test.qux.1.corge',
+					data: { key: 'value' }
+				}
+			)
+			expect(state).toEqual({
+				test: {
+					foo: {
+						bar: 'baz'
+					},
+					qux: {
+						'1': {
+							corge: {
+								key: 'value',
+								_metadata: {
+									isFetching: false,
+									hasError: false,
+									timedOut: false,
+									fetchedAt: fetchedDate
+								}
+							}
+						}
+					},
+					_metadata: {
+						isFetching: false,
+						hasError: false,
+						timedOut: false,
+						fetchedAt: fetchedDate
+					}
+				}
+			})
+		})
+
+		test('should convert the incoming data from arrays to object', () => {
+			const fetchedDate = new Date()
+
+			const state = fetchReducer(
+				{
+					test: {
+						foo: {
+							bar: 'baz'
+						},
+						qux: {
+							'1': {
+								corge: {
+									'17': {
+										_metadata: {
+											isFetching: true,
+											hasError: false,
+											timedOut: false,
+											lastFetchError: undefined
+										}
+									}
+								}
+							}
+						},
+						_metadata: {
+							isFetching: false,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedDate
+						}
+					}
+				},
+				{
+					type: actions.FETCH_RESULT_RECEIVED,
+					modelName: 'test.qux.1.corge.17',
+					data: {
+						test: [
+							{
+								foo: [
+									{
+										bar: '2',
+										id: '112'
+									}
+								],
+								id: '322'
+							}
+						],
+						emptyObject: {},
+						emptyArray: [],
+						nonObjectArray: ['1', 2, 'bar'],
+						nonIdObjects: [
+							{
+								val: 'a'
+							},
+							{
+								val: 'b'
+							},
+							{
+								val: 'b'
+							}
+						]
+					}
+				}
+			)
+			expect(state).toEqual({
+				test: {
+					foo: {
+						bar: 'baz'
+					},
+					qux: {
+						'1': {
+							corge: {
+								'17': {
+									test: {
+										'322': {
+											foo: {
+												'112': {
+													bar: '2',
+													id: '112'
+												}
+											},
+											id: '322'
+										}
+									},
+									emptyObject: {},
+									emptyArray: {},
+									nonObjectArray: ['1', 2, 'bar'],
+									nonIdObjects: {
+										'0': {
+											val: 'a'
+										},
+										'1': {
+											val: 'b'
+										},
+										'2': {
+											val: 'b'
+										}
+									},
+									_metadata: {
+										isFetching: false,
+										hasError: false,
+										timedOut: false,
+										lastFetchError: undefined,
+										fetchedAt: fetchedDate
+									}
+								}
+							}
+						}
+					},
+					_metadata: {
+						isFetching: false,
+						hasError: false,
+						timedOut: false,
+						fetchedAt: fetchedDate
+					}
+				}
+			})
+		})
+
+		test('handle string response', () => {
+			const fetchedAtDate = new Date()
+			const _Date = Date
+			global.Date = jest.fn(() => fetchedAtDate)
+			const state = fetchReducer(
+				{},
+				{
+					type: actions.FETCH_RESULT_RECEIVED,
+					modelName: 'class',
+					data: 'value'
+				}
+			)
+			expect(state).toEqual({
+				class: {
+					_metadata: {
+						isFetching: false,
+						hasError: false,
+						timedOut: false,
+						fetchedAt: fetchedAtDate
+					},
+					response: 'value'
+				}
+			})
+		})
 	})
 
 	describe('FETCH_FAILED', () => {
 		test('single level with fetch error data', () => {
 			const state = fetchReducer(
 				{},
-				{ type: actions.FETCH_FAILED, modelName: 'test', lastFetchError: 'server fire' }
+				{ type: actions.FETCH_FAILED, modelName: 'test', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				test: {
@@ -382,7 +670,7 @@ describe('fetchReducer', () => {
 		test('nested level', () => {
 			const state = fetchReducer(
 				{},
-				{ type: actions.FETCH_FAILED, modelName: 'user.test', lastFetchError: 'server fire' }
+				{ type: actions.FETCH_FAILED, modelName: 'user.test', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				user: {
@@ -401,7 +689,7 @@ describe('fetchReducer', () => {
 		test('nested level merge state', () => {
 			const state = fetchReducer(
 				{ foo: 'bar' },
-				{ type: actions.FETCH_FAILED, modelName: 'user.test', lastFetchError: 'server fire' }
+				{ type: actions.FETCH_FAILED, modelName: 'user.test', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				foo: 'bar',
@@ -421,7 +709,7 @@ describe('fetchReducer', () => {
 		test('nested level replace state', () => {
 			const state = fetchReducer(
 				{ user: { foo: 'bar' } },
-				{ type: actions.FETCH_FAILED, modelName: 'user.test', lastFetchError: 'server fire' }
+				{ type: actions.FETCH_FAILED, modelName: 'user.test', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				user: {
@@ -457,7 +745,7 @@ describe('fetchReducer', () => {
 						}
 					}
 				},
-				{ type: actions.FETCH_FAILED, modelName: 'groups.1', lastFetchError: 'server fire' }
+				{ type: actions.FETCH_FAILED, modelName: 'groups.1', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				groups: {

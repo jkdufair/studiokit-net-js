@@ -46,6 +46,7 @@ type OAuthToken = {
  * noRetry - (optional)  will prevent the use of the default logarithmic backoff retry strategy
  * timeLimit - (optional) number that will specify the timeout for a single attempt at a request. Defaults to 3000ms
  * guid - (optional) A pre-generated (by your application) GUID that will be attached to the fetchResult.data, to be stored in redux and used to match
+ * contentType - (optional) the contentType to be set in the header. If not set, the default value is `application/json`
  */
 type FetchAction = {
 	modelName: string,
@@ -58,7 +59,8 @@ type FetchAction = {
 	taskId?: string,
 	noRetry?: boolean,
 	timeLimit?: number,
-	guid?: string
+	guid?: string,
+	contentType?: string
 }
 
 type FetchError = {
@@ -142,9 +144,14 @@ function* fetchData(action: FetchAction) {
 		fetchConfig.method = action.method
 	}
 
+	//set "contentType" if defined
+	if (action.contentType && typeof action.contentType === 'string') {
+		fetchConfig.contentType = action.contentType
+	}
+
 	// set or merge "body"
 	// If the body is a string, we are assuming it's an application/x-www-form-urlencoded
-	if (action.body && typeof action.body === 'string') {
+	if (action.body && (typeof action.body === 'string' || action.body instanceof FormData)) {
 		fetchConfig.body = action.body
 	} else if (fetchConfig.body || action.body) {
 		const isBodyArray =
@@ -189,10 +196,8 @@ function* fetchData(action: FetchAction) {
 		} else if (!fetchConfig.path) {
 			fetchConfig.path = `/api/${modelName}`
 		}
-
 		// determine if we need to add pathParam hooks
 		const pathLevels = (fetchConfig.path.match(/{:.+}/g) || []).length
-
 		// GET, PUT, PATCH, DELETE => append '/{:id}'
 		isCollectionItemFetch = modelConfig.isCollection && pathParams.length > pathLevels
 		// POST
@@ -207,7 +212,6 @@ function* fetchData(action: FetchAction) {
 			modelName = `${modelName}.${action.guid || uuid.v4()}`
 		}
 	}
-
 	// substitute any pathParams in path, e.g. /api/group/{:id}
 	if (/{:.+}/.test(fetchConfig.path)) {
 		let index = 0
@@ -264,7 +268,6 @@ function* fetchData(action: FetchAction) {
 	let didFail: boolean = false
 	let lastFetchError: ?FetchError
 	let lastError: ?Error
-
 	// Run retry loop
 	do {
 		didFail = false
@@ -293,7 +296,6 @@ function* fetchData(action: FetchAction) {
 					? actions.TRANSIENT_FETCH_RESULT_RECEIVED
 					: actions.FETCH_RESULT_RECEIVED
 				let data = fetchResult
-
 				if (modelConfig.isCollection) {
 					data = {}
 					if (fetchConfig.method === 'DELETE') {
