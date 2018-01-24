@@ -144,21 +144,23 @@ function* fetchData(action: FetchAction) {
 		fetchConfig.method = action.method
 	}
 
-	//set "contentType" if defined
-	if (action.contentType && typeof action.contentType === 'string') {
-		fetchConfig.contentType = action.contentType
-	}
-
 	// set or merge "body"
 	// If the body is a string, we are assuming it's an application/x-www-form-urlencoded
 	if (action.body && (typeof action.body === 'string' || action.body instanceof FormData)) {
 		fetchConfig.body = action.body
+		fetchConfig.contentType = 'application/x-www-form-urlencoded'
 	} else if (fetchConfig.body || action.body) {
 		const isBodyArray =
 			(fetchConfig.body && _.isArray(fetchConfig.body)) || (action.body && _.isArray(action.body))
 		fetchConfig.body = isBodyArray
 			? _.union([], fetchConfig.body, action.body)
 			: _.merge({}, fetchConfig.body, action.body)
+	}
+
+	// set "contentType" if defined, overriding the default application/x-www-form-urlencoded
+	// that may have been set previously
+	if (action.contentType && typeof action.contentType === 'string') {
+		fetchConfig.contentType = action.contentType
 	}
 
 	let modelName: string = action.modelName
