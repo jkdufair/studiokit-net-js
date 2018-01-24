@@ -289,26 +289,22 @@ function* fetchData(action: FetchAction) {
 				fetchResult: call(doFetch, fetchConfig),
 				timedOutResult: call(delay, action.timeLimit ? action.timeLimit : 30000)
 			})
-			if (
-				fetchResult &&
-				!(fetchResult.title && fetchResult.title === 'Error') &&
-				!(fetchResult.code && fetchResult.code >= 400)
-			) {
+			if (fetchResult && fetchResult.ok) {
 				let storeAction = action.noStore
 					? actions.TRANSIENT_FETCH_RESULT_RECEIVED
 					: actions.FETCH_RESULT_RECEIVED
-				let data = fetchResult
+				let data = fetchResult.data
 				if (modelConfig.isCollection) {
 					data = {}
 					if (fetchConfig.method === 'DELETE') {
 						storeAction = actions.KEY_REMOVAL_REQUESTED
 					} else if (isCollectionItemFetch || isCollectionItemCreate) {
-						data = fetchResult
+						data = fetchResult.data
 					} else {
 						const fetchedAt = new Date()
-						const resultsArray = !_.isArray(fetchResult)
-							? Object.keys(fetchResult).map(key => fetchResult[key])
-							: fetchResult
+						const resultsArray = !_.isArray(fetchResult.data)
+							? Object.keys(fetchResult.data).map(key => fetchResult.data[key])
+							: fetchResult.data
 						resultsArray.forEach(item => {
 							data[item.id] = _.merge({}, item, {
 								_metadata: {
@@ -357,7 +353,7 @@ function* fetchData(action: FetchAction) {
 						{
 							didTimeOut: !!timedOutResult
 						},
-						fetchResult
+						fetchResult && fetchResult.data ? fetchResult.data : {}
 					)
 				}
 				throw new Error(JSON.stringify(lastFetchError))
