@@ -882,7 +882,7 @@ describe('fetchData', () => {
 
 	describe('collection fetch', () => {
 		describe('GET collection', () => {
-			test('should return a key-value object by id of nested items, from an api array', () => {
+			test('should not convert an api array to a key-value object', () => {
 				const fetchedAt = new Date()
 				const _Date = Date
 				global.Date = jest.fn(() => fetchedAt)
@@ -901,8 +901,8 @@ describe('fetchData', () => {
 				expect(resultReceivedEffect.value).toEqual(
 					put(
 						createAction(actions.FETCH_RESULT_RECEIVED, {
-							data: {
-								1: {
+							data: [
+								{
 									id: 1,
 									name: 'foo',
 									_metadata: {
@@ -912,7 +912,7 @@ describe('fetchData', () => {
 										fetchedAt
 									}
 								},
-								2: {
+								{
 									id: 2,
 									name: 'bar',
 									_metadata: {
@@ -922,7 +922,7 @@ describe('fetchData', () => {
 										fetchedAt
 									}
 								}
-							},
+							],
 							modelName: 'entities'
 						})
 					)
@@ -930,7 +930,7 @@ describe('fetchData', () => {
 				expect(gen.next().done).toEqual(true)
 			})
 
-			test('should return a key-value object by id of nested items, from a key-value api object', () => {
+			test('should return an array from a key-value api object', () => {
 				const fetchedAt = new Date()
 				const _Date = Date
 				global.Date = jest.fn(() => fetchedAt)
@@ -949,8 +949,8 @@ describe('fetchData', () => {
 				expect(resultReceivedEffect.value).toEqual(
 					put(
 						createAction(actions.FETCH_RESULT_RECEIVED, {
-							data: {
-								1: {
+							data: [
+								{
 									id: 1,
 									name: 'foo',
 									_metadata: {
@@ -960,7 +960,7 @@ describe('fetchData', () => {
 										fetchedAt
 									}
 								},
-								2: {
+								{
 									id: 2,
 									name: 'bar',
 									_metadata: {
@@ -970,7 +970,7 @@ describe('fetchData', () => {
 										fetchedAt
 									}
 								}
-							},
+							],
 							modelName: 'entities'
 						})
 					)
@@ -1225,7 +1225,7 @@ describe('fetchData', () => {
 
 	describe('nested collection fetch', () => {
 		describe('GET nested collection', () => {
-			test('should return a key-value object by id of nested items, from an api array', () => {
+			test('should not convert an api array to a key-value object', () => {
 				const fetchedAt = new Date()
 				const _Date = Date
 				global.Date = jest.fn(() => fetchedAt)
@@ -1247,8 +1247,8 @@ describe('fetchData', () => {
 				expect(resultReceivedEffect.value).toEqual(
 					put(
 						createAction(actions.FETCH_RESULT_RECEIVED, {
-							data: {
-								1: {
+							data: [
+								{
 									id: 1,
 									name: 'foo',
 									_metadata: {
@@ -1258,7 +1258,7 @@ describe('fetchData', () => {
 										fetchedAt
 									}
 								},
-								2: {
+								{
 									id: 2,
 									name: 'bar',
 									_metadata: {
@@ -1268,7 +1268,7 @@ describe('fetchData', () => {
 										fetchedAt
 									}
 								}
-							},
+							],
 							modelName: 'topLevelEntities.1.secondLevelEntities'
 						})
 					)
@@ -1276,7 +1276,7 @@ describe('fetchData', () => {
 				expect(gen.next().done).toEqual(true)
 			})
 
-			test('should return a key-value object by id of nested items, from a key-value api object', () => {
+			test('should return an array, from a key-value api object', () => {
 				const fetchedAt = new Date()
 				const _Date = Date
 				global.Date = jest.fn(() => fetchedAt)
@@ -1298,8 +1298,8 @@ describe('fetchData', () => {
 				expect(resultReceivedEffect.value).toEqual(
 					put(
 						createAction(actions.FETCH_RESULT_RECEIVED, {
-							data: {
-								1: {
+							data: [
+								{
 									id: 1,
 									name: 'foo',
 									_metadata: {
@@ -1309,7 +1309,7 @@ describe('fetchData', () => {
 										fetchedAt
 									}
 								},
-								2: {
+								{
 									id: 2,
 									name: 'bar',
 									_metadata: {
@@ -1319,7 +1319,7 @@ describe('fetchData', () => {
 										fetchedAt
 									}
 								}
-							},
+							],
 							modelName: 'topLevelEntities.1.secondLevelEntities'
 						})
 					)

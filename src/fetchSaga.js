@@ -295,18 +295,20 @@ function* fetchData(action: FetchAction) {
 					: actions.FETCH_RESULT_RECEIVED
 				let data = fetchResult.data
 				if (modelConfig.isCollection) {
-					data = {}
 					if (fetchConfig.method === 'DELETE') {
 						storeAction = actions.KEY_REMOVAL_REQUESTED
+						data = {}
 					} else if (isCollectionItemFetch || isCollectionItemCreate) {
 						data = fetchResult.data
 					} else {
 						const fetchedAt = new Date()
+						// convert to array if key-value object was returned for collection
 						const resultsArray = !_.isArray(fetchResult.data)
 							? Object.keys(fetchResult.data).map(key => fetchResult.data[key])
 							: fetchResult.data
-						resultsArray.forEach(item => {
-							data[item.id] = _.merge({}, item, {
+						// set metadata on each item
+						data = resultsArray.map(item => {
+							return _.merge({}, item, {
 								_metadata: {
 									isFetching: false,
 									hasError: false,

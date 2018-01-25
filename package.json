@@ -1,6 +1,6 @@
 {
 	"name": "studiokit-net-js",
-	"version": "1.4.12",
+	"version": "1.4.13",
 	"scripts": {
 		"eslint-check": "eslint --print-config .eslintrc.js | eslint-config-prettier-check",
 		"lint": "eslint --ext=js ./*.js src test",
