@@ -49,24 +49,21 @@ function getMetadata(state: FetchState, path: Array<string>): MetadataState {
  * @returns data and its array elements converted into objects if needed
  */
 function convertArraysToObjects(data) {
-	var localData = data
-	return _.forEach(localData, function(value, key) {
-		if (_.isObject(value)) {
-			convertArraysToObjects(value)
-		}
-		if (_.isArray(value)) {
-			if (value.every(e => _.isPlainObject(e))) {
-				let indexKey = 0
-				const newValue = value.every(e => e.hasOwnProperty('id'))
-					? _.keyBy(value, 'id')
-					: _.keyBy(value, function() {
-							return indexKey++
-						})
-
-				localData[key] = newValue
-			}
-		}
-	})
+	if (!_.isPlainObject(data) && !_.isArray(data)) return data
+	if (_.isArray(data)) {
+		if (data.length > 0 && !data.every(e => _.isPlainObject(e) && e.hasOwnProperty('id')))
+			return data
+		return Object.keys(data).reduce((prev, k) => {
+			const value = data[k]
+			const newKey = value.id
+			prev[`${newKey}`] = convertArraysToObjects(value)
+			return prev
+		}, {})
+	}
+	return Object.keys(data).reduce((prev, k) => {
+		prev[k] = convertArraysToObjects(data[k])
+		return prev
+	}, {})
 }
 
 /**
@@ -87,6 +84,29 @@ function nonScalars(obj) {
 		}
 		return prev
 	}, {})
+}
+
+function removeUndefinedKeys(obj, newObj) {
+	return Object.keys(obj).reduce((prev, k) => {
+		if (_.isPlainObject(obj[k]) && _.isUndefined(newObj[k])) {
+			return prev
+		}
+		prev[k] = obj[k]
+		return prev
+	}, {})
+}
+
+function diff(current, incoming) {
+	let incomingConverted = convertArraysToObjects(
+		!_.isPlainObject(incoming) && !_.isArray(incoming) ? { response: incoming } : incoming
+	)
+
+	let currentNonScalars = nonScalars(current)
+	if (_.isArray(incoming) && incoming.every(e => _.isPlainObject(e) && e.hasOwnProperty('id'))) {
+		currentNonScalars = removeUndefinedKeys(currentNonScalars, nonScalars(incomingConverted))
+	}
+
+	return _.merge({}, currentNonScalars, incomingConverted)
 }
 
 /**
@@ -124,14 +144,11 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 
 		case actions.FETCH_RESULT_RECEIVED:
 			// Replace the object, preserving any children.
-			// Update the metadata to reflect fetch is complete.
 			// Children are preserved by copying references to the non-scalar
 			// values (i.e. relations), and then setting the scalar values
 			// from the response.
-			const replacementValue = convertArraysToObjects(
-				typeof action.data !== 'object' ? { response: action.data } : action.data
-			)
-			valueAtPath = _.assign({}, nonScalars(valueAtPath), replacementValue)
+			valueAtPath = diff(valueAtPath, action.data)
+			// Update the metadata to reflect fetch is complete.
 			valueAtPath._metadata = _.merge(metadata, {
 				isFetching: false,
 				hasError: false,

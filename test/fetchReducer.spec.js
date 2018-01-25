@@ -5,6 +5,7 @@ import _ from 'lodash'
 const nonScalars = FetchReducerRewireAPI.__get__('nonScalars')
 const convertArraysToObjects = FetchReducerRewireAPI.__get__('convertArraysToObjects')
 const getMetadata = FetchReducerRewireAPI.__get__('getMetadata')
+const diff = FetchReducerRewireAPI.__get__('diff')
 
 describe('supporting functions', () => {
 	describe('nonScalars', () => {
@@ -31,6 +32,48 @@ describe('supporting functions', () => {
 	})
 
 	describe('convertArraysToObject', () => {
+		test('should not convert scalar', () => {
+			const result = convertArraysToObjects('test')
+			expect(result).toEqual('test')
+		})
+
+		test('should convert array to object', () => {
+			const result = convertArraysToObjects([])
+			expect(result).toEqual({})
+		})
+
+		test('should convert empty array prop to empty object prop', () => {
+			const result = convertArraysToObjects({ arr: [] })
+			expect(result).toEqual({ arr: {} })
+		})
+
+		test('should convert array to dictionary style object prop', () => {
+			let obj = [
+				{
+					id: 1,
+					name: 'Alton Brown',
+					unitaskers: [{ id: 1, function: 'garlic peeler' }, { id: 2, function: 'herb scissors' }]
+				}
+			]
+			const result = convertArraysToObjects(obj)
+			expect(result).toEqual({
+				1: {
+					id: 1,
+					name: 'Alton Brown',
+					unitaskers: {
+						1: {
+							id: 1,
+							function: 'garlic peeler'
+						},
+						2: {
+							id: 2,
+							function: 'herb scissors'
+						}
+					}
+				}
+			})
+		})
+
 		test('should convert object with array prop to dictionary style object prop', () => {
 			let obj = {
 				id: 1,
@@ -664,17 +707,17 @@ describe('fetchReducer', () => {
 									emptyObject: {},
 									emptyArray: {},
 									nonObjectArray: ['1', 2, 'bar'],
-									nonIdObjects: {
-										'0': {
+									nonIdObjects: [
+										{
 											val: 'a'
 										},
-										'1': {
+										{
 											val: 'b'
 										},
-										'2': {
+										{
 											val: 'b'
 										}
-									},
+									],
 									_metadata: {
 										isFetching: false,
 										hasError: false,
@@ -824,6 +867,83 @@ describe('fetchReducer', () => {
 						child2: {
 							eeny: 'meeny',
 							miney: 'mo'
+						}
+					}
+				}
+			})
+		})
+
+		test('remove non-scalars by key if response is an array and key is not included', () => {
+			const fetchedAtDate = new Date()
+			const _Date = Date
+			global.Date = jest.fn(() => fetchedAtDate)
+			let state = fetchReducer(
+				{
+					groups: {
+						'1': {
+							id: 1,
+							name: 'Group 1',
+							members: {
+								'1': { id: 1, name: 'Alton' },
+								'2': {
+									id: 2,
+									name: 'Giada',
+									child1: [1, 2, 3],
+									relations: {
+										'1': {
+											id: 1
+										}
+									}
+								}
+							}
+						},
+						'21': {
+							id: 2,
+							name: 'Group 2',
+							members: {
+								'3': { id: 3, name: 'Jim' },
+								'4': { id: 4, name: 'Bob' }
+							}
+						}
+					}
+				},
+				{
+					type: actions.FETCH_RESULT_RECEIVED,
+					modelName: 'groups.1.members',
+					data: [{ id: 2, name: 'Giada' }]
+				}
+			)
+			expect(state).toEqual({
+				groups: {
+					'1': {
+						id: 1,
+						name: 'Group 1',
+						members: {
+							'2': {
+								id: 2,
+								name: 'Giada',
+								child1: [1, 2, 3],
+								relations: {
+									'1': {
+										id: 1
+									}
+								}
+							},
+							_metadata: {
+								isFetching: false,
+								lastFetchError: undefined,
+								hasError: false,
+								timedOut: false,
+								fetchedAt: fetchedAtDate
+							}
+						}
+					},
+					'21': {
+						id: 2,
+						name: 'Group 2',
+						members: {
+							'3': { id: 3, name: 'Jim' },
+							'4': { id: 4, name: 'Bob' }
 						}
 					}
 				}
