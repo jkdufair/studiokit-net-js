@@ -5,7 +5,6 @@ import _ from 'lodash'
 const nonScalars = FetchReducerRewireAPI.__get__('nonScalars')
 const convertArraysToObjects = FetchReducerRewireAPI.__get__('convertArraysToObjects')
 const getMetadata = FetchReducerRewireAPI.__get__('getMetadata')
-const diff = FetchReducerRewireAPI.__get__('diff')
 
 describe('supporting functions', () => {
 	describe('nonScalars', () => {

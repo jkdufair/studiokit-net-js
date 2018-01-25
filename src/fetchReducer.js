@@ -96,19 +96,6 @@ function removeUndefinedKeys(obj, newObj) {
 	}, {})
 }
 
-function diff(current, incoming) {
-	let incomingConverted = convertArraysToObjects(
-		!_.isPlainObject(incoming) && !_.isArray(incoming) ? { response: incoming } : incoming
-	)
-
-	let currentNonScalars = nonScalars(current)
-	if (_.isArray(incoming) && incoming.every(e => _.isPlainObject(e) && e.hasOwnProperty('id'))) {
-		currentNonScalars = removeUndefinedKeys(currentNonScalars, nonScalars(incomingConverted))
-	}
-
-	return _.merge({}, currentNonScalars, incomingConverted)
-}
-
 /**
  * Reducer for fetching. Fetching state updated with every action. Data updated on result received.
  * Data and fetchedDate NOT deleted on failed request. All data at key removed on KEY_REMOVAL_REQUESTED.
@@ -147,7 +134,21 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			// Children are preserved by copying references to the non-scalar
 			// values (i.e. relations), and then setting the scalar values
 			// from the response.
-			valueAtPath = diff(valueAtPath, action.data)
+			let incomingConverted = convertArraysToObjects(
+				!_.isPlainObject(action.data) && !_.isArray(action.data)
+					? { response: action.data }
+					: action.data
+			)
+
+			valueAtPath = nonScalars(valueAtPath)
+			if (
+				_.isArray(action.data) &&
+				action.data.every(e => _.isPlainObject(e) && e.hasOwnProperty('id'))
+			) {
+				valueAtPath = removeUndefinedKeys(valueAtPath, nonScalars(incomingConverted))
+			}
+
+			valueAtPath = _.merge({}, valueAtPath, incomingConverted)
 			// Update the metadata to reflect fetch is complete.
 			valueAtPath._metadata = _.merge(metadata, {
 				isFetching: false,
