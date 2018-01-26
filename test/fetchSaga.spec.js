@@ -26,6 +26,7 @@ const fetchDataLoop = FetchSagaRewireAPI.__get__('fetchDataLoop')
 const getState = FetchSagaRewireAPI.__get__('getState')
 const matchesTerminationAction = FetchSagaRewireAPI.__get__('matchesTerminationAction')
 const takeMatchesTerminationAction = FetchSagaRewireAPI.__get__('takeMatchesTerminationAction')
+const prepareFetch = FetchSagaRewireAPI.__get__('prepareFetch')
 
 let consoleOutput
 const _consoleLog = console.debug
@@ -86,6 +87,35 @@ describe('fetchSaga', () => {
 		const defaultErrorFunction = FetchSagaRewireAPI.__get__('defaultErrorFunction')
 		expect(errorFunction).toEqual(defaultErrorFunction)
 		expect(errorFunction()).toEqual(undefined)
+	})
+})
+
+describe('prepareFetch', () => {
+	test('should populate id params for multi-level paths', () => {
+		var result = prepareFetch(
+			{
+				_config: {
+					fetch: {
+						path: '/api/foo/{:id}/bar/{:id}/baz'
+					},
+					isCollection: true
+				}
+			},
+			{ type: 'SOME_ACTION', modelName: 'foo.bar.baz', pathParams: [1, 2] },
+			{
+				foo: {
+					bar: {
+						baz: {
+							_config: {
+								isCollection: true
+							}
+						}
+					}
+				}
+			}
+		)
+		console.log(result)
+		expect(result.fetchConfig.path).toEqual('/api/foo/1/bar/2/baz')
 	})
 })
 
