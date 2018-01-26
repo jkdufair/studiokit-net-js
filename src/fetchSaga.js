@@ -115,24 +115,14 @@ let errorFunction: ErrorFunction
 //#endregion Shared Variables
 
 /**
- * Construct a request based on the provided action, make a request with a configurable retry,
- * and handle errors, logging and dispatching all steps.
+ * Prepare fetchConfig to pass to fetchService. Also set up state
+ * to handle response correctly.
  * 
- * @param {FetchAction} action - An action with the request configuration
+ * @param {Object} model - The model selected from the models object
+ * @param {FetchAction} action - The action dispatched by the client
+ * @param {Object} models - The entire models object, passed in for testability
  */
-function* fetchData(action: FetchAction) {
-	// Validate
-	if (!action || !action.modelName) {
-		throw new Error("'modelName' config parameter is required for fetchData")
-	}
-
-	// Get fetch parameters from global fetch dictionary using the modelName passed in to locate them
-	// Combine parameters from global dictionary with any passed in - locals override dictionary
-	const model = _.get(models, action.modelName)
-	if (!model) {
-		throw new Error(`Cannot find \'${action.modelName}\' model in model dictionary`)
-	}
-
+function prepareFetch(model, action, models) {
 	const modelConfig = _.merge({}, model._config)
 	const fetchConfig = _.merge({}, modelConfig.fetch, {
 		headers: _.merge({}, action.headers),
@@ -199,7 +189,7 @@ function* fetchData(action: FetchAction) {
 			fetchConfig.path = `/api/${modelName}`
 		}
 		// determine if we need to add pathParam hooks
-		const pathLevels = (fetchConfig.path.match(/{:.+}/g) || []).length
+		const pathLevels = (fetchConfig.path.match(/{:id}/g) || []).length
 		// GET, PUT, PATCH, DELETE => append '/{:id}'
 		isCollectionItemFetch = modelConfig.isCollection && pathParams.length > pathLevels
 		// POST
@@ -240,6 +230,42 @@ function* fetchData(action: FetchAction) {
 		})
 	}
 
+	return {
+		fetchConfig,
+		modelConfig,
+		modelName,
+		isCollectionItemFetch,
+		isCollectionItemCreate,
+		isUrlValid,
+		pathParams
+	}
+}
+
+/**
+ * Construct a request based on the provided action, make a request with a configurable retry,
+ * and handle errors, logging and dispatching all steps.
+ * 
+ * @param {FetchAction} action - An action with the request configuration
+ */
+function* fetchData(action: FetchAction) {
+	// Validate
+	if (!action || !action.modelName) {
+		throw new Error("'modelName' config parameter is required for fetchData")
+	}
+
+	// Get fetch parameters from global fetch dictionary using the modelName passed in to locate them
+	// Combine parameters from global dictionary with any passed in - locals override dictionary
+	const model = _.get(models, action.modelName)
+	if (!model) {
+		throw new Error(`Cannot find \'${action.modelName}\' model in model dictionary`)
+	}
+
+	const result = prepareFetch(model, action, models)
+	const { fetchConfig, modelConfig, pathParams } = result
+	let { modelName, isCollectionItemFetch, isCollectionItemCreate, isUrlValid } = result
+
+	// TODO: Figure out how to move this into prepareFetch() without causing the
+	// carefully constructed tower of yield()s in the tests from crashing down
 	// substitute any path parameters from the redux store, e.g. '{{apiRoot}}/groups'
 	if (/{{.+}}/.test(fetchConfig.path)) {
 		// have to get reference to the whole store here
