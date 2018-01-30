@@ -109,7 +109,7 @@ function mergeRelations(current, incoming) {
 			prev[k] = c
 		}
 		return prev
-	}, _.isArray(current) ? [] : {})
+	}, {})
 }
 
 /**
