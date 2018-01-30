@@ -114,7 +114,6 @@ describe('prepareFetch', () => {
 				}
 			}
 		)
-		console.log(result)
 		expect(result.fetchConfig.path).toEqual('/api/foo/1/bar/2/baz')
 	})
 })

@@ -51,7 +51,7 @@ function getMetadata(state: FetchState, path: Array<string>): MetadataState {
 function convertArraysToObjects(data) {
 	if (!_.isPlainObject(data) && !_.isArray(data)) return data
 	if (_.isArray(data)) {
-		if (data.length > 0 && !data.every(e => _.isPlainObject(e) && e.hasOwnProperty('id')))
+		if (data.length > 0 && !_.every(data, e => _.isPlainObject(e) && e.hasOwnProperty('id')))
 			return data
 		return Object.keys(data).reduce((prev, k) => {
 			const value = data[k]
@@ -67,33 +67,49 @@ function convertArraysToObjects(data) {
 }
 
 /**
- * Given a plain object, return an object whos own properties
- * are only the properties of obj whose values are arrays
- * or plain objects
- * i.e.: {'foo': 'bar', 'baz': {'quux': 7}, 'bleb': 4, 'boop':[1, 2, {'three': 4}]}
- * returns {'baz': {'quux': 7}, 'boop':[1, 2, {'three': 4}]}
- *
- * @param obj A plain JS object
- * @returns A plain JS object with scalar-valued properties removed
-**/
-function nonScalars(obj) {
-	if (!_.isPlainObject(obj)) return obj
-	return Object.keys(obj).reduce((prev, k) => {
-		if (_.isArray(obj[k]) || _.isPlainObject(obj[k])) {
-			prev[k] = obj[k]
-		}
-		return prev
-	}, {})
+ * Get whether or not an object is a plain object where all keys are plain objects with 'id' properties.
+ * @param {*} obj 
+ * @returns A boolean
+ */
+function isCollection(obj) {
+	return (
+		_.isPlainObject(obj) &&
+		Object.keys(obj).length > 0 &&
+		_.every(obj, e => _.isPlainObject(e) && e.hasOwnProperty('id'))
+	)
 }
 
-function removeUndefinedKeys(obj, newObj) {
-	return Object.keys(obj).reduce((prev, k) => {
-		if (_.isPlainObject(obj[k]) && _.isUndefined(newObj[k])) {
+/**
+ * Merge relations between the `current` and `incoming` recursively.
+ * 
+ * For each key in `current` whose value is an array or plain object:
+ * a) remove if `current` is a "collection" and item key is not in `incoming`
+ * b) recurse if `incoming` has a value
+ * c) or preserve existing value
+ * @param {*} current 
+ * @param {*} incoming 
+ */
+function mergeRelations(current, incoming) {
+	return Object.keys(current).reduce((prev, k) => {
+		const c = current[k]
+		const i = incoming[k]
+		// skip all non-relations
+		if (!_.isArray(c) && !_.isPlainObject(c)) {
 			return prev
 		}
-		prev[k] = obj[k]
+		// remove "collection" item not included in incoming
+		if (isCollection(current) && _.isUndefined(i)) {
+			return prev
+		}
+		// merge relations, if incoming has value
+		if (!_.isUndefined(i)) {
+			prev[k] = mergeRelations(c, i)
+		} else {
+			// preserve existing relation
+			prev[k] = c
+		}
 		return prev
-	}, {})
+	}, _.isArray(current) ? [] : {})
 }
 
 /**
@@ -130,25 +146,11 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			return _fp.setWith(Object, path, valueAtPath, state)
 
 		case actions.FETCH_RESULT_RECEIVED:
-			// Replace the object, preserving any children.
-			// Children are preserved by copying references to the non-scalar
-			// values (i.e. relations), and then setting the scalar values
-			// from the response.
-			let incomingConverted = convertArraysToObjects(
-				!_.isPlainObject(action.data) && !_.isArray(action.data)
-					? { response: action.data }
-					: action.data
+			const incoming = action.data
+			const incomingConverted = convertArraysToObjects(
+				!_.isPlainObject(incoming) && !_.isArray(incoming) ? { response: incoming } : incoming
 			)
-
-			valueAtPath = nonScalars(valueAtPath)
-			if (
-				_.isArray(action.data) &&
-				action.data.every(e => _.isPlainObject(e) && e.hasOwnProperty('id'))
-			) {
-				valueAtPath = removeUndefinedKeys(valueAtPath, nonScalars(incomingConverted))
-			}
-
-			valueAtPath = _.merge({}, valueAtPath, incomingConverted)
+			valueAtPath = _.merge({}, mergeRelations(valueAtPath, incomingConverted), incomingConverted)
 			// Update the metadata to reflect fetch is complete.
 			valueAtPath._metadata = _.merge(metadata, {
 				isFetching: false,

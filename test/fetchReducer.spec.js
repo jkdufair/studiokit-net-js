@@ -2,34 +2,13 @@ import fetchReducer, { __RewireAPI__ as FetchReducerRewireAPI } from '../src/fet
 import actions from '../src/actions'
 import _ from 'lodash'
 
-const nonScalars = FetchReducerRewireAPI.__get__('nonScalars')
+const getRelations = FetchReducerRewireAPI.__get__('getRelations')
 const convertArraysToObjects = FetchReducerRewireAPI.__get__('convertArraysToObjects')
 const getMetadata = FetchReducerRewireAPI.__get__('getMetadata')
+const isCollection = FetchReducerRewireAPI.__get__('isCollection')
+const mergeRelations = FetchReducerRewireAPI.__get__('mergeRelations')
 
 describe('supporting functions', () => {
-	describe('nonScalars', () => {
-		test('should remove scalars from object', () => {
-			const obj = { foo: 'bar', baz: { quux: 7 }, bleb: 4, boop: [1, 2, { three: 4 }] }
-			const result = nonScalars(obj)
-			expect(result).toEqual({ baz: { quux: 7 }, boop: [1, 2, { three: 4 }] })
-		})
-
-		test('should return itself for non-objects', () => {
-			expect(nonScalars('foo')).toEqual('foo')
-			expect(nonScalars([1, 2, 3])).toEqual([1, 2, 3])
-		})
-
-		test('should return empty obj for an object with no children', () => {
-			const obj = { foo: 'bar', baz: 'quux' }
-			expect(nonScalars(obj)).toEqual({})
-		})
-
-		test('should return self for object with no scalars', () => {
-			const obj = { foo: { bar: 'baz', quux: [1, 2, 3] } }
-			expect(nonScalars(obj)).toEqual(obj)
-		})
-	})
-
 	describe('convertArraysToObject', () => {
 		test('should not convert scalar', () => {
 			const result = convertArraysToObjects('test')
@@ -136,6 +115,56 @@ describe('supporting functions', () => {
 		test('should return empty object for nonexistent path', () => {
 			const state = { foo: { bar: 'bar' } }
 			expect(getMetadata(state, ['nada'])).toEqual({})
+		})
+	})
+
+	describe('isCollection', () => {
+		test('should return true for a collection obj', () => {
+			const obj = {
+				1: {
+					id: 1
+				},
+				2: {
+					id: 2
+				}
+			}
+			expect(isCollection(obj)).toEqual(true)
+		})
+
+		test('should return false for a collection array', () => {
+			const obj = [
+				{
+					id: 1
+				},
+				{
+					id: 2
+				}
+			]
+			expect(isCollection(obj)).toEqual(false)
+		})
+
+		test('should return false for a non collection', () => {
+			const obj = { foo: 'bar', baz: { quux: 7 }, bleb: 4, boop: [1, 2, { three: 4 }] }
+			expect(isCollection(obj)).toEqual(false)
+		})
+
+		test('should return false for an empty object', () => {
+			const obj = {}
+			expect(isCollection(obj)).toEqual(false)
+		})
+	})
+
+	describe('mergeRelations', () => {
+		test('should succeed with empty objects', () => {
+			const current = {}
+			const incoming = {}
+			expect(mergeRelations(current, incoming)).toEqual({})
+		})
+
+		test('should remove collection items not included in incoming array', () => {
+			const current = { 1: { id: 1, child: { foo: 'bar' } }, 2: { id: 2 } }
+			const incoming = { 1: { id: 1 } }
+			expect(mergeRelations(current, incoming)).toEqual({ 1: { child: { foo: 'bar' } } })
 		})
 	})
 })
@@ -943,6 +972,76 @@ describe('fetchReducer', () => {
 						members: {
 							'3': { id: 3, name: 'Jim' },
 							'4': { id: 4, name: 'Bob' }
+						}
+					}
+				}
+			})
+		})
+
+		test('remove nested non-scalars by key if response is an array and key is not included', () => {
+			const fetchedAtDate = new Date()
+			const _Date = Date
+			global.Date = jest.fn(() => fetchedAtDate)
+			let state = fetchReducer(
+				{
+					parents: {
+						'1': {
+							id: 1,
+							name: 'Parent 1',
+							children: {
+								'1': { id: 1, name: 'Alton' },
+								'2': {
+									id: 2,
+									name: 'Giada',
+									child1: [1, 2, 3],
+									relations: {
+										'1': {
+											id: 1
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				{
+					type: actions.FETCH_RESULT_RECEIVED,
+					modelName: 'parents.1',
+					data: {
+						id: 1,
+						name: 'Parent 1',
+						children: [
+							{
+								id: 2,
+								name: 'Giada'
+							}
+						]
+					}
+				}
+			)
+			expect(state).toEqual({
+				parents: {
+					'1': {
+						id: 1,
+						name: 'Parent 1',
+						children: {
+							'2': {
+								id: 2,
+								name: 'Giada',
+								child1: [1, 2, 3],
+								relations: {
+									'1': {
+										id: 1
+									}
+								}
+							}
+						},
+						_metadata: {
+							isFetching: false,
+							lastFetchError: undefined,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedAtDate
 						}
 					}
 				}
