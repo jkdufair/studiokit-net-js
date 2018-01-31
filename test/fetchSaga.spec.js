@@ -26,6 +26,7 @@ const fetchDataLoop = FetchSagaRewireAPI.__get__('fetchDataLoop')
 const getState = FetchSagaRewireAPI.__get__('getState')
 const matchesTerminationAction = FetchSagaRewireAPI.__get__('matchesTerminationAction')
 const takeMatchesTerminationAction = FetchSagaRewireAPI.__get__('takeMatchesTerminationAction')
+const prepareFetch = FetchSagaRewireAPI.__get__('prepareFetch')
 
 let consoleOutput
 const _consoleLog = console.debug
@@ -86,6 +87,34 @@ describe('fetchSaga', () => {
 		const defaultErrorFunction = FetchSagaRewireAPI.__get__('defaultErrorFunction')
 		expect(errorFunction).toEqual(defaultErrorFunction)
 		expect(errorFunction()).toEqual(undefined)
+	})
+})
+
+describe('prepareFetch', () => {
+	test('should populate id params for multi-level paths', () => {
+		var result = prepareFetch(
+			{
+				_config: {
+					fetch: {
+						path: '/api/foo/{:id}/bar/{:id}/baz'
+					},
+					isCollection: true
+				}
+			},
+			{ type: 'SOME_ACTION', modelName: 'foo.bar.baz', pathParams: [1, 2] },
+			{
+				foo: {
+					bar: {
+						baz: {
+							_config: {
+								isCollection: true
+							}
+						}
+					}
+				}
+			}
+		)
+		expect(result.fetchConfig.path).toEqual('/api/foo/1/bar/2/baz')
 	})
 })
 
@@ -271,6 +300,7 @@ describe('fetchData', () => {
 				race({
 					fetchResult: call(doFetch, {
 						path: 'http://news.ycombinator.com',
+						contentType: 'application/x-www-form-urlencoded',
 						headers: { Authorization: 'Bearer some-access-token' },
 						queryParams: {},
 						body: 'body'
@@ -620,7 +650,25 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next()
-			const resultReceivedEffect = gen.next({ fetchResult: { foo: 'bar' } })
+			const resultReceivedEffect = gen.next({
+				fetchResult: { ok: true, status: 200, data: { foo: 'bar' } }
+			})
+			expect(resultReceivedEffect.value).toEqual(
+				put(
+					createAction(actions.FETCH_RESULT_RECEIVED, { data: { foo: 'bar' }, modelName: 'test' })
+				)
+			)
+			expect(gen.next().done).toEqual(true)
+		})
+
+		test('should execute basic fetch with content-type', () => {
+			const gen = fetchData({ modelName: 'test', contentType: 'text/html; charset=utf-8' })
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next()
+			const resultReceivedEffect = gen.next({
+				fetchResult: { ok: true, status: 200, data: { foo: 'bar' } }
+			})
 			expect(resultReceivedEffect.value).toEqual(
 				put(
 					createAction(actions.FETCH_RESULT_RECEIVED, { data: { foo: 'bar' }, modelName: 'test' })
@@ -634,7 +682,9 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
-			const resultReceivedEffect = gen.next({ fetchResult: { foo: 'bar' } })
+			const resultReceivedEffect = gen.next({
+				fetchResult: { ok: true, status: 200, data: { foo: 'bar' } }
+			})
 			expect(resultReceivedEffect.value).toEqual(
 				put(
 					createAction(actions.TRANSIENT_FETCH_RESULT_RECEIVED, {
@@ -652,7 +702,9 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next()
-			const resultReceivedEffect = gen.next({ fetchResult: { foo: 'bar' } })
+			const resultReceivedEffect = gen.next({
+				fetchResult: { ok: true, status: 200, data: { foo: 'bar' } }
+			})
 			expect(resultReceivedEffect.value).toEqual(
 				put(
 					createAction(actions.FETCH_RESULT_RECEIVED, {
@@ -708,12 +760,25 @@ describe('fetchData', () => {
 			)
 		})
 
-		test('should retry on fetch error', () => {
+		test('should retry on fetch error title', () => {
 			const gen = fetchData({ modelName: 'test' })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
 			const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error' } })
+			const putTryFailedEffect = gen.next()
+			const delayAndPutAgainEffect = gen.next()
+			expect(delayAndPutAgainEffect.value).toEqual(
+				put(createAction(actions.FETCH_REQUESTED, { modelName: 'test' }))
+			)
+		})
+
+		test('should retry on fetch error code', () => {
+			const gen = fetchData({ modelName: 'test' })
+			const putFetchRequestEffect = gen.next()
+			const tokenAccessCall = gen.next()
+			const raceEffect = gen.next(getOauthToken())
+			const fetchTryFailedEffect = gen.next({ fetchResult: { code: 500 } })
 			const putTryFailedEffect = gen.next()
 			const delayAndPutAgainEffect = gen.next()
 			expect(delayAndPutAgainEffect.value).toEqual(
@@ -727,7 +792,9 @@ describe('fetchData', () => {
 			for (let i = 0; i <= 3; i++) {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next(getOauthToken())
-				const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error' } })
+				const fetchTryFailedEffect = gen.next({
+					fetchResult: { ok: false, status: 500, data: { title: 'Error' } }
+				})
 				const putTryFailedEffect = gen.next()
 				if (i < 3) {
 					const delayAndPutAgainEffect = gen.next()
@@ -783,7 +850,9 @@ describe('fetchData', () => {
 			for (let i = 0; i <= 3; i++) {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next(getOauthToken())
-				const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error' } })
+				const fetchTryFailedEffect = gen.next({
+					fetchResult: { ok: false, status: 500, data: { title: 'Error' } }
+				})
 				const putTryFailedEffect = gen.next()
 				if (i < 3) {
 					const delayAndPutAgainEffect = gen.next()
@@ -811,7 +880,9 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const raceEffect = gen.next(getOauthToken())
-			const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error', code: 401 } })
+			const fetchTryFailedEffect = gen.next({
+				fetchResult: { ok: false, status: 401, data: { title: 'Error', code: 401 } }
+			})
 			const putTryFailedEffect = gen.next()
 			const delayEffect = gen.next()
 			expect(errorOutput).toEqual(null)
@@ -840,7 +911,7 @@ describe('fetchData', () => {
 
 	describe('collection fetch', () => {
 		describe('GET collection', () => {
-			test('should return a key-value object by id of nested items, from an api array', () => {
+			test('should not convert an api array to a key-value object', () => {
 				const fetchedAt = new Date()
 				const _Date = Date
 				global.Date = jest.fn(() => fetchedAt)
@@ -850,13 +921,17 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: [{ id: 1, name: 'foo' }, { id: 2, name: 'bar' }]
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: [{ id: 1, name: 'foo' }, { id: 2, name: 'bar' }]
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
 						createAction(actions.FETCH_RESULT_RECEIVED, {
-							data: {
-								1: {
+							data: [
+								{
 									id: 1,
 									name: 'foo',
 									_metadata: {
@@ -866,7 +941,7 @@ describe('fetchData', () => {
 										fetchedAt
 									}
 								},
-								2: {
+								{
 									id: 2,
 									name: 'bar',
 									_metadata: {
@@ -876,7 +951,7 @@ describe('fetchData', () => {
 										fetchedAt
 									}
 								}
-							},
+							],
 							modelName: 'entities'
 						})
 					)
@@ -884,7 +959,7 @@ describe('fetchData', () => {
 				expect(gen.next().done).toEqual(true)
 			})
 
-			test('should return a key-value object by id of nested items, from a key-value api object', () => {
+			test('should return an array from a key-value api object', () => {
 				const fetchedAt = new Date()
 				const _Date = Date
 				global.Date = jest.fn(() => fetchedAt)
@@ -894,13 +969,17 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { '1': { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { '1': { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
 						createAction(actions.FETCH_RESULT_RECEIVED, {
-							data: {
-								1: {
+							data: [
+								{
 									id: 1,
 									name: 'foo',
 									_metadata: {
@@ -910,7 +989,7 @@ describe('fetchData', () => {
 										fetchedAt
 									}
 								},
-								2: {
+								{
 									id: 2,
 									name: 'bar',
 									_metadata: {
@@ -920,7 +999,7 @@ describe('fetchData', () => {
 										fetchedAt
 									}
 								}
-							},
+							],
 							modelName: 'entities'
 						})
 					)
@@ -961,7 +1040,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { id: 2, name: 'bar' }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { id: 2, name: 'bar' }
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1019,7 +1102,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { id: 3, name: 'baz' }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { id: 3, name: 'baz' }
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1043,7 +1130,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { id: 3, name: 'baz' }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { id: 3, name: 'baz' }
+					}
 				})
 				const resultStoredEffect = gen.next()
 				expect(resultStoredEffect.value).toEqual(
@@ -1091,7 +1182,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: 'success'
+					fetchResult: {
+						ok: true,
+						status: 204,
+						data: undefined
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1138,7 +1233,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { foo: 'bar' }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { foo: 'bar' }
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1155,7 +1254,7 @@ describe('fetchData', () => {
 
 	describe('nested collection fetch', () => {
 		describe('GET nested collection', () => {
-			test('should return a key-value object by id of nested items, from an api array', () => {
+			test('should not convert an api array to a key-value object', () => {
 				const fetchedAt = new Date()
 				const _Date = Date
 				global.Date = jest.fn(() => fetchedAt)
@@ -1168,13 +1267,17 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: [{ id: 1, name: 'foo' }, { id: 2, name: 'bar' }]
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: [{ id: 1, name: 'foo' }, { id: 2, name: 'bar' }]
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
 						createAction(actions.FETCH_RESULT_RECEIVED, {
-							data: {
-								1: {
+							data: [
+								{
 									id: 1,
 									name: 'foo',
 									_metadata: {
@@ -1184,7 +1287,7 @@ describe('fetchData', () => {
 										fetchedAt
 									}
 								},
-								2: {
+								{
 									id: 2,
 									name: 'bar',
 									_metadata: {
@@ -1194,7 +1297,7 @@ describe('fetchData', () => {
 										fetchedAt
 									}
 								}
-							},
+							],
 							modelName: 'topLevelEntities.1.secondLevelEntities'
 						})
 					)
@@ -1202,7 +1305,7 @@ describe('fetchData', () => {
 				expect(gen.next().done).toEqual(true)
 			})
 
-			test('should return a key-value object by id of nested items, from a key-value api object', () => {
+			test('should return an array, from a key-value api object', () => {
 				const fetchedAt = new Date()
 				const _Date = Date
 				global.Date = jest.fn(() => fetchedAt)
@@ -1215,13 +1318,17 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { '1': { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { '1': { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
 						createAction(actions.FETCH_RESULT_RECEIVED, {
-							data: {
-								1: {
+							data: [
+								{
 									id: 1,
 									name: 'foo',
 									_metadata: {
@@ -1231,7 +1338,7 @@ describe('fetchData', () => {
 										fetchedAt
 									}
 								},
-								2: {
+								{
 									id: 2,
 									name: 'bar',
 									_metadata: {
@@ -1241,7 +1348,7 @@ describe('fetchData', () => {
 										fetchedAt
 									}
 								}
-							},
+							],
 							modelName: 'topLevelEntities.1.secondLevelEntities'
 						})
 					)
@@ -1282,7 +1389,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { id: 999, name: 'bar' }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { id: 999, name: 'bar' }
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1350,7 +1461,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { id: 3, name: 'baz' }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { id: 3, name: 'baz' }
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1375,7 +1490,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { id: 3, name: 'baz' }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { id: 3, name: 'baz' }
+					}
 				})
 				const resultStoredEffect = gen.next()
 				expect(resultStoredEffect.value).toEqual(
@@ -1423,7 +1542,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: 'success'
+					fetchResult: {
+						ok: true,
+						status: 204,
+						data: undefined
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1469,7 +1592,11 @@ describe('fetchData', () => {
 				const tokenAccessCall = gen.next()
 				const raceEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: { foo: 'bar' }
+					fetchResult: {
+						ok: true,
+						status: 200,
+						data: { foo: 'bar' }
+					}
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
