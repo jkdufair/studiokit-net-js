@@ -2,7 +2,6 @@ import fetchReducer, { __RewireAPI__ as FetchReducerRewireAPI } from '../src/fet
 import actions from '../src/actions'
 import _ from 'lodash'
 
-const getRelations = FetchReducerRewireAPI.__get__('getRelations')
 const convertArraysToObjects = FetchReducerRewireAPI.__get__('convertArraysToObjects')
 const getMetadata = FetchReducerRewireAPI.__get__('getMetadata')
 const isCollection = FetchReducerRewireAPI.__get__('isCollection')
@@ -131,6 +130,24 @@ describe('supporting functions', () => {
 			expect(isCollection(obj)).toEqual(true)
 		})
 
+		test('should return true for a collection obj with _metadata', () => {
+			const obj = {
+				1: {
+					id: 1
+				},
+				2: {
+					id: 2
+				},
+				_metadata: {
+					isFetching: false,
+					hasError: false,
+					lastFetchError: undefined,
+					timedOut: false
+				}
+			}
+			expect(isCollection(obj)).toEqual(true)
+		})
+
 		test('should return false for a collection array', () => {
 			const obj = [
 				{
@@ -144,7 +161,18 @@ describe('supporting functions', () => {
 		})
 
 		test('should return false for a non collection', () => {
-			const obj = { foo: 'bar', baz: { quux: 7 }, bleb: 4, boop: [1, 2, { three: 4 }] }
+			const obj = {
+				foo: 'bar',
+				baz: { quux: 7 },
+				bleb: 4,
+				boop: [1, 2, { three: 4 }],
+				_metadata: {
+					isFetching: false,
+					hasError: false,
+					lastFetchError: undefined,
+					timedOut: false
+				}
+			}
 			expect(isCollection(obj)).toEqual(false)
 		})
 
@@ -161,10 +189,32 @@ describe('supporting functions', () => {
 			expect(mergeRelations(current, incoming)).toEqual({})
 		})
 
+		test('should return objects without non-relations', () => {
+			const current = { foo: 'bar' }
+			const incoming = { foo: 'bar' }
+			expect(mergeRelations(current, incoming)).toEqual({})
+		})
+
 		test('should remove collection items not included in incoming array', () => {
 			const current = { 1: { id: 1, child: { foo: 'bar' } }, 2: { id: 2 } }
 			const incoming = { 1: { id: 1 } }
 			expect(mergeRelations(current, incoming)).toEqual({ 1: { child: { foo: 'bar' } } })
+		})
+
+		test('should remove nested collection items not included in incoming array', () => {
+			const current = {
+				1: { id: 1, children: { 1: { id: 1, foo: 'bar' }, 2: { id: 2, boo: 'bah' } } }
+			}
+			const incoming = { 1: { id: 1, children: { 2: { id: 2 } } } }
+			expect(mergeRelations(current, incoming)).toEqual({
+				1: { children: { 2: {} } }
+			})
+		})
+
+		test('should preserve non-collection relations', () => {
+			const current = { child: { foo: 'bar' } }
+			const incoming = {}
+			expect(mergeRelations(current, incoming)).toEqual({ child: { foo: 'bar' } })
 		})
 	})
 })

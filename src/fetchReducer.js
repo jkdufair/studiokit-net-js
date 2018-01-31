@@ -48,7 +48,7 @@ function getMetadata(state: FetchState, path: Array<string>): MetadataState {
  * @param data - the data object
  * @returns data and its array elements converted into objects if needed
  */
-function convertArraysToObjects(data) {
+function convertArraysToObjects(data: any) {
 	if (!_.isPlainObject(data) && !_.isArray(data)) return data
 	if (_.isArray(data)) {
 		if (data.length > 0 && !_.every(data, e => _.isPlainObject(e) && e.hasOwnProperty('id')))
@@ -67,7 +67,7 @@ function convertArraysToObjects(data) {
 }
 
 /**
- * Get whether or not an object is a plain object where all keys are plain objects with 'id' properties.
+ * Get whether or not an object is a "collection", or id key-value dictionary.
  * @param {*} obj 
  * @returns A boolean
  */
@@ -75,7 +75,10 @@ function isCollection(obj) {
 	return (
 		_.isPlainObject(obj) &&
 		Object.keys(obj).length > 0 &&
-		_.every(obj, e => _.isPlainObject(e) && e.hasOwnProperty('id'))
+		_.every(
+			obj,
+			e => _.isPlainObject(e) && (e.hasOwnProperty('id') || e.hasOwnProperty('isFetching'))
+		)
 	)
 }
 
