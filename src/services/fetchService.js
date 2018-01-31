@@ -9,7 +9,8 @@ type FetchConfig = {
 	path: string,
 	method: string,
 	headers: Object,
-	body: Object
+	body: Object,
+	contentType: string
 }
 
 let apiRoot: string
@@ -53,7 +54,8 @@ export function getApiRoot() {
  * The function that actually sends the HTTP request and returns the response, handling errors.
  * Requests default to using GET method. Content-Type defaults to 'application/json'. Body is sent
  * as stringified JSON unless the 'application/x-www-form-urlencoded' Content-Type is detected, in which case
- * it's sent as provided
+ * it's sent as provided. If it is a 'multipart/form-data', we are assuming that the data is being sent as a FormData, and
+ * we do not set the Content-type (https://stackoverflow.com/questions/39280438/fetch-missing-boundary-in-multipart-form-data-post).
  * TODO: provide logging injection
  * 
  * @export
@@ -66,35 +68,60 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 	}
 
 	const method = config.method || 'GET'
-	const headers = _.merge(
-		{},
-		{
-			'Content-Type': 'application/json; charset=utf-8'
-		},
-		config.headers
-	)
-	const body = headers['Content-Type'].includes('application/x-www-form-urlencoded')
-		? config.body
-		: JSON.stringify(config.body)
+
+	const headers =
+		// setting FormData as the body will set "Content-Type", including "boundary"
+		// do not interfere
+		config.contentType === 'multipart/form-data'
+			? _.merge({}, config.headers)
+			: _.merge(
+					{},
+					{
+						'Content-Type': !!config.contentType
+							? config.contentType
+							: 'application/json; charset=utf-8'
+					},
+					config.headers
+				)
+	const body =
+		!headers['Content-Type'] ||
+		headers['Content-Type'].includes('application/x-www-form-urlencoded') ||
+		headers['Content-Type'].includes('multipart/form-data')
+			? config.body
+			: JSON.stringify(config.body)
 	const response = yield call(fetch, constructPath(config), {
 		method: method,
 		headers: headers,
 		body
 	})
 	if (!response) {
-		return null
+		return undefined
 	}
-	const responseJson = yield call(() => response.json())
+
+	// construct a subset of the response object to return
+	const result = {
+		ok: response.ok,
+		status: response.status,
+		data: undefined
+	}
+
+	// If the request was a 204, use the body (if any) that was PUT in the request as the "response"
+	// so it gets incorporated correctly into Redux
+	// 200/201 should return a representation of the entity.
+	// (https://tools.ietf.org/html/rfc7231#section-6.3.1)
+	result.data = response.status === 204 ? config.body : yield call(() => response.json())
+
 	if (!response.ok) {
-		return _.merge(
+		result.data = _.merge(
 			{},
 			{
 				title: 'Error',
 				message: response.statusText,
 				code: response.status
 			},
-			responseJson
+			result.data
 		)
 	}
-	return responseJson
+
+	return result
 }

@@ -46,6 +46,7 @@ type OAuthToken = {
  * noRetry - (optional)  will prevent the use of the default logarithmic backoff retry strategy
  * timeLimit - (optional) number that will specify the timeout for a single attempt at a request. Defaults to 3000ms
  * guid - (optional) A pre-generated (by your application) GUID that will be attached to the fetchResult.data, to be stored in redux and used to match
+ * contentType - (optional) the contentType to be set in the header. If not set, the default value is `application/json`
  */
 type FetchAction = {
 	modelName: string,
@@ -58,7 +59,8 @@ type FetchAction = {
 	taskId?: string,
 	noRetry?: boolean,
 	timeLimit?: number,
-	guid?: string
+	guid?: string,
+	contentType?: string
 }
 
 type FetchError = {
@@ -113,24 +115,14 @@ let errorFunction: ErrorFunction
 //#endregion Shared Variables
 
 /**
- * Construct a request based on the provided action, make a request with a configurable retry,
- * and handle errors, logging and dispatching all steps.
+ * Prepare fetchConfig to pass to fetchService. Also set up state
+ * to handle response correctly.
  * 
- * @param {FetchAction} action - An action with the request configuration
+ * @param {Object} model - The model selected from the models object
+ * @param {FetchAction} action - The action dispatched by the client
+ * @param {Object} models - The entire models object, passed in for testability
  */
-function* fetchData(action: FetchAction) {
-	// Validate
-	if (!action || !action.modelName) {
-		throw new Error("'modelName' config parameter is required for fetchData")
-	}
-
-	// Get fetch parameters from global fetch dictionary using the modelName passed in to locate them
-	// Combine parameters from global dictionary with any passed in - locals override dictionary
-	const model = _.get(models, action.modelName)
-	if (!model) {
-		throw new Error(`Cannot find \'${action.modelName}\' model in model dictionary`)
-	}
-
+function prepareFetch(model, action, models) {
 	const modelConfig = _.merge({}, model._config)
 	const fetchConfig = _.merge({}, modelConfig.fetch, {
 		headers: _.merge({}, action.headers),
@@ -144,14 +136,21 @@ function* fetchData(action: FetchAction) {
 
 	// set or merge "body"
 	// If the body is a string, we are assuming it's an application/x-www-form-urlencoded
-	if (action.body && typeof action.body === 'string') {
+	if (action.body && (typeof action.body === 'string' || action.body instanceof FormData)) {
 		fetchConfig.body = action.body
+		fetchConfig.contentType = 'application/x-www-form-urlencoded'
 	} else if (fetchConfig.body || action.body) {
 		const isBodyArray =
 			(fetchConfig.body && _.isArray(fetchConfig.body)) || (action.body && _.isArray(action.body))
 		fetchConfig.body = isBodyArray
 			? _.union([], fetchConfig.body, action.body)
 			: _.merge({}, fetchConfig.body, action.body)
+	}
+
+	// set "contentType" if defined, overriding the default application/x-www-form-urlencoded
+	// that may have been set previously
+	if (action.contentType && typeof action.contentType === 'string') {
+		fetchConfig.contentType = action.contentType
 	}
 
 	let modelName: string = action.modelName
@@ -189,10 +188,8 @@ function* fetchData(action: FetchAction) {
 		} else if (!fetchConfig.path) {
 			fetchConfig.path = `/api/${modelName}`
 		}
-
 		// determine if we need to add pathParam hooks
-		const pathLevels = (fetchConfig.path.match(/{:.+}/g) || []).length
-
+		const pathLevels = (fetchConfig.path.match(/{:id}/g) || []).length
 		// GET, PUT, PATCH, DELETE => append '/{:id}'
 		isCollectionItemFetch = modelConfig.isCollection && pathParams.length > pathLevels
 		// POST
@@ -207,7 +204,6 @@ function* fetchData(action: FetchAction) {
 			modelName = `${modelName}.${action.guid || uuid.v4()}`
 		}
 	}
-
 	// substitute any pathParams in path, e.g. /api/group/{:id}
 	if (/{:.+}/.test(fetchConfig.path)) {
 		let index = 0
@@ -234,6 +230,42 @@ function* fetchData(action: FetchAction) {
 		})
 	}
 
+	return {
+		fetchConfig,
+		modelConfig,
+		modelName,
+		isCollectionItemFetch,
+		isCollectionItemCreate,
+		isUrlValid,
+		pathParams
+	}
+}
+
+/**
+ * Construct a request based on the provided action, make a request with a configurable retry,
+ * and handle errors, logging and dispatching all steps.
+ * 
+ * @param {FetchAction} action - An action with the request configuration
+ */
+function* fetchData(action: FetchAction) {
+	// Validate
+	if (!action || !action.modelName) {
+		throw new Error("'modelName' config parameter is required for fetchData")
+	}
+
+	// Get fetch parameters from global fetch dictionary using the modelName passed in to locate them
+	// Combine parameters from global dictionary with any passed in - locals override dictionary
+	const model = _.get(models, action.modelName)
+	if (!model) {
+		throw new Error(`Cannot find \'${action.modelName}\' model in model dictionary`)
+	}
+
+	const result = prepareFetch(model, action, models)
+	const { fetchConfig, modelConfig, pathParams } = result
+	let { modelName, isCollectionItemFetch, isCollectionItemCreate, isUrlValid } = result
+
+	// TODO: Figure out how to move this into prepareFetch() without causing the
+	// carefully constructed tower of yield()s in the tests from crashing down
 	// substitute any path parameters from the redux store, e.g. '{{apiRoot}}/groups'
 	if (/{{.+}}/.test(fetchConfig.path)) {
 		// have to get reference to the whole store here
@@ -264,7 +296,6 @@ function* fetchData(action: FetchAction) {
 	let didFail: boolean = false
 	let lastFetchError: ?FetchError
 	let lastError: ?Error
-
 	// Run retry loop
 	do {
 		didFail = false
@@ -284,25 +315,26 @@ function* fetchData(action: FetchAction) {
 				fetchResult: call(doFetch, fetchConfig),
 				timedOutResult: call(delay, action.timeLimit ? action.timeLimit : 30000)
 			})
-			if (fetchResult && !(fetchResult.title && fetchResult.title === 'Error')) {
+			if (fetchResult && fetchResult.ok) {
 				let storeAction = action.noStore
 					? actions.TRANSIENT_FETCH_RESULT_RECEIVED
 					: actions.FETCH_RESULT_RECEIVED
-				let data = fetchResult
-
+				let data = fetchResult.data
 				if (modelConfig.isCollection) {
-					data = {}
 					if (fetchConfig.method === 'DELETE') {
 						storeAction = actions.KEY_REMOVAL_REQUESTED
+						data = {}
 					} else if (isCollectionItemFetch || isCollectionItemCreate) {
-						data = fetchResult
+						data = fetchResult.data
 					} else {
 						const fetchedAt = new Date()
-						const resultsArray = !_.isArray(fetchResult)
-							? Object.keys(fetchResult).map(key => fetchResult[key])
-							: fetchResult
-						resultsArray.forEach(item => {
-							data[item.id] = _.merge({}, item, {
+						// convert to array if key-value object was returned for collection
+						const resultsArray = !_.isArray(fetchResult.data)
+							? Object.keys(fetchResult.data).map(key => fetchResult.data[key])
+							: fetchResult.data
+						// set metadata on each item
+						data = resultsArray.map(item => {
+							return _.merge({}, item, {
 								_metadata: {
 									isFetching: false,
 									hasError: false,
@@ -349,7 +381,7 @@ function* fetchData(action: FetchAction) {
 						{
 							didTimeOut: !!timedOutResult
 						},
-						fetchResult
+						fetchResult && fetchResult.data ? fetchResult.data : {}
 					)
 				}
 				throw new Error(JSON.stringify(lastFetchError))
