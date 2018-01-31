@@ -328,13 +328,12 @@ function* fetchData(action: FetchAction) {
 						data = fetchResult.data
 					} else {
 						const fetchedAt = new Date()
-						// convert to array if key-value object was returned for collection
-						const resultsArray = !_.isArray(fetchResult.data)
-							? Object.keys(fetchResult.data).map(key => fetchResult.data[key])
-							: fetchResult.data
-						// set metadata on each item
-						data = resultsArray.map(item => {
-							return _.merge({}, item, {
+						// convert to a key-value collection
+						// handles arrays or objects
+						// set item metadata
+						data = Object.keys(fetchResult.data).reduce((out, key) => {
+							const item = fetchResult.data[key]
+							out[item.id] = _.merge({}, item, {
 								_metadata: {
 									isFetching: false,
 									hasError: false,
@@ -342,7 +341,8 @@ function* fetchData(action: FetchAction) {
 									fetchedAt
 								}
 							})
-						})
+							return out
+						}, {})
 					}
 				}
 

@@ -39,34 +39,6 @@ function getMetadata(state: FetchState, path: Array<string>): MetadataState {
 }
 
 /**
- * Converts any arrays in a object into objects itself recursively.
- * If all the elements in an array are plain objects, then set their keys by:
- * 1. the property ID, if any
- * 2. else from 0 to length of the array
- * If not all elements in the array are plain objects, then leave it as an array
- *
- * @param data - the data object
- * @returns data and its array elements converted into objects if needed
- */
-function convertArraysToObjects(data: any) {
-	if (!_.isPlainObject(data) && !_.isArray(data)) return data
-	if (_.isArray(data)) {
-		if (data.length > 0 && !_.every(data, e => _.isPlainObject(e) && e.hasOwnProperty('id')))
-			return data
-		return Object.keys(data).reduce((prev, k) => {
-			const value = data[k]
-			const newKey = value.id
-			prev[`${newKey}`] = convertArraysToObjects(value)
-			return prev
-		}, {})
-	}
-	return Object.keys(data).reduce((prev, k) => {
-		prev[k] = convertArraysToObjects(data[k])
-		return prev
-	}, {})
-}
-
-/**
  * Get whether or not an object is a "collection", or id key-value dictionary.
  * @param {*} obj 
  * @returns A boolean
@@ -149,11 +121,11 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			return _fp.setWith(Object, path, valueAtPath, state)
 
 		case actions.FETCH_RESULT_RECEIVED:
-			const incoming = action.data
-			const incomingConverted = convertArraysToObjects(
-				!_.isPlainObject(incoming) && !_.isArray(incoming) ? { response: incoming } : incoming
-			)
-			valueAtPath = _.merge({}, mergeRelations(valueAtPath, incomingConverted), incomingConverted)
+			const incoming =
+				!_.isPlainObject(action.data) && !_.isArray(action.data)
+					? { response: action.data }
+					: action.data
+			valueAtPath = _.merge({}, mergeRelations(valueAtPath, incoming), incoming)
 			// Update the metadata to reflect fetch is complete.
 			valueAtPath._metadata = _.merge(metadata, {
 				isFetching: false,
