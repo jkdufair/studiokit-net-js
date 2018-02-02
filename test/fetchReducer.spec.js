@@ -689,6 +689,89 @@ describe('fetchReducer', () => {
 			})
 		})
 
+		test('should remove nested collection key, if incoming is a collection and key is not included', () => {
+			const fetchedDate = new Date()
+
+			let state = {
+				groups: {
+					2: {
+						child: {
+							id: 2,
+							foo: false,
+							_metadata: {
+								isFetching: false,
+								hasError: false,
+								timedOut: false,
+								fetchedAt: fetchedDate
+							}
+						}
+					}
+				}
+			}
+			state = fetchReducer(state, {
+				type: actions.FETCH_RESULT_RECEIVED,
+				modelName: 'groups.1.child',
+				data: { id: 1, foo: false }
+			})
+			expect(state).toEqual({
+				groups: {
+					1: {
+						child: {
+							id: 1,
+							foo: false,
+							_metadata: {
+								isFetching: false,
+								hasError: false,
+								timedOut: false,
+								fetchedAt: fetchedDate
+							}
+						}
+					},
+					2: {
+						child: {
+							id: 2,
+							foo: false,
+							_metadata: {
+								isFetching: false,
+								hasError: false,
+								timedOut: false,
+								fetchedAt: fetchedDate
+							}
+						}
+					}
+				}
+			})
+			state = fetchReducer(state, {
+				type: actions.FETCH_RESULT_RECEIVED,
+				modelName: 'groups',
+				data: { 2: { id: 2, name: 'Group 2' } }
+			})
+			expect(state).toEqual({
+				groups: {
+					2: {
+						id: 2,
+						name: 'Group 2',
+						child: {
+							id: 2,
+							foo: false,
+							_metadata: {
+								isFetching: false,
+								hasError: false,
+								timedOut: false,
+								fetchedAt: fetchedDate
+							}
+						}
+					},
+					_metadata: {
+						isFetching: false,
+						hasError: false,
+						timedOut: false,
+						fetchedAt: fetchedDate
+					}
+				}
+			})
+		})
+
 		test('handle string response', () => {
 			const fetchedAtDate = new Date()
 			const _Date = Date

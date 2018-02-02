@@ -77,7 +77,7 @@ function mergeRelations(current, incoming) {
 			return prev
 		}
 		// remove "collection" item not included in incoming
-		if (isCollection(current) && _.isUndefined(i)) {
+		if ((isCollection(current) || isCollection(incoming)) && _.isUndefined(i)) {
 			return prev
 		}
 		// merge relations, if incoming has value
