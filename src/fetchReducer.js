@@ -39,7 +39,7 @@ function getMetadata(state: FetchState, path: Array<string>): MetadataState {
 }
 
 /**
- * Get whether or not an object is a "collection", or id key-value dictionary.
+ * Get whether or not an object is a "collection" (id key-value dictionary).
  * @param {*} obj 
  * @returns A boolean
  */
@@ -47,10 +47,14 @@ function isCollection(obj) {
 	return (
 		_.isPlainObject(obj) &&
 		Object.keys(obj).length > 0 &&
-		_.every(
-			obj,
-			e => _.isPlainObject(e) && (e.hasOwnProperty('id') || e.hasOwnProperty('isFetching'))
-		)
+		Object.keys(obj).every(key => {
+			const child = obj[key]
+			return (
+				_.isPlainObject(child) &&
+				(key === '_metadata' ||
+					(child.hasOwnProperty('id') && (child.id === parseInt(key, 10) || child.id === key)))
+			)
+		})
 	)
 }
 
@@ -73,7 +77,7 @@ function mergeRelations(current, incoming) {
 			return prev
 		}
 		// remove "collection" item not included in incoming
-		if (isCollection(current) && _.isUndefined(i)) {
+		if ((isCollection(current) || isCollection(incoming)) && _.isUndefined(i)) {
 			return prev
 		}
 		// merge relations, if incoming has value
