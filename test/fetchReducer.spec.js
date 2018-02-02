@@ -87,6 +87,17 @@ describe('supporting functions', () => {
 			const obj = {}
 			expect(isCollection(obj)).toEqual(false)
 		})
+
+		test('should return false for item with single relation that has id, but is not a collection', () => {
+			expect(
+				isCollection({
+					child: {
+						id: 1,
+						foo: false
+					}
+				})
+			).toEqual(false)
+		})
 	})
 
 	describe('mergeRelations', () => {
@@ -122,6 +133,22 @@ describe('supporting functions', () => {
 			const current = { child: { foo: 'bar' } }
 			const incoming = {}
 			expect(mergeRelations(current, incoming)).toEqual({ child: { foo: 'bar' } })
+		})
+
+		test('should preserve child relation that has an id, but key is not the id', () => {
+			const current = {
+				child: {
+					id: 1,
+					foo: false
+				}
+			}
+			const incoming = { id: 1, name: 'Bob' }
+			expect(mergeRelations(current, incoming)).toEqual({
+				child: {
+					id: 1,
+					foo: false
+				}
+			})
 		})
 	})
 })
@@ -593,6 +620,145 @@ describe('fetchReducer', () => {
 									timedOut: false,
 									fetchedAt: fetchedDate
 								}
+							}
+						}
+					},
+					_metadata: {
+						isFetching: false,
+						hasError: false,
+						timedOut: false,
+						fetchedAt: fetchedDate
+					}
+				}
+			})
+		})
+
+		test('should preserve nested collection relation that contains an id, but is not its key', () => {
+			const fetchedDate = new Date()
+
+			let state = {}
+			state = fetchReducer(state, {
+				type: actions.FETCH_RESULT_RECEIVED,
+				modelName: 'groups.1.child',
+				data: { id: 1, foo: false }
+			})
+			expect(state).toEqual({
+				groups: {
+					1: {
+						child: {
+							id: 1,
+							foo: false,
+							_metadata: {
+								isFetching: false,
+								hasError: false,
+								timedOut: false,
+								fetchedAt: fetchedDate
+							}
+						}
+					}
+				}
+			})
+			state = fetchReducer(state, {
+				type: actions.FETCH_RESULT_RECEIVED,
+				modelName: 'groups.1',
+				data: { id: 1, name: 'Group 1' }
+			})
+			expect(state).toEqual({
+				groups: {
+					1: {
+						id: 1,
+						name: 'Group 1',
+						child: {
+							id: 1,
+							foo: false,
+							_metadata: {
+								isFetching: false,
+								hasError: false,
+								timedOut: false,
+								fetchedAt: fetchedDate
+							}
+						},
+						_metadata: {
+							isFetching: false,
+							hasError: false,
+							timedOut: false,
+							fetchedAt: fetchedDate
+						}
+					}
+				}
+			})
+		})
+
+		test('should remove nested collection key, if incoming is a collection and key is not included', () => {
+			const fetchedDate = new Date()
+
+			let state = {
+				groups: {
+					2: {
+						child: {
+							id: 2,
+							foo: false,
+							_metadata: {
+								isFetching: false,
+								hasError: false,
+								timedOut: false,
+								fetchedAt: fetchedDate
+							}
+						}
+					}
+				}
+			}
+			state = fetchReducer(state, {
+				type: actions.FETCH_RESULT_RECEIVED,
+				modelName: 'groups.1.child',
+				data: { id: 1, foo: false }
+			})
+			expect(state).toEqual({
+				groups: {
+					1: {
+						child: {
+							id: 1,
+							foo: false,
+							_metadata: {
+								isFetching: false,
+								hasError: false,
+								timedOut: false,
+								fetchedAt: fetchedDate
+							}
+						}
+					},
+					2: {
+						child: {
+							id: 2,
+							foo: false,
+							_metadata: {
+								isFetching: false,
+								hasError: false,
+								timedOut: false,
+								fetchedAt: fetchedDate
+							}
+						}
+					}
+				}
+			})
+			state = fetchReducer(state, {
+				type: actions.FETCH_RESULT_RECEIVED,
+				modelName: 'groups',
+				data: { 2: { id: 2, name: 'Group 2' } }
+			})
+			expect(state).toEqual({
+				groups: {
+					2: {
+						id: 2,
+						name: 'Group 2',
+						child: {
+							id: 2,
+							foo: false,
+							_metadata: {
+								isFetching: false,
+								hasError: false,
+								timedOut: false,
+								fetchedAt: fetchedDate
 							}
 						}
 					},
