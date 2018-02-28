@@ -284,6 +284,7 @@ function* fetchData(action: FetchAction) {
 		yield put(
 			createAction(action.noStore ? actions.TRANSIENT_FETCH_FAILED : actions.FETCH_FAILED, {
 				modelName: action.modelName,
+				guid: action.guid,
 				errorData: 'Invalid URL'
 			})
 		)
@@ -303,7 +304,8 @@ function* fetchData(action: FetchAction) {
 		// Indicate fetch action has begun
 		yield put(
 			createAction(action.noStore ? actions.TRANSIENT_FETCH_REQUESTED : actions.FETCH_REQUESTED, {
-				modelName
+				modelName,
+				guid: action.guid
 			})
 		)
 		try {
@@ -359,8 +361,9 @@ function* fetchData(action: FetchAction) {
 					// add by new result's id
 					yield put(
 						createAction(storeAction, {
-							data,
-							modelName: `${modelNameLevels.join('.')}.${data.id}`
+							modelName: `${modelNameLevels.join('.')}.${data.id}`,
+							guid: action.guid,
+							data
 						})
 					)
 					// remove temp item under guid key
@@ -368,8 +371,9 @@ function* fetchData(action: FetchAction) {
 				} else {
 					yield put(
 						createAction(storeAction, {
-							data,
-							modelName
+							modelName,
+							guid: action.guid,
+							data
 						})
 					)
 				}
@@ -389,7 +393,12 @@ function* fetchData(action: FetchAction) {
 		} catch (error) {
 			let errorData = lastFetchError ? lastFetchError.errorData : null
 
-			yield put(createAction(actions.TRY_FETCH_FAILED, _.merge({ modelName }, lastFetchError)))
+			yield put(
+				createAction(
+					actions.TRY_FETCH_FAILED,
+					_.merge({ modelName, guid: action.guid }, lastFetchError)
+				)
+			)
 
 			// Don't do anything with 401 errors
 			// And some errors don't have fetch results associated with them
@@ -410,7 +419,13 @@ function* fetchData(action: FetchAction) {
 		yield put(
 			createAction(
 				action.noStore ? actions.TRANSIENT_FETCH_FAILED : actions.FETCH_FAILED,
-				_.merge({ modelName }, lastFetchError)
+				_.merge(
+					{
+						modelName,
+						guid: action.guid
+					},
+					lastFetchError
+				)
 			)
 		)
 		logger('fetchData retry fail')
