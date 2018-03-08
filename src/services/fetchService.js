@@ -83,12 +83,9 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 					},
 					config.headers
 				)
-	const body =
-		!headers['Content-Type'] ||
-		headers['Content-Type'].includes('application/x-www-form-urlencoded') ||
-		headers['Content-Type'].includes('multipart/form-data')
-			? config.body
-			: JSON.stringify(config.body)
+
+	const isBodyJson = headers['Content-Type'] && headers['Content-Type'].includes('application/json')
+	const body = !isBodyJson ? config.body : JSON.stringify(config.body)
 	const response = yield call(fetch, constructPath(config), {
 		method: method,
 		headers: headers,
@@ -109,9 +106,22 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 	// so it gets incorporated correctly into Redux
 	// 200/201 should return a representation of the entity.
 	// (https://tools.ietf.org/html/rfc7231#section-6.3.1)
-	result.data = response.status === 204 ? config.body : yield call(() => response.json())
+
+	const isResponseJson =
+		!!response.headers &&
+		response.headers.has('Content-Type') &&
+		_.includes(response.headers.get('Content-Type'), 'application/json')
+
+	if (response.status === 204) {
+		result.data = isBodyJson ? config.body : undefined
+	} else {
+		result.data = isResponseJson
+			? yield call(() => response.json())
+			: yield call(() => response.text())
+	}
 
 	if (!response.ok) {
+		// note: error responses are expected to be JSON
 		result.data = _.merge(
 			{},
 			{
