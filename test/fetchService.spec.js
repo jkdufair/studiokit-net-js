@@ -188,9 +188,7 @@ describe('doFetch', () => {
 		const response = {
 			ok: true,
 			status: 200,
-			headers: {
-				'Content-Type': 'application/json; charset=utf-8'
-			},
+			headers: { has: () => true, get: () => 'application/json; charset=utf-8' },
 			json: () => ({ foo: 'bar' })
 		}
 		const callResponseJsonEffect = gen.next(response)
@@ -215,9 +213,7 @@ describe('doFetch', () => {
 		const response = {
 			ok: true,
 			status: 200,
-			headers: {
-				'Content-Type': 'text/plain'
-			},
+			headers: { has: () => true, get: () => 'text/plain' },
 			text: () => 'bar'
 		}
 		const callResponseJsonEffect = gen.next(response)
@@ -252,9 +248,7 @@ describe('doFetch', () => {
 			ok: false,
 			status: 400,
 			statusText: 'Bad Request',
-			headers: {
-				'Content-Type': 'application/json; charset=utf-8'
-			},
+			headers: { has: () => true, get: () => 'application/json; charset=utf-8' },
 			json: () => ({ message: 'Bad Request: reasons' })
 		}
 		const callResponseJsonEffect = gen.next(response)

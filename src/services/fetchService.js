@@ -109,8 +109,8 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 
 	const isResponseJson =
 		!!response.headers &&
-		!!response.headers['Content-Type'] &&
-		_.includes(response.headers['Content-Type'], 'application/json')
+		response.headers.has('Content-Type') &&
+		_.includes(response.headers.get('Content-Type'), 'application/json')
 
 	if (response.status === 204) {
 		result.data = isBodyJson ? config.body : undefined
