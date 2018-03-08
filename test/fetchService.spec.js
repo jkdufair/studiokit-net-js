@@ -180,7 +180,7 @@ describe('doFetch', () => {
 		global.fetch = _fetch
 	})
 
-	test('Basic GET test non-empty response from server', () => {
+	test('Basic GET test non-empty JSON response from server', () => {
 		const _fetch = global.fetch
 		global.fetch = jest.fn(() => {})
 		const gen = doFetch({ path: 'http://www.google.com' })
@@ -188,9 +188,11 @@ describe('doFetch', () => {
 		const response = {
 			ok: true,
 			status: 200,
+			headers: { has: () => true, get: () => 'application/json; charset=utf-8' },
 			json: () => ({ foo: 'bar' })
 		}
 		const callResponseJsonEffect = gen.next(response)
+		expect(callResponseJsonEffect.value.CALL.fn()).toEqual({ foo: 'bar' })
 		const sagaDone = gen.next(response.json())
 		expect(sagaDone.value).toEqual({
 			ok: true,
@@ -198,6 +200,29 @@ describe('doFetch', () => {
 			data: {
 				foo: 'bar'
 			}
+		})
+		expect(sagaDone.done).toEqual(true)
+		global.fetch = _fetch
+	})
+
+	test('Basic GET test non-empty Text response from server', () => {
+		const _fetch = global.fetch
+		global.fetch = jest.fn(() => {})
+		const gen = doFetch({ path: 'http://www.google.com' })
+		const callFetchEffect = gen.next()
+		const response = {
+			ok: true,
+			status: 200,
+			headers: { has: () => true, get: () => 'text/plain' },
+			text: () => 'bar'
+		}
+		const callResponseJsonEffect = gen.next(response)
+		expect(callResponseJsonEffect.value.CALL.fn()).toEqual('bar')
+		const sagaDone = gen.next(response.text())
+		expect(sagaDone.value).toEqual({
+			ok: true,
+			status: 200,
+			data: 'bar'
 		})
 		expect(sagaDone.done).toEqual(true)
 		global.fetch = _fetch
@@ -214,7 +239,7 @@ describe('doFetch', () => {
 		global.fetch = _fetch
 	})
 
-	test('Basic GET test error response from server', () => {
+	test('Basic GET JSON error response from server', () => {
 		const _fetch = global.fetch
 		global.fetch = jest.fn(() => {})
 		const gen = doFetch({ path: 'http://www.google.com' })
@@ -223,26 +248,26 @@ describe('doFetch', () => {
 			ok: false,
 			status: 400,
 			statusText: 'Bad Request',
-			json: () => ({ foo: 'bar' })
+			headers: { has: () => true, get: () => 'application/json; charset=utf-8' },
+			json: () => ({ message: 'Bad Request: reasons' })
 		}
 		const callResponseJsonEffect = gen.next(response)
-		expect(callResponseJsonEffect.value.CALL.fn()).toEqual({ foo: 'bar' })
+		expect(callResponseJsonEffect.value.CALL.fn()).toEqual({ message: 'Bad Request: reasons' })
 		const sagaDone = gen.next(response.json())
 		expect(sagaDone.value).toEqual({
 			ok: false,
 			status: 400,
 			data: {
 				title: 'Error',
-				message: 'Bad Request',
-				code: 400,
-				foo: 'bar'
+				message: 'Bad Request: reasons',
+				code: 400
 			}
 		})
 		expect(sagaDone.done).toEqual(true)
 		global.fetch = _fetch
 	})
 
-	test('PUT with 204 response', () => {
+	test('PUT JSON with 204 response', () => {
 		const _fetch = global.fetch
 		global.fetch = jest.fn(() => {})
 		const putBody = { foo: 'bar', baz: 'quux' }
@@ -268,6 +293,46 @@ describe('doFetch', () => {
 			ok: true,
 			status: 204,
 			data: putBody
+		})
+		const sagaDone = gen.next()
+		expect(sagaDone.value).toEqual()
+		expect(sagaDone.done).toEqual(true)
+		global.fetch = _fetch
+	})
+
+	test('PUT Text content with 204 response', () => {
+		const _fetch = global.fetch
+		global.fetch = jest.fn(() => {})
+		const putBody = 'something'
+		const gen = doFetch({
+			path: 'http://www.google.com',
+			method: 'PUT',
+			body: putBody,
+			headers: {
+				'Content-Type': 'text/plain'
+			}
+		})
+		const callFetchEffect = gen.next()
+		expect(callFetchEffect.value.CALL.args).toEqual([
+			'http://www.google.com',
+			{
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'text/plain'
+				},
+				body: putBody
+			}
+		])
+		const response = {
+			ok: true,
+			status: 204,
+			statusText: 'NoContent'
+		}
+		const callResponseJsonEffect = gen.next(response)
+		expect(callResponseJsonEffect.value).toEqual({
+			ok: true,
+			status: 204,
+			data: undefined
 		})
 		const sagaDone = gen.next()
 		expect(sagaDone.value).toEqual()
