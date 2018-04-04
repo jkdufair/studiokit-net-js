@@ -29,7 +29,7 @@ function constructPath(config: FetchConfig) {
 			.join('&')
 	}
 
-	let path = config.path.startsWith('http') ? config.path : `${apiRoot}${config.path}`
+	let path = _.startsWith(config.path, 'http') ? config.path : `${apiRoot}${config.path}`
 	if (queryParams) {
 		path = `${path}?${queryParams}`
 	}
@@ -84,7 +84,8 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 					config.headers
 				)
 
-	const isBodyJson = headers['Content-Type'] && headers['Content-Type'].includes('application/json')
+	const isBodyJson =
+		headers['Content-Type'] && _.includes(headers['Content-Type'], 'application/json')
 	const body = !isBodyJson ? config.body : JSON.stringify(config.body)
 	const response = yield call(fetch, constructPath(config), {
 		method: method,
