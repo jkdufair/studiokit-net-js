@@ -16,7 +16,7 @@
 		"prepare": "npm run build"
 	},
 	"description": "Network/API functions for Studio apps at Purdue",
-	"main": "lib/index.js",
+	"main": "src/index.js",
 	"repository": "purdue-tlt/studiokit-net-js",
 	"license": "MIT",
 	"files": [
