@@ -108,6 +108,8 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 		return state
 	}
 	let path: Array<string> = action.modelName.split('.')
+	path.concat('data')
+
 	// the object value at the specified path
 	let valueAtPath = _.merge({}, _.get(state, path))
 	const metadata = getMetadata(state, path)
@@ -129,7 +131,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 				!_.isPlainObject(action.data) && !_.isArray(action.data)
 					? { response: action.data }
 					: action.data
-			valueAtPath = _.merge({}, mergeRelations(valueAtPath, incoming), incoming)
+			valueAtPath.data = incoming
 			// Update the metadata to reflect fetch is complete.
 			valueAtPath._metadata = _.merge(metadata, {
 				isFetching: false,
