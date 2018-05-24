@@ -16,11 +16,11 @@
 		"prepare": "npm run build"
 	},
 	"description": "Network/API functions for Studio apps at Purdue",
-	"main": "src/index.js",
+	"main": "lib/index.js",
 	"repository": "purdue-tlt/studiokit-net-js",
 	"license": "MIT",
 	"files": [
-		"src"
+		"lib"
 	],
 	"devDependencies": {
 		"babel-cli": "^6.24.1",
