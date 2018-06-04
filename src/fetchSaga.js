@@ -373,6 +373,7 @@ function* fetchData(action: FetchAction) {
 						createAction(storeAction, {
 							modelName,
 							guid: action.guid,
+							reduxPath: action.reduxPath,
 							data
 						})
 					)
