@@ -111,7 +111,6 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 	if (action.reduxPath) {
 		path = path.concat(action.reduxPath)
 	}
-	path = path.concat('data')
 
 	// the object value at the specified path
 	let valueAtPath = _.merge({}, _.get(state, path))
