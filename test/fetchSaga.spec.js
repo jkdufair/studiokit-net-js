@@ -91,7 +91,7 @@ describe('fetchSaga', () => {
 })
 
 describe('prepareFetch', () => {
-	test('should populate id params for multi-level paths', () => {
+	test('should populate id params for multi-level collection paths', () => {
 		var result = prepareFetch(
 			{
 				_config: {
@@ -104,7 +104,13 @@ describe('prepareFetch', () => {
 			{ type: 'SOME_ACTION', modelName: 'foo.bar.baz', pathParams: [1, 2] },
 			{
 				foo: {
+					_config: {
+						isCollection: true
+					},
 					bar: {
+						_config: {
+							isCollection: true
+						},
 						baz: {
 							_config: {
 								isCollection: true
@@ -115,6 +121,61 @@ describe('prepareFetch', () => {
 			}
 		)
 		expect(result.fetchConfig.path).toEqual('/api/foo/1/bar/2/baz')
+	})
+	test('should populate id params for collection nested under non-collections', () => {
+		var result = prepareFetch(
+			{
+				_config: {
+					isCollection: true
+				}
+			},
+			{ type: 'SOME_ACTION', modelName: 'foo.bar.baz', pathParams: [1] },
+			{
+				foo: {
+					bar: {
+						baz: {
+							_config: {
+								isCollection: true
+							}
+						}
+					}
+				}
+			}
+		)
+		expect(result.fetchConfig.path).toEqual('/api/foo/bar/baz/1')
+	})
+	test('should populate id params for collection nested under non-collections and honor empty fetch paths', () => {
+		var result = prepareFetch(
+			{
+				_config: {
+					isCollection: true
+				}
+			},
+			{ type: 'SOME_ACTION', modelName: 'foo.bar.baz', pathParams: [1] },
+			{
+				foo: {
+					_config: {
+						fetch: {
+							path: ''
+						}
+					},
+					bar: {
+						_config: {
+							fetch: {
+								path: '/api/bar'
+							},
+							isCollection: true
+						},
+						baz: {
+							_config: {
+								isCollection: true
+							}
+						}
+					}
+				}
+			}
+		)
+		expect(result.fetchConfig.path).toEqual('/api/bar/1/baz')
 	})
 })
 
