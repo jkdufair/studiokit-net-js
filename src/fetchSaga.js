@@ -177,13 +177,23 @@ function prepareFetch(model, action, models) {
 				const levelName = modelNameLevels[index]
 				const currentModelConfig = _.merge({}, modelLevel._config)
 				const currentFetchConfig = _.merge({}, currentModelConfig.fetch)
+				const currentPath = !_.isUndefined(currentFetchConfig.path)
+					? currentFetchConfig.path
+					: index === 0 ? `/api/${levelName}` : levelName
 				if (index === 0) {
-					fetchConfig.path = currentFetchConfig.path || `/api/${levelName}`
+					fetchConfig.path = currentPath
 					modelName = levelName
 					return
 				}
-				fetchConfig.path = `${fetchConfig.path}/{:id}/${currentFetchConfig.path || levelName}`
-				modelName = `${modelName}.{:id}.${levelName}`
+				const prevModelConfig = _.merge({}, modelLevels[index - 1]._config)
+				const divider = fetchConfig.path.length > 0 && currentPath.length > 0 ? '/' : ''
+				if (prevModelConfig.isCollection) {
+					fetchConfig.path = `${fetchConfig.path}${divider}{:id}/${currentPath}`
+					modelName = `${modelName}.{:id}.${levelName}`
+				} else {
+					fetchConfig.path = `${fetchConfig.path}${divider}${currentPath}`
+					modelName = `${modelName}.${levelName}`
+				}
 			})
 		} else if (!fetchConfig.path) {
 			fetchConfig.path = `/api/${modelName}`
