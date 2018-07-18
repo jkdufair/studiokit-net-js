@@ -18,6 +18,8 @@ const matchesFailedNoStoreHookAction = (incomingAction, fetchAction) => {
 	return (
 		incomingAction.type === actions.TRANSIENT_FETCH_FAILED &&
 		incomingAction.noStore === true &&
+		fetchAction.noStore === true &&
+		incomingAction.modelName === fetchAction.modelName &&
 		incomingAction.guid === fetchAction.guid
 	)
 }
@@ -29,6 +31,8 @@ const matchesReceivedNoStoreHookAction = (incomingAction, fetchAction) => {
 	return (
 		incomingAction.type === actions.TRANSIENT_FETCH_RESULT_RECEIVED &&
 		incomingAction.noStore === true &&
+		fetchAction.noStore === true &&
+		incomingAction.modelName === fetchAction.modelName &&
 		incomingAction.guid === fetchAction.guid
 	)
 }

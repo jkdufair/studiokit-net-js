@@ -37,172 +37,204 @@ const hooks = NoStoreSagaRewireAPI.__get__('hooks')
 const handleAction = NoStoreSagaRewireAPI.__get__('handleAction')
 
 describe('helpers', () => {
-	test('matchesNoStoreAction matches correctly', () => {
-		expect(
-			matchesNoStoreAction({
-				modelName: 'someModel',
-				type: actions.DATA_REQUESTED,
-				noStore: true
-			})
-		).toEqual(true)
-	})
-	test('matchesNoStoreAction does not match when `noStore` is `false`', () => {
-		expect(
-			matchesNoStoreAction({
-				modelName: 'someModel',
-				type: actions.DATA_REQUESTED
-			})
-		).toEqual(false)
-	})
-	test('matchesNoStoreAction does not match incorrect action types', () => {
-		expect(
-			matchesNoStoreAction({
-				modelName: 'someModel',
-				type: actions.KEY_REMOVAL_REQUESTED,
-				noStore: true
-			})
-		).toEqual(false)
-	})
-	test('should call matchesNoStoreAction from takeMatchesNoStoreAction', () => {
-		expect(
-			takeMatchesNoStoreAction()({
-				modelName: 'someModel',
-				type: actions.DATA_REQUESTED,
-				noStore: true
-			})
-		).toEqual(true)
-	})
-
-	test('matchesFailedNoStoreHookAction matches correctly', () => {
-		const guid = uuid.v4()
-		expect(
-			matchesFailedNoStoreHookAction(
-				{
+	describe('matchesNoStoreAction', () => {
+		test('matchesNoStoreAction matches correctly', () => {
+			expect(
+				matchesNoStoreAction({
 					modelName: 'someModel',
-					type: actions.TRANSIENT_FETCH_FAILED,
-					noStore: true,
-					guid
-				},
-				{ guid }
-			)
-		).toEqual(true)
-	})
-	test('matchesFailedNoStoreHookAction does not match when `noStore` is `false`', () => {
-		const guid = uuid.v4()
-		expect(
-			matchesFailedNoStoreHookAction(
-				{
+					type: actions.DATA_REQUESTED,
+					noStore: true
+				})
+			).toEqual(true)
+		})
+		test('matchesNoStoreAction does not match when `noStore` is `false`', () => {
+			expect(
+				matchesNoStoreAction({
 					modelName: 'someModel',
-					type: actions.TRANSIENT_FETCH_FAILED,
-					guid
-				},
-				{ guid }
-			)
-		).toEqual(false)
-	})
-	test('matchesFailedNoStoreHookAction does not match incorrect action types', () => {
-		const guid = uuid.v4()
-		expect(
-			matchesFailedNoStoreHookAction(
-				{
+					type: actions.DATA_REQUESTED
+				})
+			).toEqual(false)
+		})
+		test('matchesNoStoreAction does not match incorrect action types', () => {
+			expect(
+				matchesNoStoreAction({
 					modelName: 'someModel',
 					type: actions.KEY_REMOVAL_REQUESTED,
-					noStore: true,
-					guid
-				},
-				{ guid }
-			)
-		).toEqual(false)
+					noStore: true
+				})
+			).toEqual(false)
+		})
+		test('should call matchesNoStoreAction from takeMatchesNoStoreAction', () => {
+			expect(
+				takeMatchesNoStoreAction()({
+					modelName: 'someModel',
+					type: actions.DATA_REQUESTED,
+					noStore: true
+				})
+			).toEqual(true)
+		})
 	})
-	test('matchesFailedNoStoreHookAction does not match incorrect `guid`', () => {
-		expect(
-			matchesFailedNoStoreHookAction(
-				{
+
+	describe('matchesFailedNoStoreHookAction', () => {
+		test('matchesFailedNoStoreHookAction matches correctly', () => {
+			const guid = uuid.v4()
+			expect(
+				matchesFailedNoStoreHookAction(
+					{
+						modelName: 'someModel',
+						type: actions.TRANSIENT_FETCH_FAILED,
+						noStore: true,
+						guid
+					},
+					{ modelName: 'someModel', noStore: true, guid }
+				)
+			).toEqual(true)
+		})
+		test('matchesFailedNoStoreHookAction does not match when `noStore` is `false`', () => {
+			const guid = uuid.v4()
+			expect(
+				matchesFailedNoStoreHookAction(
+					{
+						modelName: 'someModel',
+						type: actions.TRANSIENT_FETCH_FAILED,
+						guid
+					},
+					{ modelName: 'someModel', noStore: true, guid }
+				)
+			).toEqual(false)
+		})
+		test('matchesFailedNoStoreHookAction does not match incorrect action types', () => {
+			const guid = uuid.v4()
+			expect(
+				matchesFailedNoStoreHookAction(
+					{
+						modelName: 'someModel',
+						type: actions.KEY_REMOVAL_REQUESTED,
+						noStore: true,
+						guid
+					},
+					{ modelName: 'someModel', noStore: true, guid }
+				)
+			).toEqual(false)
+		})
+		test('matchesFailedNoStoreHookAction does not match incorrect `guid`', () => {
+			expect(
+				matchesFailedNoStoreHookAction(
+					{
+						modelName: 'someModel',
+						type: actions.TRANSIENT_FETCH_FAILED,
+						noStore: true,
+						guid: uuid.v4()
+					},
+					{ modelName: 'someModel', noStore: true, guid: uuid.v4() }
+				)
+			).toEqual(false)
+		})
+		test('matchesFailedNoStoreHookAction does not match incorrect `modelName`', () => {
+			expect(
+				matchesFailedNoStoreHookAction(
+					{
+						modelName: 'someOtherModel',
+						type: actions.TRANSIENT_FETCH_FAILED,
+						noStore: true,
+						guid: uuid.v4()
+					},
+					{ modelName: 'someModel', noStore: true, guid: uuid.v4() }
+				)
+			).toEqual(false)
+		})
+		test('should call matchesFailedNoStoreHookAction from takeMatchesFailedNoStoreHookAction', () => {
+			const guid = uuid.v4()
+			expect(
+				takeMatchesFailedNoStoreHookAction({ modelName: 'someModel', noStore: true, guid })({
 					modelName: 'someModel',
 					type: actions.TRANSIENT_FETCH_FAILED,
 					noStore: true,
-					guid: uuid.v4()
-				},
-				{ guid: uuid.v4() }
-			)
-		).toEqual(false)
-	})
-	test('should call matchesFailedNoStoreHookAction from takeMatchesFailedNoStoreHookAction', () => {
-		const guid = uuid.v4()
-		expect(
-			takeMatchesFailedNoStoreHookAction({ guid })({
-				modelName: 'someModel',
-				type: actions.TRANSIENT_FETCH_FAILED,
-				noStore: true,
-				guid
-			})
-		).toEqual(true)
+					guid
+				})
+			).toEqual(true)
+		})
 	})
 
-	test('matchesReceivedNoStoreHookAction matches correctly', () => {
-		const guid = uuid.v4()
-		expect(
-			matchesReceivedNoStoreHookAction(
-				{
+	describe('matchesReceivedNoStoreHookAction', () => {
+		test('matchesReceivedNoStoreHookAction matches correctly', () => {
+			const guid = uuid.v4()
+			expect(
+				matchesReceivedNoStoreHookAction(
+					{
+						modelName: 'someModel',
+						type: actions.TRANSIENT_FETCH_RESULT_RECEIVED,
+						noStore: true,
+						guid
+					},
+					{ modelName: 'someModel', noStore: true, guid }
+				)
+			).toEqual(true)
+		})
+		test('matchesReceivedNoStoreHookAction does not match when `noStore` is `false`', () => {
+			const guid = uuid.v4()
+			expect(
+				matchesReceivedNoStoreHookAction(
+					{
+						modelName: 'someModel',
+						type: actions.TRANSIENT_FETCH_RESULT_RECEIVED,
+						guid
+					},
+					{ modelName: 'someModel', noStore: true, guid }
+				)
+			).toEqual(false)
+		})
+		test('matchesReceivedNoStoreHookAction does not match incorrect action types', () => {
+			const guid = uuid.v4()
+			expect(
+				matchesReceivedNoStoreHookAction(
+					{
+						modelName: 'someModel',
+						type: actions.KEY_REMOVAL_REQUESTED,
+						noStore: true,
+						guid
+					},
+					{ modelName: 'someModel', noStore: true, guid }
+				)
+			).toEqual(false)
+		})
+		test('matchesReceivedNoStoreHookAction does not match incorrect `guid`', () => {
+			expect(
+				matchesReceivedNoStoreHookAction(
+					{
+						modelName: 'someModel',
+						type: actions.TRANSIENT_FETCH_FAILED,
+						noStore: true,
+						guid: uuid.v4()
+					},
+					{ modelName: 'someModel', noStore: true, guid: uuid.v4() }
+				)
+			).toEqual(false)
+		})
+		test('matchesReceivedNoStoreHookAction does not match incorrect `modelName`', () => {
+			expect(
+				matchesReceivedNoStoreHookAction(
+					{
+						modelName: 'someOtherModel',
+						type: actions.TRANSIENT_FETCH_FAILED,
+						noStore: true,
+						guid: uuid.v4()
+					},
+					{ modelName: 'someModel', noStore: true, guid: uuid.v4() }
+				)
+			).toEqual(false)
+		})
+		test('should call matchesReceivedNoStoreHookAction from takeMatchesReceivedNoStoreHookAction', () => {
+			const guid = uuid.v4()
+			expect(
+				takeMatchesReceivedNoStoreHookAction({ modelName: 'someModel', noStore: true, guid })({
 					modelName: 'someModel',
 					type: actions.TRANSIENT_FETCH_RESULT_RECEIVED,
 					noStore: true,
 					guid
-				},
-				{ guid }
-			)
-		).toEqual(true)
-	})
-	test('matchesReceivedNoStoreHookAction does not match when `noStore` is `false`', () => {
-		const guid = uuid.v4()
-		expect(
-			matchesReceivedNoStoreHookAction(
-				{
-					modelName: 'someModel',
-					type: actions.TRANSIENT_FETCH_RESULT_RECEIVED,
-					guid
-				},
-				{ guid }
-			)
-		).toEqual(false)
-	})
-	test('matchesReceivedNoStoreHookAction does not match incorrect action types', () => {
-		const guid = uuid.v4()
-		expect(
-			matchesReceivedNoStoreHookAction(
-				{
-					modelName: 'someModel',
-					type: actions.KEY_REMOVAL_REQUESTED,
-					noStore: true,
-					guid
-				},
-				{ guid }
-			)
-		).toEqual(false)
-	})
-	test('matchesReceivedNoStoreHookAction does not match incorrect `guid`', () => {
-		expect(
-			matchesReceivedNoStoreHookAction(
-				{
-					modelName: 'someModel',
-					type: actions.TRANSIENT_FETCH_FAILED,
-					noStore: true,
-					guid: uuid.v4()
-				},
-				{ guid: uuid.v4() }
-			)
-		).toEqual(false)
-	})
-	test('should call matchesReceivedNoStoreHookAction from takeMatchesReceivedNoStoreHookAction', () => {
-		const guid = uuid.v4()
-		expect(
-			takeMatchesReceivedNoStoreHookAction({ guid })({
-				modelName: 'someModel',
-				type: actions.TRANSIENT_FETCH_RESULT_RECEIVED,
-				noStore: true,
-				guid
-			})
-		).toEqual(true)
+				})
+			).toEqual(true)
+		})
 	})
 })
 
@@ -277,6 +309,38 @@ describe('handleAction', () => {
 		expect(sagaDone.done).toEqual(true)
 		expect(hookCalled).toEqual('first')
 		expect(hookData).toEqual('blah')
+	})
+
+	test('should call two different hooks with `data` on success', () => {
+		const firstAction = {
+			modelName: 'someModel',
+			type: actions.DATA_REQUESTED,
+			noStore: true,
+			guid: firstKey
+		}
+		const gen = handleAction(firstAction)
+		const raceEffect = gen.next()
+		const sagaDone = gen.next({
+			receivedResult: { data: 'blah' }
+		})
+		expect(sagaDone.done).toEqual(true)
+		expect(hookCalled).toEqual('first')
+		expect(hookData).toEqual('blah')
+
+		const secondAction = {
+			modelName: 'someModel',
+			type: actions.DATA_REQUESTED,
+			noStore: true,
+			guid: secondKey
+		}
+		const gen2 = handleAction(secondAction)
+		const raceEffect2 = gen2.next()
+		const sagaDone2 = gen2.next({
+			receivedResult: { data: 'bloo' }
+		})
+		expect(sagaDone2.done).toEqual(true)
+		expect(hookCalled).toEqual('second')
+		expect(hookData).toEqual('bloo')
 	})
 
 	test('should call correct hook with `null` on failure', () => {
