@@ -42,11 +42,11 @@ const takeMatchesReceivedNoStoreHookAction = action => incomingAction =>
 
 const hooks: { [string]: HookFunction } = {}
 
-export const registerNoStoreSagaHook = (key: string, hook: HookFunction) => {
+export const registerNoStoreActionHook = (key: string, hook: HookFunction) => {
 	hooks[key] = hook
 }
 
-export const unregisterNoStoreSagaHook = (key: string, hook: HookFunction) => {
+export const unregisterNoStoreActionHook = (key: string, hook: HookFunction) => {
 	delete hooks[key]
 }
 

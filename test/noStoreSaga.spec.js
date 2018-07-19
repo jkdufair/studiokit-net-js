@@ -14,8 +14,8 @@ import {
 } from 'redux-saga/effects'
 import uuid from 'uuid'
 import noStoreSaga, {
-	registerNoStoreSagaHook,
-	unregisterNoStoreSagaHook,
+	registerNoStoreActionHook,
+	unregisterNoStoreActionHook,
 	__RewireAPI__ as NoStoreSagaRewireAPI
 } from '../src/noStoreSaga'
 
@@ -186,24 +186,24 @@ describe('noStoreSaga', () => {
 	})
 })
 
-describe('registerNoStoreSagaHook', () => {
+describe('registerNoStoreActionHook', () => {
 	test('should succeed', () => {
 		const hook = data => {
 			let foo = 1
 		}
-		registerNoStoreSagaHook('key', hook)
+		registerNoStoreActionHook('key', hook)
 		expect(hooks['key']).toEqual(hook)
 	})
 })
 
-describe('unregisterNoStoreSagaHook', () => {
+describe('unregisterNoStoreActionHook', () => {
 	test('should succeed', () => {
 		const hook = data => {
 			let foo = 1
 		}
-		registerNoStoreSagaHook('key', hook)
+		registerNoStoreActionHook('key', hook)
 		expect(hooks['key']).toEqual(hook)
-		unregisterNoStoreSagaHook('key')
+		unregisterNoStoreActionHook('key')
 		expect(hooks['key']).toEqual(undefined)
 	})
 })
@@ -223,13 +223,13 @@ describe('handleAction', () => {
 	}
 
 	beforeEach(() => {
-		registerNoStoreSagaHook(firstKey, firstHook)
-		registerNoStoreSagaHook(secondKey, secondHook)
+		registerNoStoreActionHook(firstKey, firstHook)
+		registerNoStoreActionHook(secondKey, secondHook)
 	})
 
 	afterEach(() => {
-		unregisterNoStoreSagaHook(firstKey)
-		unregisterNoStoreSagaHook(secondKey)
+		unregisterNoStoreActionHook(firstKey)
+		unregisterNoStoreActionHook(secondKey)
 		hookCalled = undefined
 		hookData = undefined
 	})
