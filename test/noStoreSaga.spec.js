@@ -14,8 +14,8 @@ import {
 } from 'redux-saga/effects'
 import uuid from 'uuid'
 import noStoreSaga, {
-	registerHook,
-	unregisterHook,
+	registerNoStoreSagaHook,
+	unregisterNoStoreSagaHook,
 	__RewireAPI__ as NoStoreSagaRewireAPI
 } from '../src/noStoreSaga'
 
@@ -83,25 +83,11 @@ describe('helpers', () => {
 					{
 						modelName: 'someModel',
 						type: actions.TRANSIENT_FETCH_FAILED,
-						noStore: true,
 						guid
 					},
 					{ modelName: 'someModel', noStore: true, guid }
 				)
 			).toEqual(true)
-		})
-		test('matchesFailedNoStoreHookAction does not match when `noStore` is `false`', () => {
-			const guid = uuid.v4()
-			expect(
-				matchesFailedNoStoreHookAction(
-					{
-						modelName: 'someModel',
-						type: actions.TRANSIENT_FETCH_FAILED,
-						guid
-					},
-					{ modelName: 'someModel', noStore: true, guid }
-				)
-			).toEqual(false)
 		})
 		test('matchesFailedNoStoreHookAction does not match incorrect action types', () => {
 			const guid = uuid.v4()
@@ -110,7 +96,6 @@ describe('helpers', () => {
 					{
 						modelName: 'someModel',
 						type: actions.KEY_REMOVAL_REQUESTED,
-						noStore: true,
 						guid
 					},
 					{ modelName: 'someModel', noStore: true, guid }
@@ -123,20 +108,6 @@ describe('helpers', () => {
 					{
 						modelName: 'someModel',
 						type: actions.TRANSIENT_FETCH_FAILED,
-						noStore: true,
-						guid: uuid.v4()
-					},
-					{ modelName: 'someModel', noStore: true, guid: uuid.v4() }
-				)
-			).toEqual(false)
-		})
-		test('matchesFailedNoStoreHookAction does not match incorrect `modelName`', () => {
-			expect(
-				matchesFailedNoStoreHookAction(
-					{
-						modelName: 'someOtherModel',
-						type: actions.TRANSIENT_FETCH_FAILED,
-						noStore: true,
 						guid: uuid.v4()
 					},
 					{ modelName: 'someModel', noStore: true, guid: uuid.v4() }
@@ -149,7 +120,6 @@ describe('helpers', () => {
 				takeMatchesFailedNoStoreHookAction({ modelName: 'someModel', noStore: true, guid })({
 					modelName: 'someModel',
 					type: actions.TRANSIENT_FETCH_FAILED,
-					noStore: true,
 					guid
 				})
 			).toEqual(true)
@@ -164,25 +134,11 @@ describe('helpers', () => {
 					{
 						modelName: 'someModel',
 						type: actions.TRANSIENT_FETCH_RESULT_RECEIVED,
-						noStore: true,
 						guid
 					},
 					{ modelName: 'someModel', noStore: true, guid }
 				)
 			).toEqual(true)
-		})
-		test('matchesReceivedNoStoreHookAction does not match when `noStore` is `false`', () => {
-			const guid = uuid.v4()
-			expect(
-				matchesReceivedNoStoreHookAction(
-					{
-						modelName: 'someModel',
-						type: actions.TRANSIENT_FETCH_RESULT_RECEIVED,
-						guid
-					},
-					{ modelName: 'someModel', noStore: true, guid }
-				)
-			).toEqual(false)
 		})
 		test('matchesReceivedNoStoreHookAction does not match incorrect action types', () => {
 			const guid = uuid.v4()
@@ -191,7 +147,6 @@ describe('helpers', () => {
 					{
 						modelName: 'someModel',
 						type: actions.KEY_REMOVAL_REQUESTED,
-						noStore: true,
 						guid
 					},
 					{ modelName: 'someModel', noStore: true, guid }
@@ -204,20 +159,6 @@ describe('helpers', () => {
 					{
 						modelName: 'someModel',
 						type: actions.TRANSIENT_FETCH_FAILED,
-						noStore: true,
-						guid: uuid.v4()
-					},
-					{ modelName: 'someModel', noStore: true, guid: uuid.v4() }
-				)
-			).toEqual(false)
-		})
-		test('matchesReceivedNoStoreHookAction does not match incorrect `modelName`', () => {
-			expect(
-				matchesReceivedNoStoreHookAction(
-					{
-						modelName: 'someOtherModel',
-						type: actions.TRANSIENT_FETCH_FAILED,
-						noStore: true,
 						guid: uuid.v4()
 					},
 					{ modelName: 'someModel', noStore: true, guid: uuid.v4() }
@@ -230,7 +171,6 @@ describe('helpers', () => {
 				takeMatchesReceivedNoStoreHookAction({ modelName: 'someModel', noStore: true, guid })({
 					modelName: 'someModel',
 					type: actions.TRANSIENT_FETCH_RESULT_RECEIVED,
-					noStore: true,
 					guid
 				})
 			).toEqual(true)
@@ -246,24 +186,24 @@ describe('noStoreSaga', () => {
 	})
 })
 
-describe('registerHook', () => {
+describe('registerNoStoreSagaHook', () => {
 	test('should succeed', () => {
 		const hook = data => {
 			let foo = 1
 		}
-		registerHook('key', hook)
+		registerNoStoreSagaHook('key', hook)
 		expect(hooks['key']).toEqual(hook)
 	})
 })
 
-describe('unregisterHook', () => {
+describe('unregisterNoStoreSagaHook', () => {
 	test('should succeed', () => {
 		const hook = data => {
 			let foo = 1
 		}
-		registerHook('key', hook)
+		registerNoStoreSagaHook('key', hook)
 		expect(hooks['key']).toEqual(hook)
-		unregisterHook('key')
+		unregisterNoStoreSagaHook('key')
 		expect(hooks['key']).toEqual(undefined)
 	})
 })
@@ -283,13 +223,13 @@ describe('handleAction', () => {
 	}
 
 	beforeEach(() => {
-		registerHook(firstKey, firstHook)
-		registerHook(secondKey, secondHook)
+		registerNoStoreSagaHook(firstKey, firstHook)
+		registerNoStoreSagaHook(secondKey, secondHook)
 	})
 
 	afterEach(() => {
-		unregisterHook(firstKey)
-		unregisterHook(secondKey)
+		unregisterNoStoreSagaHook(firstKey)
+		unregisterNoStoreSagaHook(secondKey)
 		hookCalled = undefined
 		hookData = undefined
 	})

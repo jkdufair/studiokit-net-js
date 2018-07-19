@@ -1,9 +1,9 @@
 // @flow
 
+import _ from 'lodash'
 import { take, takeEvery, race } from 'redux-saga/effects'
 import actions from './actions'
 import type { FetchAction, FetchError } from './types'
-
 type HookFunction = any => void
 
 //#region Helpers
@@ -17,9 +17,7 @@ const takeMatchesNoStoreAction = () => incomingAction => matchesNoStoreAction(in
 const matchesFailedNoStoreHookAction = (incomingAction, fetchAction) => {
 	return (
 		incomingAction.type === actions.TRANSIENT_FETCH_FAILED &&
-		incomingAction.noStore === true &&
 		fetchAction.noStore === true &&
-		incomingAction.modelName === fetchAction.modelName &&
 		incomingAction.guid === fetchAction.guid
 	)
 }
@@ -30,9 +28,7 @@ const takeMatchesFailedNoStoreHookAction = action => incomingAction =>
 const matchesReceivedNoStoreHookAction = (incomingAction, fetchAction) => {
 	return (
 		incomingAction.type === actions.TRANSIENT_FETCH_RESULT_RECEIVED &&
-		incomingAction.noStore === true &&
 		fetchAction.noStore === true &&
-		incomingAction.modelName === fetchAction.modelName &&
 		incomingAction.guid === fetchAction.guid
 	)
 }
@@ -46,11 +42,11 @@ const takeMatchesReceivedNoStoreHookAction = action => incomingAction =>
 
 const hooks: { [string]: HookFunction } = {}
 
-export const registerHook = (key: string, hook: HookFunction) => {
+export const registerNoStoreSagaHook = (key: string, hook: HookFunction) => {
 	hooks[key] = hook
 }
 
-export const unregisterHook = (key: string, hook: HookFunction) => {
+export const unregisterNoStoreSagaHook = (key: string, hook: HookFunction) => {
 	delete hooks[key]
 }
 
@@ -58,8 +54,9 @@ export const unregisterHook = (key: string, hook: HookFunction) => {
 
 function* handleAction(action: FetchAction) {
 	const guid = action.guid
+	if (_.isNil(guid)) return
 	const hook = hooks[guid]
-	if (!guid || !hook) return
+	if (_.isNil(hook)) return
 
 	const { receivedResult, failedResult } = yield race({
 		receivedResult: take(takeMatchesReceivedNoStoreHookAction(action)),
