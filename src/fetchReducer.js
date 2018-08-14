@@ -30,7 +30,7 @@ type ModelState = {
 /**
  * Given the state and a path into that state object, return the prop that
  * is named "_metadata"
- * 
+ *
  * @param {FetchState} state - The redux state object
  * @param {Array<string>} path - An array of keys that represent the path to the entity in question
  */
@@ -40,7 +40,7 @@ function getMetadata(state: FetchState, path: Array<string>): MetadataState {
 
 /**
  * Get whether or not an object is a "collection" (id key-value dictionary).
- * @param {*} obj 
+ * @param {*} obj
  * @returns A boolean
  */
 function isCollection(obj) {
@@ -60,19 +60,18 @@ function isCollection(obj) {
 
 /**
  * Merge relations between the `current` and `incoming` recursively.
- * 
+ *
  * For each key in `current` whose value is an array or plain object:
  * a) remove if `current` is a "collection" and item key is not in `incoming`
  * b) recurse if `incoming` has a value
  * c) or preserve existing value
- * @param {*} current 
- * @param {*} incoming 
+ * @param {*} current
+ * @param {*} incoming
  */
 function mergeRelations(current, incoming) {
-	if (_.isNil(incoming)) return incoming
 	return Object.keys(current).reduce((prev, k) => {
 		const c = current[k]
-		const i = incoming[k]
+		const i = incoming && incoming[k]
 		// skip all non-relations
 		if (!_.isArray(c) && !_.isPlainObject(c)) {
 			return prev
