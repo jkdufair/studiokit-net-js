@@ -69,6 +69,7 @@ function isCollection(obj) {
  * @param {*} incoming 
  */
 function mergeRelations(current, incoming) {
+	if (_.isNil(incoming)) return incoming
 	return Object.keys(current).reduce((prev, k) => {
 		const c = current[k]
 		const i = incoming[k]
