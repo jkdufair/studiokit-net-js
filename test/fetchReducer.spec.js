@@ -107,6 +107,17 @@ describe('supporting functions', () => {
 			expect(mergeRelations(current, incoming)).toEqual({})
 		})
 
+		test('should succeed if incoming is `null`', () => {
+			const current = {}
+			expect(mergeRelations(current, null)).toEqual(null)
+		})
+
+		test('should succeed if incoming property is `null`', () => {
+			const current = { something: { count: 0 } }
+			const incoming = { something: null }
+			expect(mergeRelations(current, incoming)).toEqual({ something: null })
+		})
+
 		test('should return objects without non-relations', () => {
 			const current = { foo: 'bar' }
 			const incoming = { foo: 'bar' }
