@@ -2,6 +2,7 @@
 
 import { call } from 'redux-saga/effects'
 import _ from 'lodash'
+const queryString = require('query-string')
 
 type FetchConfig = {
 	queryParams: Object,
@@ -24,9 +25,7 @@ let apiRoot: string
 function constructPath(config: FetchConfig) {
 	let queryParams
 	if (config.queryParams) {
-		queryParams = Object.keys(config.queryParams)
-			.map(key => `${encodeURIComponent(key)}=${encodeURIComponent(config.queryParams[key])}`)
-			.join('&')
+		queryParams = queryString.stringify(config.queryParams)
 	}
 
 	let path = _.startsWith(config.path, 'http') ? config.path : `${apiRoot}${config.path}`
