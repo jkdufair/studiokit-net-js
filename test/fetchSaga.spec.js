@@ -9,7 +9,6 @@ import {
 	takeLatest,
 	fork,
 	put,
-	race,
 	select
 } from 'redux-saga/effects'
 import { createMockTask } from 'redux-saga/utils'
@@ -854,7 +853,7 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'test', noRetry: true })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(getOauthToken())
 			const throwFetchErrorEffect = gen.throw('some other error')
 			const putTryFailedEffect = gen.next()
 			const putErrorEffect = gen.next()
@@ -880,7 +879,7 @@ describe('fetchData', () => {
 				const gen = fetchData({ modelName: 'entities' })
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const racefetchEffectEffect = gen.next()
+				const fetchEffect = gen.next()
 				const resultReceivedEffect = gen.next({
 					ok: true,
 					status: 200,
@@ -1201,7 +1200,7 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next()
+				const fetchEffect = gen.next()
 				const resultReceivedEffect = gen.next({
 					ok: true,
 					status: 200,
