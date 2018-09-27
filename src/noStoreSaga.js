@@ -46,7 +46,7 @@ export const registerNoStoreActionHook = (key: string, hook: HookFunction) => {
 	hooks[key] = hook
 }
 
-export const unregisterNoStoreActionHook = (key: string, hook: HookFunction) => {
+export const unregisterNoStoreActionHook = (key: string) => {
 	delete hooks[key]
 }
 
@@ -55,13 +55,15 @@ export const unregisterNoStoreActionHook = (key: string, hook: HookFunction) => 
 function* handleAction(action: FetchAction) {
 	const guid = action.guid
 	if (_.isNil(guid)) return
-	const hook = hooks[guid]
-	if (_.isNil(hook)) return
+	if (_.isNil(hooks[guid])) return
 
 	const { receivedResult, failedResult } = yield race({
 		receivedResult: take(takeMatchesReceivedNoStoreHookAction(action)),
 		failedResult: take(takeMatchesFailedNoStoreHookAction(action))
 	})
+
+	const hook = hooks[guid]
+	if (_.isNil(hook)) return
 
 	if (!receivedResult || !receivedResult.data || !!failedResult) {
 		hook(null)

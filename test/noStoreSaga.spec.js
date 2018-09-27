@@ -326,4 +326,22 @@ describe('handleAction', () => {
 		expect(hookCalled).toEqual(undefined)
 		expect(hookData).toEqual(undefined)
 	})
+
+	test('should not call if hook if unregistered while requesting', () => {
+		const action = {
+			modelName: 'someModel',
+			type: actions.DATA_REQUESTED,
+			noStore: true,
+			guid: firstKey
+		}
+		const gen = handleAction(action)
+		const raceEffect = gen.next()
+		unregisterNoStoreActionHook(firstKey)
+		const sagaDone = gen.next({
+			receivedResult: { data: 'blah' }
+		})
+		expect(sagaDone.done).toEqual(true)
+		expect(hookCalled).toEqual(undefined)
+		expect(hookData).toEqual(undefined)
+	})
 })
