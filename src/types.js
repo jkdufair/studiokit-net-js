@@ -23,7 +23,6 @@ export type OAuthToken = {
  * period - (optional) How often to re-fetch when used in a recurring fetch scenario
  * taskId - (optional) A pre-generated (by your application) id to be used to cancel a recurring task at a later time
  * noRetry - (optional)  will prevent the use of the default logarithmic backoff retry strategy
- * timeLimit - (optional) number that will specify the timeout for a single attempt at a request. Defaults to 3000ms
  * guid - (optional) A pre-generated (by your application) GUID that will be attached to the fetchResult.data, to be stored in redux and used to match
  * contentType - (optional) the contentType to be set in the header. If not set, the default value is `application/json`
  */
@@ -37,7 +36,6 @@ export type FetchAction = {
 	period?: number,
 	taskId?: string,
 	noRetry?: boolean,
-	timeLimit?: number,
 	guid?: string,
 	contentType?: string
 }

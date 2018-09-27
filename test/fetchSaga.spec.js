@@ -9,7 +9,6 @@ import {
 	takeLatest,
 	fork,
 	put,
-	race,
 	select
 } from 'redux-saga/effects'
 import { createMockTask } from 'redux-saga/utils'
@@ -339,16 +338,13 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'test', method: 'POST' })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			expect(raceEffect.value).toEqual(
-				race({
-					fetchResult: call(doFetch, {
-						path: 'http://www.google.com',
-						headers: { Authorization: 'Bearer some-access-token' },
-						method: 'POST',
-						queryParams: {}
-					}),
-					timedOutResult: call(delay, 30000)
+			const fetchEffect = gen.next(getOauthToken())
+			expect(fetchEffect.value).toEqual(
+				call(doFetch, {
+					path: 'http://www.google.com',
+					headers: { Authorization: 'Bearer some-access-token' },
+					method: 'POST',
+					queryParams: {}
 				})
 			)
 		})
@@ -356,17 +352,14 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'test2', body: 'body' })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			expect(raceEffect.value).toEqual(
-				race({
-					fetchResult: call(doFetch, {
-						path: 'http://news.ycombinator.com',
-						contentType: 'application/x-www-form-urlencoded',
-						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {},
-						body: 'body'
-					}),
-					timedOutResult: call(delay, 30000)
+			const fetchEffect = gen.next(getOauthToken())
+			expect(fetchEffect.value).toEqual(
+				call(doFetch, {
+					path: 'http://news.ycombinator.com',
+					contentType: 'application/x-www-form-urlencoded',
+					headers: { Authorization: 'Bearer some-access-token' },
+					queryParams: {},
+					body: 'body'
 				})
 			)
 		})
@@ -375,19 +368,16 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'test3', body: { baz: 'quux' } })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			expect(raceEffect.value).toEqual(
-				race({
-					fetchResult: call(doFetch, {
-						path: 'http://news.ycombinator.com',
-						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {},
-						body: {
-							foo: 'bar',
-							baz: 'quux'
-						}
-					}),
-					timedOutResult: call(delay, 30000)
+			const fetchEffect = gen.next(getOauthToken())
+			expect(fetchEffect.value).toEqual(
+				call(doFetch, {
+					path: 'http://news.ycombinator.com',
+					headers: { Authorization: 'Bearer some-access-token' },
+					queryParams: {},
+					body: {
+						foo: 'bar',
+						baz: 'quux'
+					}
 				})
 			)
 		})
@@ -396,16 +386,13 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'arrayBodyDefault', body: ['bar'] })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			expect(raceEffect.value).toEqual(
-				race({
-					fetchResult: call(doFetch, {
-						path: 'http://news.ycombinator.com',
-						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {},
-						body: ['foo', 'bar']
-					}),
-					timedOutResult: call(delay, 30000)
+			const fetchEffect = gen.next(getOauthToken())
+			expect(fetchEffect.value).toEqual(
+				call(doFetch, {
+					path: 'http://news.ycombinator.com',
+					headers: { Authorization: 'Bearer some-access-token' },
+					queryParams: {},
+					body: ['foo', 'bar']
 				})
 			)
 		})
@@ -414,16 +401,13 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'arrayBodyDefault' })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			expect(raceEffect.value).toEqual(
-				race({
-					fetchResult: call(doFetch, {
-						path: 'http://news.ycombinator.com',
-						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {},
-						body: ['foo']
-					}),
-					timedOutResult: call(delay, 30000)
+			const fetchEffect = gen.next(getOauthToken())
+			expect(fetchEffect.value).toEqual(
+				call(doFetch, {
+					path: 'http://news.ycombinator.com',
+					headers: { Authorization: 'Bearer some-access-token' },
+					queryParams: {},
+					body: ['foo']
 				})
 			)
 		})
@@ -432,16 +416,13 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'arrayBody', body: ['bar'] })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			expect(raceEffect.value).toEqual(
-				race({
-					fetchResult: call(doFetch, {
-						path: 'http://news.ycombinator.com',
-						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {},
-						body: ['bar']
-					}),
-					timedOutResult: call(delay, 30000)
+			const fetchEffect = gen.next(getOauthToken())
+			expect(fetchEffect.value).toEqual(
+				call(doFetch, {
+					path: 'http://news.ycombinator.com',
+					headers: { Authorization: 'Bearer some-access-token' },
+					queryParams: {},
+					body: ['bar']
 				})
 			)
 		})
@@ -451,15 +432,12 @@ describe('fetchData', () => {
 			const selectEffect = gen.next()
 			const putFetchRequestEffect = gen.next({ testServer: 'baz' })
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			expect(raceEffect.value).toEqual(
-				race({
-					fetchResult: call(doFetch, {
-						path: 'http://baz',
-						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {}
-					}),
-					timedOutResult: call(delay, 30000)
+			const fetchEffect = gen.next(getOauthToken())
+			expect(fetchEffect.value).toEqual(
+				call(doFetch, {
+					path: 'http://baz',
+					headers: { Authorization: 'Bearer some-access-token' },
+					queryParams: {}
 				})
 			)
 		})
@@ -500,15 +478,12 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'test5', pathParams: [1] })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			expect(raceEffect.value).toEqual(
-				race({
-					fetchResult: call(doFetch, {
-						path: 'http://www.google.com/1',
-						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {}
-					}),
-					timedOutResult: call(delay, 30000)
+			const fetchEffect = gen.next(getOauthToken())
+			expect(fetchEffect.value).toEqual(
+				call(doFetch, {
+					path: 'http://www.google.com/1',
+					headers: { Authorization: 'Bearer some-access-token' },
+					queryParams: {}
 				})
 			)
 		})
@@ -557,15 +532,12 @@ describe('fetchData', () => {
 			const selectEffect = gen.next()
 			const putFetchRequestEffect = gen.next({ testServer: 'baz' })
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			expect(raceEffect.value).toEqual(
-				race({
-					fetchResult: call(doFetch, {
-						path: 'http://baz/1',
-						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {}
-					}),
-					timedOutResult: call(delay, 30000)
+			const fetchEffect = gen.next(getOauthToken())
+			expect(fetchEffect.value).toEqual(
+				call(doFetch, {
+					path: 'http://baz/1',
+					headers: { Authorization: 'Bearer some-access-token' },
+					queryParams: {}
 				})
 			)
 		})
@@ -574,15 +546,12 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'topLevelEntitiesNoPath' })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			expect(raceEffect.value).toEqual(
-				race({
-					fetchResult: call(doFetch, {
-						path: '/api/topLevelEntitiesNoPath',
-						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {}
-					}),
-					timedOutResult: call(delay, 30000)
+			const fetchEffect = gen.next(getOauthToken())
+			expect(fetchEffect.value).toEqual(
+				call(doFetch, {
+					path: '/api/topLevelEntitiesNoPath',
+					headers: { Authorization: 'Bearer some-access-token' },
+					queryParams: {}
 				})
 			)
 		})
@@ -591,15 +560,12 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'topLevelEntitiesNoPath', pathParams: [1] })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			expect(raceEffect.value).toEqual(
-				race({
-					fetchResult: call(doFetch, {
-						path: '/api/topLevelEntitiesNoPath/1',
-						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {}
-					}),
-					timedOutResult: call(delay, 30000)
+			const fetchEffect = gen.next(getOauthToken())
+			expect(fetchEffect.value).toEqual(
+				call(doFetch, {
+					path: '/api/topLevelEntitiesNoPath/1',
+					headers: { Authorization: 'Bearer some-access-token' },
+					queryParams: {}
 				})
 			)
 		})
@@ -611,15 +577,12 @@ describe('fetchData', () => {
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			expect(raceEffect.value).toEqual(
-				race({
-					fetchResult: call(doFetch, {
-						path: '/api/topLevelEntitiesNoPath/1/secondLevelEntities',
-						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {}
-					}),
-					timedOutResult: call(delay, 30000)
+			const fetchEffect = gen.next(getOauthToken())
+			expect(fetchEffect.value).toEqual(
+				call(doFetch, {
+					path: '/api/topLevelEntitiesNoPath/1/secondLevelEntities',
+					headers: { Authorization: 'Bearer some-access-token' },
+					queryParams: {}
 				})
 			)
 		})
@@ -628,16 +591,13 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'topLevelEntitiesNoPath.entityAction', pathParams: [1] })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			expect(raceEffect.value).toEqual(
-				race({
-					fetchResult: call(doFetch, {
-						path: '/api/topLevelEntitiesNoPath/1/entityAction',
-						method: 'POST',
-						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {}
-					}),
-					timedOutResult: call(delay, 30000)
+			const fetchEffect = gen.next(getOauthToken())
+			expect(fetchEffect.value).toEqual(
+				call(doFetch, {
+					path: '/api/topLevelEntitiesNoPath/1/entityAction',
+					method: 'POST',
+					headers: { Authorization: 'Bearer some-access-token' },
+					queryParams: {}
 				})
 			)
 		})
@@ -649,15 +609,12 @@ describe('fetchData', () => {
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			expect(raceEffect.value).toEqual(
-				race({
-					fetchResult: call(doFetch, {
-						path: '/api/topLevelEntitiesNoPath/1/secondLevelEntities/999/entityAction',
-						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {}
-					}),
-					timedOutResult: call(delay, 30000)
+			const fetchEffect = gen.next(getOauthToken())
+			expect(fetchEffect.value).toEqual(
+				call(doFetch, {
+					path: '/api/topLevelEntitiesNoPath/1/secondLevelEntities/999/entityAction',
+					headers: { Authorization: 'Bearer some-access-token' },
+					queryParams: {}
 				})
 			)
 		})
@@ -691,15 +648,12 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'test' })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			expect(raceEffect.value).toEqual(
-				race({
-					fetchResult: call(doFetch, {
-						path: 'http://www.google.com',
-						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {}
-					}),
-					timedOutResult: call(delay, 30000)
+			const fetchEffect = gen.next(getOauthToken())
+			expect(fetchEffect.value).toEqual(
+				call(doFetch, {
+					path: 'http://www.google.com',
+					headers: { Authorization: 'Bearer some-access-token' },
+					queryParams: {}
 				})
 			)
 		})
@@ -710,9 +664,11 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'test' })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next()
+			const fetchEffect = gen.next()
 			const resultReceivedEffect = gen.next({
-				fetchResult: { ok: true, status: 200, data: { foo: 'bar' } }
+				ok: true,
+				status: 200,
+				data: { foo: 'bar' }
 			})
 			expect(resultReceivedEffect.value).toEqual(
 				put(
@@ -726,9 +682,11 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'test', contentType: 'text/html; charset=utf-8' })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next()
+			const fetchEffect = gen.next()
 			const resultReceivedEffect = gen.next({
-				fetchResult: { ok: true, status: 200, data: { foo: 'bar' } }
+				ok: true,
+				status: 200,
+				data: { foo: 'bar' }
 			})
 			expect(resultReceivedEffect.value).toEqual(
 				put(
@@ -742,9 +700,11 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'test', noStore: true })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(getOauthToken())
 			const resultReceivedEffect = gen.next({
-				fetchResult: { ok: true, status: 200, data: { foo: 'bar' } }
+				ok: true,
+				status: 200,
+				data: { foo: 'bar' }
 			})
 			expect(resultReceivedEffect.value).toEqual(
 				put(
@@ -762,9 +722,11 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'test', method: 'POST', guid })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next()
+			const fetchEffect = gen.next()
 			const resultReceivedEffect = gen.next({
-				fetchResult: { ok: true, status: 200, data: { foo: 'bar' } }
+				ok: true,
+				status: 200,
+				data: { foo: 'bar' }
 			})
 			expect(resultReceivedEffect.value).toEqual(
 				put(
@@ -780,54 +742,12 @@ describe('fetchData', () => {
 	})
 
 	describe('failed fetch', () => {
-		test('should retry when fetch times out', () => {
-			const gen = fetchData({ modelName: 'test' })
-			const putFetchRequestEffect = gen.next()
-			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			const putFetchTimedOutEffect = gen.next({ timedOutResult: true })
-			const putTryFailedEffect = gen.next()
-			const delayAndPutAgainEffect = gen.next()
-			expect(delayAndPutAgainEffect.value).toEqual(
-				put(createAction(actions.FETCH_REQUESTED, { modelName: 'test' }))
-			)
-		})
-
-		test('should not retry when fetch times out and noRetry is specified', () => {
-			const gen = fetchData({ modelName: 'test', noRetry: true })
-			const putFetchRequestEffect = gen.next()
-			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			const putFetchTimedOutEffect = gen.next({ timedOutResult: true })
-			const putTryFailedEffect = gen.next()
-			const putFailedEffect = gen.next()
-			const sagaDone = gen.next()
-			expect(sagaDone.done).toEqual(true)
-		})
-
-		test('should time out to a configurable value', () => {
-			const gen = fetchData({ modelName: 'test', timeLimit: 1000 })
-			const putFetchRequestEffect = gen.next()
-			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			expect(raceEffect.value).toEqual(
-				race({
-					fetchResult: call(doFetch, {
-						path: 'http://www.google.com',
-						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {}
-					}),
-					timedOutResult: call(delay, 1000)
-				})
-			)
-		})
-
 		test('should retry on fetch error title', () => {
 			const gen = fetchData({ modelName: 'test' })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			const fetchTryFailedEffect = gen.next({ fetchResult: { title: 'Error' } })
+			const fetchEffect = gen.next(getOauthToken())
+			const fetchTryFailedEffect = gen.next({ title: 'Error' })
 			const putTryFailedEffect = gen.next()
 			const delayAndPutAgainEffect = gen.next()
 			expect(delayAndPutAgainEffect.value).toEqual(
@@ -839,8 +759,8 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'test' })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
-			const fetchTryFailedEffect = gen.next({ fetchResult: { code: 500 } })
+			const fetchEffect = gen.next(getOauthToken())
+			const fetchTryFailedEffect = gen.next({ code: 500 })
 			const putTryFailedEffect = gen.next()
 			const delayAndPutAgainEffect = gen.next()
 			expect(delayAndPutAgainEffect.value).toEqual(
@@ -853,9 +773,11 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			for (let i = 0; i <= 3; i++) {
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(getOauthToken())
 				const fetchTryFailedEffect = gen.next({
-					fetchResult: { ok: false, status: 500, data: { title: 'Error' } }
+					ok: false,
+					status: 500,
+					data: { title: 'Error' }
 				})
 				const putTryFailedEffect = gen.next()
 				if (i < 3) {
@@ -870,35 +792,7 @@ describe('fetchData', () => {
 				put(
 					createAction(actions.FETCH_FAILED, {
 						modelName: 'test',
-						errorData: { didTimeOut: false, title: 'Error' }
-					})
-				)
-			)
-			const sagaDone = gen.next()
-			expect(sagaDone.done).toEqual(true)
-		})
-
-		test('should dispatch FETCH_FAILED with didTimeOut if all tries timedOut', () => {
-			const gen = fetchData({ modelName: 'test' })
-			const putFetchRequestEffect = gen.next()
-			for (let i = 0; i <= 3; i++) {
-				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next(getOauthToken())
-				const fetchTryFailedEffect = gen.next({ timedOutResult: true })
-				const putTryFailedEffect = gen.next()
-				if (i < 3) {
-					const delayAndPutAgainEffect = gen.next()
-					expect(delayAndPutAgainEffect.value).toEqual(
-						put(createAction(actions.FETCH_REQUESTED, { modelName: 'test' }))
-					)
-				}
-			}
-			const delayAndPutFetchFailedEffect = gen.next()
-			expect(delayAndPutFetchFailedEffect.value).toEqual(
-				put(
-					createAction(actions.FETCH_FAILED, {
-						modelName: 'test',
-						errorData: { didTimeOut: true }
+						errorData: { title: 'Error' }
 					})
 				)
 			)
@@ -911,9 +805,11 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			for (let i = 0; i <= 3; i++) {
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(getOauthToken())
 				const fetchTryFailedEffect = gen.next({
-					fetchResult: { ok: false, status: 500, data: { title: 'Error' } }
+					ok: false,
+					status: 500,
+					data: { title: 'Error' }
 				})
 				const putTryFailedEffect = gen.next()
 				if (i < 3) {
@@ -928,7 +824,7 @@ describe('fetchData', () => {
 				put(
 					createAction(actions.TRANSIENT_FETCH_FAILED, {
 						modelName: 'test',
-						errorData: { didTimeOut: false, title: 'Error' }
+						errorData: { title: 'Error' }
 					})
 				)
 			)
@@ -941,9 +837,11 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'test' })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(getOauthToken())
 			const fetchTryFailedEffect = gen.next({
-				fetchResult: { ok: false, status: 401, data: { title: 'Error', code: 401 } }
+				ok: false,
+				status: 401,
+				data: { title: 'Error', code: 401 }
 			})
 			const putTryFailedEffect = gen.next()
 			const delayEffect = gen.next()
@@ -955,7 +853,7 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'test', noRetry: true })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const raceEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(getOauthToken())
 			const throwFetchErrorEffect = gen.throw('some other error')
 			const putTryFailedEffect = gen.next()
 			const putErrorEffect = gen.next()
@@ -981,13 +879,11 @@ describe('fetchData', () => {
 				const gen = fetchData({ modelName: 'entities' })
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next()
+				const fetchEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: {
-						ok: true,
-						status: 200,
-						data: [{ id: 1, name: 'foo' }, { id: 2, name: 'bar' }]
-					}
+					ok: true,
+					status: 200,
+					data: [{ id: 1, name: 'foo' }, { id: 2, name: 'bar' }]
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -999,7 +895,6 @@ describe('fetchData', () => {
 									_metadata: {
 										isFetching: false,
 										hasError: false,
-										timedOut: false,
 										fetchedAt
 									}
 								},
@@ -1009,7 +904,6 @@ describe('fetchData', () => {
 									_metadata: {
 										isFetching: false,
 										hasError: false,
-										timedOut: false,
 										fetchedAt
 									}
 								}
@@ -1029,13 +923,11 @@ describe('fetchData', () => {
 				const gen = fetchData({ modelName: 'entities' })
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next()
+				const fetchEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: {
-						ok: true,
-						status: 200,
-						data: { '1': { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
-					}
+					ok: true,
+					status: 200,
+					data: { '1': { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1047,7 +939,6 @@ describe('fetchData', () => {
 									_metadata: {
 										isFetching: false,
 										hasError: false,
-										timedOut: false,
 										fetchedAt
 									}
 								},
@@ -1057,7 +948,6 @@ describe('fetchData', () => {
 									_metadata: {
 										isFetching: false,
 										hasError: false,
-										timedOut: false,
 										fetchedAt
 									}
 								}
@@ -1078,15 +968,12 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next(getOauthToken())
-				expect(raceEffect.value).toEqual(
-					race({
-						fetchResult: call(doFetch, {
-							path: 'http://www.google.com/entities/999',
-							headers: { Authorization: 'Bearer some-access-token' },
-							queryParams: {}
-						}),
-						timedOutResult: call(delay, 30000)
+				const fetchEffect = gen.next(getOauthToken())
+				expect(fetchEffect.value).toEqual(
+					call(doFetch, {
+						path: 'http://www.google.com/entities/999',
+						headers: { Authorization: 'Bearer some-access-token' },
+						queryParams: {}
 					})
 				)
 			})
@@ -1100,13 +987,11 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next()
+				const fetchEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: {
-						ok: true,
-						status: 200,
-						data: { id: 2, name: 'bar' }
-					}
+					ok: true,
+					status: 200,
+					data: { id: 2, name: 'bar' }
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1126,16 +1011,13 @@ describe('fetchData', () => {
 				const gen = fetchData({ modelName: 'entities', method: 'POST' })
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next(getOauthToken())
-				expect(raceEffect.value).toEqual(
-					race({
-						fetchResult: call(doFetch, {
-							path: 'http://www.google.com/entities',
-							headers: { Authorization: 'Bearer some-access-token' },
-							method: 'POST',
-							queryParams: {}
-						}),
-						timedOutResult: call(delay, 30000)
+				const fetchEffect = gen.next(getOauthToken())
+				expect(fetchEffect.value).toEqual(
+					call(doFetch, {
+						path: 'http://www.google.com/entities',
+						headers: { Authorization: 'Bearer some-access-token' },
+						method: 'POST',
+						queryParams: {}
 					})
 				)
 			})
@@ -1164,13 +1046,11 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next()
+				const fetchEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: {
-						ok: true,
-						status: 200,
-						data: { id: 3, name: 'baz' }
-					}
+					ok: true,
+					status: 200,
+					data: { id: 3, name: 'baz' }
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1193,13 +1073,11 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next()
+				const fetchEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: {
-						ok: true,
-						status: 200,
-						data: { id: 3, name: 'baz' }
-					}
+					ok: true,
+					status: 200,
+					data: { id: 3, name: 'baz' }
 				})
 				const resultStoredEffect = gen.next()
 				expect(resultStoredEffect.value).toEqual(
@@ -1221,16 +1099,13 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next(getOauthToken())
-				expect(raceEffect.value).toEqual(
-					race({
-						fetchResult: call(doFetch, {
-							path: 'http://www.google.com/entities/999',
-							method: 'DELETE',
-							headers: { Authorization: 'Bearer some-access-token' },
-							queryParams: {}
-						}),
-						timedOutResult: call(delay, 30000)
+				const fetchEffect = gen.next(getOauthToken())
+				expect(fetchEffect.value).toEqual(
+					call(doFetch, {
+						path: 'http://www.google.com/entities/999',
+						method: 'DELETE',
+						headers: { Authorization: 'Bearer some-access-token' },
+						queryParams: {}
 					})
 				)
 			})
@@ -1245,13 +1120,11 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next()
+				const fetchEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: {
-						ok: true,
-						status: 204,
-						data: undefined
-					}
+					ok: true,
+					status: 204,
+					data: undefined
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1274,16 +1147,13 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next(getOauthToken())
-				expect(raceEffect.value).toEqual(
-					race({
-						fetchResult: call(doFetch, {
-							path: 'http://www.google.com/topLevelEntities/1/entityAction',
-							method: 'POST',
-							headers: { Authorization: 'Bearer some-access-token' },
-							queryParams: {}
-						}),
-						timedOutResult: call(delay, 30000)
+				const fetchEffect = gen.next(getOauthToken())
+				expect(fetchEffect.value).toEqual(
+					call(doFetch, {
+						path: 'http://www.google.com/topLevelEntities/1/entityAction',
+						method: 'POST',
+						headers: { Authorization: 'Bearer some-access-token' },
+						queryParams: {}
 					})
 				)
 			})
@@ -1297,13 +1167,11 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next()
+				const fetchEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: {
-						ok: true,
-						status: 200,
-						data: { foo: 'bar' }
-					}
+					ok: true,
+					status: 200,
+					data: { foo: 'bar' }
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1332,13 +1200,11 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next()
+				const fetchEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: {
-						ok: true,
-						status: 200,
-						data: [{ id: 1, name: 'foo' }, { id: 2, name: 'bar' }]
-					}
+					ok: true,
+					status: 200,
+					data: [{ id: 1, name: 'foo' }, { id: 2, name: 'bar' }]
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1350,7 +1216,6 @@ describe('fetchData', () => {
 									_metadata: {
 										isFetching: false,
 										hasError: false,
-										timedOut: false,
 										fetchedAt
 									}
 								},
@@ -1360,7 +1225,6 @@ describe('fetchData', () => {
 									_metadata: {
 										isFetching: false,
 										hasError: false,
-										timedOut: false,
 										fetchedAt
 									}
 								}
@@ -1383,13 +1247,11 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next()
+				const fetchEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: {
-						ok: true,
-						status: 200,
-						data: { '1': { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
-					}
+					ok: true,
+					status: 200,
+					data: { '1': { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1401,7 +1263,6 @@ describe('fetchData', () => {
 									_metadata: {
 										isFetching: false,
 										hasError: false,
-										timedOut: false,
 										fetchedAt
 									}
 								},
@@ -1411,7 +1272,6 @@ describe('fetchData', () => {
 									_metadata: {
 										isFetching: false,
 										hasError: false,
-										timedOut: false,
 										fetchedAt
 									}
 								}
@@ -1432,15 +1292,12 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next(getOauthToken())
-				expect(raceEffect.value).toEqual(
-					race({
-						fetchResult: call(doFetch, {
-							path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999',
-							headers: { Authorization: 'Bearer some-access-token' },
-							queryParams: {}
-						}),
-						timedOutResult: call(delay, 30000)
+				const fetchEffect = gen.next(getOauthToken())
+				expect(fetchEffect.value).toEqual(
+					call(doFetch, {
+						path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999',
+						headers: { Authorization: 'Bearer some-access-token' },
+						queryParams: {}
 					})
 				)
 			})
@@ -1454,13 +1311,11 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next()
+				const fetchEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: {
-						ok: true,
-						status: 200,
-						data: { id: 999, name: 'bar' }
-					}
+					ok: true,
+					status: 200,
+					data: { id: 999, name: 'bar' }
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1484,16 +1339,13 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next(getOauthToken())
-				expect(raceEffect.value).toEqual(
-					race({
-						fetchResult: call(doFetch, {
-							path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities',
-							headers: { Authorization: 'Bearer some-access-token' },
-							method: 'POST',
-							queryParams: {}
-						}),
-						timedOutResult: call(delay, 30000)
+				const fetchEffect = gen.next(getOauthToken())
+				expect(fetchEffect.value).toEqual(
+					call(doFetch, {
+						path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities',
+						headers: { Authorization: 'Bearer some-access-token' },
+						method: 'POST',
+						queryParams: {}
 					})
 				)
 			})
@@ -1528,13 +1380,11 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next()
+				const fetchEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: {
-						ok: true,
-						status: 200,
-						data: { id: 3, name: 'baz' }
-					}
+					ok: true,
+					status: 200,
+					data: { id: 3, name: 'baz' }
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1558,13 +1408,11 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next()
+				const fetchEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: {
-						ok: true,
-						status: 200,
-						data: { id: 3, name: 'baz' }
-					}
+					ok: true,
+					status: 200,
+					data: { id: 3, name: 'baz' }
 				})
 				const resultStoredEffect = gen.next()
 				expect(resultStoredEffect.value).toEqual(
@@ -1586,16 +1434,13 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next(getOauthToken())
-				expect(raceEffect.value).toEqual(
-					race({
-						fetchResult: call(doFetch, {
-							path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999',
-							method: 'DELETE',
-							headers: { Authorization: 'Bearer some-access-token' },
-							queryParams: {}
-						}),
-						timedOutResult: call(delay, 30000)
+				const fetchEffect = gen.next(getOauthToken())
+				expect(fetchEffect.value).toEqual(
+					call(doFetch, {
+						path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999',
+						method: 'DELETE',
+						headers: { Authorization: 'Bearer some-access-token' },
+						queryParams: {}
 					})
 				)
 			})
@@ -1610,13 +1455,11 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next()
+				const fetchEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: {
-						ok: true,
-						status: 204,
-						data: undefined
-					}
+					ok: true,
+					status: 204,
+					data: undefined
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1639,15 +1482,12 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next(getOauthToken())
-				expect(raceEffect.value).toEqual(
-					race({
-						fetchResult: call(doFetch, {
-							path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999/entityAction',
-							headers: { Authorization: 'Bearer some-access-token' },
-							queryParams: {}
-						}),
-						timedOutResult: call(delay, 30000)
+				const fetchEffect = gen.next(getOauthToken())
+				expect(fetchEffect.value).toEqual(
+					call(doFetch, {
+						path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999/entityAction',
+						headers: { Authorization: 'Bearer some-access-token' },
+						queryParams: {}
 					})
 				)
 			})
@@ -1661,13 +1501,11 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const raceEffect = gen.next()
+				const fetchEffect = gen.next()
 				const resultReceivedEffect = gen.next({
-					fetchResult: {
-						ok: true,
-						status: 200,
-						data: { foo: 'bar' }
-					}
+					ok: true,
+					status: 200,
+					data: { foo: 'bar' }
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
