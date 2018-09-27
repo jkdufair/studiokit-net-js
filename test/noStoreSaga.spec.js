@@ -327,7 +327,7 @@ describe('handleAction', () => {
 		expect(hookData).toEqual(undefined)
 	})
 
-	test('should not call if hook if unregistered while requesting', () => {
+	test('should not call if hook is unregistered while requesting', () => {
 		const action = {
 			modelName: 'someModel',
 			type: actions.DATA_REQUESTED,
