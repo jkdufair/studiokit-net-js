@@ -7,7 +7,6 @@ import {
 	cancelled,
 	fork,
 	put,
-	race,
 	select,
 	take,
 	takeEvery,
@@ -278,10 +277,7 @@ function* fetchData(action: FetchAction) {
 			if (oauthToken && oauthToken.access_token) {
 				fetchConfig.headers['Authorization'] = `Bearer ${oauthToken.access_token}`
 			}
-			const { fetchResult, timedOutResult } = yield race({
-				fetchResult: call(doFetch, fetchConfig),
-				timedOutResult: call(delay, action.timeLimit ? action.timeLimit : 30000)
-			})
+			const fetchResult = yield call(doFetch, fetchConfig)
 			if (fetchResult && fetchResult.ok) {
 				let storeAction = action.noStore
 					? actions.TRANSIENT_FETCH_RESULT_RECEIVED
@@ -304,7 +300,6 @@ function* fetchData(action: FetchAction) {
 								_metadata: {
 									isFetching: false,
 									hasError: false,
-									timedOut: false,
 									fetchedAt
 								}
 							})
@@ -343,20 +338,14 @@ function* fetchData(action: FetchAction) {
 					)
 				}
 			} else {
-				// combine fetchResult with didTimeOut
 				lastFetchError = {
 					modelName,
-					errorData: _.merge(
-						{
-							didTimeOut: !!timedOutResult
-						},
-						fetchResult && fetchResult.data ? fetchResult.data : {}
-					)
+					errorData: _.merge({}, !!fetchResult && !!fetchResult.data ? fetchResult.data : {})
 				}
 				throw new Error(JSON.stringify(lastFetchError))
 			}
 		} catch (error) {
-			let errorData = lastFetchError ? lastFetchError.errorData : null
+			let errorData = !!lastFetchError ? lastFetchError.errorData : null
 
 			yield put(
 				createAction(

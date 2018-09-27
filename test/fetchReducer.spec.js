@@ -48,8 +48,7 @@ describe('supporting functions', () => {
 				_metadata: {
 					isFetching: false,
 					hasError: false,
-					lastFetchError: undefined,
-					timedOut: false
+					lastFetchError: undefined
 				}
 			}
 			expect(isCollection(obj)).toEqual(true)
@@ -76,8 +75,7 @@ describe('supporting functions', () => {
 				_metadata: {
 					isFetching: false,
 					hasError: false,
-					lastFetchError: undefined,
-					timedOut: false
+					lastFetchError: undefined
 				}
 			}
 			expect(isCollection(obj)).toEqual(false)
@@ -172,8 +170,7 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: true,
 						hasError: false,
-						lastFetchError: undefined,
-						timedOut: false
+						lastFetchError: undefined
 					}
 				}
 			})
@@ -187,8 +184,7 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: true,
 							hasError: false,
-							lastFetchError: undefined,
-							timedOut: false
+							lastFetchError: undefined
 						}
 					}
 				}
@@ -203,8 +199,7 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: true,
 							hasError: false,
-							lastFetchError: undefined,
-							timedOut: false
+							lastFetchError: undefined
 						}
 					}
 				}
@@ -221,8 +216,7 @@ describe('fetchReducer', () => {
 								_metadata: {
 									isFetching: true,
 									hasError: false,
-									lastFetchError: undefined,
-									timedOut: false
+									lastFetchError: undefined
 								}
 							}
 						}
@@ -243,8 +237,7 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: true,
 							hasError: false,
-							lastFetchError: undefined,
-							timedOut: false
+							lastFetchError: undefined
 						}
 					}
 				}
@@ -263,8 +256,7 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: true,
 							hasError: false,
-							lastFetchError: undefined,
-							timedOut: false
+							lastFetchError: undefined
 						}
 					}
 				}
@@ -281,7 +273,6 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							timedOut: false,
 							fetchedAt: fetchedDate
 						}
 					}
@@ -294,7 +285,6 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: true,
 						hasError: false,
-						timedOut: false,
 						fetchedAt: fetchedDate
 					}
 				}
@@ -313,7 +303,7 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							timedOut: false,
+
 							fetchedAt: fetchedDate
 						}
 					}
@@ -331,7 +321,6 @@ describe('fetchReducer', () => {
 								_metadata: {
 									isFetching: true,
 									hasError: false,
-									timedOut: false,
 									lastFetchError: undefined
 								}
 							}
@@ -340,7 +329,6 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						timedOut: false,
 						fetchedAt: fetchedDate
 					}
 				}
@@ -366,7 +354,6 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						timedOut: false,
 						fetchedAt: fetchedAtDate
 					},
 					key: 'value'
@@ -393,7 +380,6 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							timedOut: false,
 							fetchedAt: fetchedAtDate
 						},
 						key: 'value'
@@ -421,7 +407,6 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							timedOut: false,
 							fetchedAt: fetchedAtDate
 						},
 						key: 'value'
@@ -452,7 +437,6 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							timedOut: false,
 							fetchedAt: fetchedAtDate
 						},
 						key: 'value'
@@ -484,7 +468,6 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							timedOut: false,
 							fetchedAt: fetchedAtDate
 						},
 						key: 'value'
@@ -505,7 +488,6 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								timedOut: false,
 								fetchedAt: fetchedAtDate
 							},
 							key: 'value',
@@ -525,7 +507,6 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							timedOut: false,
 							fetchedAt: fetchedAtDate
 						},
 						key: 'value'
@@ -546,7 +527,6 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								timedOut: false,
 								fetchedAt: fetchedAtDate
 							},
 							key: 'value',
@@ -566,7 +546,6 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							timedOut: false,
 							fetchedAt: fetchedAtDate
 						},
 						key: 'value'
@@ -590,7 +569,6 @@ describe('fetchReducer', () => {
 									_metadata: {
 										isFetching: true,
 										hasError: false,
-										timedOut: false,
 										lastFetchError: undefined
 									}
 								}
@@ -599,7 +577,6 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							timedOut: false,
 							fetchedAt: fetchedDate
 						}
 					}
@@ -622,7 +599,6 @@ describe('fetchReducer', () => {
 								_metadata: {
 									isFetching: false,
 									hasError: false,
-									timedOut: false,
 									fetchedAt: fetchedDate
 								}
 							}
@@ -631,7 +607,6 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						timedOut: false,
 						fetchedAt: fetchedDate
 					}
 				}
@@ -656,7 +631,6 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								timedOut: false,
 								fetchedAt: fetchedDate
 							}
 						}
@@ -679,14 +653,13 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								timedOut: false,
 								fetchedAt: fetchedDate
 							}
 						},
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							timedOut: false,
+
 							fetchedAt: fetchedDate
 						}
 					}
@@ -706,7 +679,6 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								timedOut: false,
 								fetchedAt: fetchedDate
 							}
 						}
@@ -727,7 +699,6 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								timedOut: false,
 								fetchedAt: fetchedDate
 							}
 						}
@@ -739,7 +710,6 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								timedOut: false,
 								fetchedAt: fetchedDate
 							}
 						}
@@ -762,7 +732,6 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								timedOut: false,
 								fetchedAt: fetchedDate
 							}
 						}
@@ -770,7 +739,6 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						timedOut: false,
 						fetchedAt: fetchedDate
 					}
 				}
@@ -794,7 +762,6 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						timedOut: false,
 						fetchedAt: fetchedAtDate
 					},
 					response: 'value'
@@ -814,7 +781,6 @@ describe('fetchReducer', () => {
 								isFetching: false,
 								lastFetchError: undefined,
 								hasError: false,
-								timedOut: false,
 								fetchedAt: fetchedAtDate
 							},
 							key: 'value',
@@ -841,7 +807,6 @@ describe('fetchReducer', () => {
 							isFetching: false,
 							lastFetchError: undefined,
 							hasError: false,
-							timedOut: false,
 							fetchedAt: fetchedAtDate
 						},
 						key: 'new value',
@@ -867,8 +832,7 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: true,
-						lastFetchError: 'server fire',
-						timedOut: false
+						lastFetchError: 'server fire'
 					}
 				}
 			})
@@ -881,20 +845,9 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: true,
-						lastFetchError: undefined,
-						timedOut: false
+						lastFetchError: undefined
 					}
 				}
-			})
-		})
-
-		test('single level, didTimeOut = true', () => {
-			const state = fetchReducer(
-				{},
-				{ type: actions.FETCH_FAILED, modelName: 'test', didTimeOut: true }
-			)
-			expect(state).toEqual({
-				test: { _metadata: { isFetching: false, hasError: true, timedOut: true } }
 			})
 		})
 
@@ -909,8 +862,7 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: true,
-							lastFetchError: 'server fire',
-							timedOut: false
+							lastFetchError: 'server fire'
 						}
 					}
 				}
@@ -929,8 +881,7 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: true,
-							lastFetchError: 'server fire',
-							timedOut: false
+							lastFetchError: 'server fire'
 						}
 					}
 				}
@@ -949,8 +900,7 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: true,
-							lastFetchError: 'server fire',
-							timedOut: false
+							lastFetchError: 'server fire'
 						}
 					}
 				}
@@ -970,7 +920,6 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: true,
 								hasError: false,
-								timedOut: false,
 								fetchedAt
 							}
 						}
@@ -987,7 +936,6 @@ describe('fetchReducer', () => {
 							isFetching: false,
 							hasError: true,
 							lastFetchError: 'server fire',
-							timedOut: false,
 							fetchedAt
 						}
 					}
@@ -1032,8 +980,7 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: true,
 						hasError: false,
-						lastFetchError: undefined,
-						timedOut: false
+						lastFetchError: undefined
 					}
 				}
 			})
@@ -1051,7 +998,6 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						timedOut: false,
 						fetchedAt: fetchedAtDate
 					},
 					foo: 'bar'
@@ -1069,7 +1015,6 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						timedOut: false,
 						fetchedAt: fetchedAtDate
 					},
 					baz: 'quux',
@@ -1094,8 +1039,7 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: true,
 						hasError: false,
-						lastFetchError: undefined,
-						timedOut: false
+						lastFetchError: undefined
 					}
 				}
 			})

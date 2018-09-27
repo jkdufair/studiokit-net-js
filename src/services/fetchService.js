@@ -17,7 +17,7 @@ let apiRoot: string
 
 /**
  * Add query params to path. Prepend with apiRoot if necessary
- * 
+ *
  * @param {FetchConfig} config - The fetch configuration containing the path and query params
  * @returns A string with query params populated and prepended
  */
@@ -38,7 +38,7 @@ function constructPath(config: FetchConfig) {
 
 /**
  * A function to receieve and store the apiRoot for prepending to subsequent partial URLs in paths
- * 
+ *
  * @export
  * @param {string} uri - The uri to save and prepend later
  */
@@ -57,7 +57,7 @@ export function getApiRoot() {
  * it's sent as provided. If it is a 'multipart/form-data', we are assuming that the data is being sent as a FormData, and
  * we do not set the Content-type (https://stackoverflow.com/questions/39280438/fetch-missing-boundary-in-multipart-form-data-post).
  * TODO: provide logging injection
- * 
+ *
  * @export
  * @param {FetchConfig} config - The configuration used to construct a fetch request
  * @returns {Object?} - The response, parsed as JSON
@@ -82,7 +82,7 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 							: 'application/json; charset=utf-8'
 					},
 					config.headers
-				)
+			  )
 
 	const isBodyJson =
 		headers['Content-Type'] && _.includes(headers['Content-Type'], 'application/json')
