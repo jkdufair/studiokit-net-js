@@ -1,6 +1,6 @@
 {
 	"name": "studiokit-net-js",
-	"version": "1.5.1",
+	"version": "1.5.2",
 	"scripts": {
 		"eslint-check": "eslint --print-config .eslintrc.js | eslint-config-prettier-check",
 		"lint": "eslint --ext=js ./*.js src test",
@@ -11,8 +11,6 @@
 		"coveralls": "npm run coverage && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
 		"build": "babel src -d lib",
 		"build:watch": "babel src --watch -d lib",
-		"precommit": "lint-staged",
-		"prepush": "npm run test",
 		"prepare": "npm run build"
 	},
 	"description": "Network/API functions for Studio apps at Purdue",
@@ -23,37 +21,43 @@
 		"lib"
 	],
 	"devDependencies": {
-		"babel-cli": "^6.24.1",
-		"babel-core": "^6.0.0",
-		"babel-eslint": "^8.0.0",
-		"babel-plugin-rewire": "^1.1.0",
+		"babel-cli": "^6.26.0",
+		"babel-core": "^6.26.3",
+		"babel-eslint": "7.2.3",
+		"babel-plugin-rewire": "^1.2.0",
 		"babel-plugin-transform-flow-strip-types": "^6.22.0",
 		"babel-plugin-transform-runtime": "^6.23.0",
-		"babel-preset-env": "^1.6.0",
+		"babel-preset-env": "^1.7.0",
 		"babel-runtime": "^6.26.0",
-		"babel-template": "^6.2.0",
-		"babel-types": "^6.2.0",
-		"coveralls": "^3.0.0",
-		"cross-env": "^5.0.5",
-		"eslint": "^4.7.2",
-		"eslint-config-prettier": "^2.6.0",
-		"eslint-config-studiokit": "^0.1.0",
-		"eslint-plugin-prettier": "^2.3.1",
-		"eslint-plugin-redux-saga": "^0.5.0",
-		"fetch-mock": "^6.4.4",
-		"flow-bin": "^0.74.0",
-		"husky": "^0.14.3",
+		"babel-template": "^6.26.0",
+		"babel-types": "^6.26.0",
+		"coveralls": "^3.0.2",
+		"cross-env": "^5.2.0",
+		"eslint": "4.10.0",
+		"eslint-config-prettier": "^3.1.0",
+		"eslint-config-studiokit": "^0.2.1",
+		"eslint-plugin-prettier": "^2.7.0",
+		"eslint-plugin-redux-saga": "^0.9.0",
+		"fetch-mock": "^7.0.5",
+		"flow-bin": "^0.81.0",
+		"husky": "^1.0.1",
 		"immutable": "^3.8.2",
 		"isomorphic-fetch": "^2.2.1",
-		"jest": "^23.1.0",
-		"lint-staged": "^7.2.0",
-		"prettier": "^1.7.0"
+		"jest": "^23.6.0",
+		"lint-staged": "^7.3.0",
+		"prettier": "^1.14.3"
 	},
 	"dependencies": {
-		"lodash": "^4.17.4",
-		"redux": "^3.6.0",
-		"redux-saga": "^0.15.6",
-		"uuid": "^3.2.1"
+		"lodash": "^4.17.11",
+		"redux": "^3.7.2",
+		"redux-saga": "^0.16.0",
+		"uuid": "^3.3.2"
+	},
+	"husky": {
+		"hooks": {
+			"pre-commit": "lint-staged",
+			"pre-push": "npm run test"
+		}
 	},
 	"lint-staged": {
 		"*.js": [
