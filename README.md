@@ -2,7 +2,7 @@
 
 # StudioKit Net Library
 
-A library for declarative, configurable data (API) access with built-in retry, timeout, periodic refresh, and concurrency handling.
+A library for declarative, configurable data (API) access with built-in retry, periodic refresh, and concurrency handling.
 
 1. [Installation](#installation)
 1. [Usage](#usage)
@@ -91,7 +91,6 @@ models: {
 		data: { foo: 'bar', baz: ['quux', 'fluux']},
 		isFetching: false,
 		hasError: false,
-		timedOut: false,
 		fetchedAt: "2017-05-23T20:38:11.103Z"
 	}
 }
@@ -110,7 +109,6 @@ type FetchAction = {
 	period?: number,
 	taskId?: string,
 	noRetry?: boolean,
-	timeLimit?: number,
 	guid?: string
 }
 ```
@@ -124,7 +122,6 @@ type FetchAction = {
 - `period` is an optional number of milliseconds after which a request should repeat when dispatching a recurring fetch
 - `taskId` is a string that must be passed to a recurring fetch for future cancellation
 - `noRetry` will prevent the use of the default logarithmic backoff retry strategy
-- `timeLimit` is an optional number that will specify the timeout for a single attempt at a request. Defaults to 3000ms
 - `guid` is an optional pre-generated (by your application) GUID that will be attached to a fetch result's data, to be stored in redux and used to match request results in components
 
 The following actions can be dispatched
@@ -265,7 +262,6 @@ GET https://httpbin.org/get
 			_metadata: {
 				isFetching: false,
 				hasError: false,
-				timedOut: false,
 				fetchedAt: '2017-05-23T20:38:11.103Z'
 			}
 		}
@@ -299,7 +295,6 @@ GET https://myapp.com/api/one
 				_metadata: {
 					isFetching: false,
 					hasError: false,
-					timedOut: false,
 					fetchedAt: '2017-05-23T20:38:11.103Z'
 				}
 			}
@@ -504,7 +499,6 @@ GET https://myapp.com/api/entities
 				_metadata: {
 					isFetching: false,
 					hasError: false,
-					timedOut: false,
 					fetchedAt: '2017-05-23T20:38:11.103Z'
 				}
 			},
@@ -512,7 +506,6 @@ GET https://myapp.com/api/entities
 			_metadata: {
 				isFetching: false,
 				hasError: false,
-				timedOut: false,
 				fetchedAt: '2017-05-23T20:38:11.103Z'
 			}
 		}
@@ -638,7 +631,6 @@ GET https://myapp.com/api/topLevelEntities/1/secondLevelEntities
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							timedOut: false,
 							fetchedAt: '2017-05-23T20:38:11.103Z'
 						}
 					},
@@ -646,7 +638,6 @@ GET https://myapp.com/api/topLevelEntities/1/secondLevelEntities
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						timedOut: false,
 						fetchedAt: '2017-05-23T20:38:11.103Z'
 					}
 				}

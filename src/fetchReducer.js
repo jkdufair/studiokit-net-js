@@ -10,16 +10,13 @@ type FetchState = {}
 
 type FetchError = {
 	modelName: string,
-	errorData: {
-		didTimeOut: boolean
-	}
+	errorData: any
 }
 
 type MetadataState = {
 	isFetching: boolean,
 	hasError: boolean,
 	lastFetchError: FetchError,
-	timedOut: boolean,
 	fetchedAt?: Date
 }
 
@@ -119,8 +116,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			valueAtPath._metadata = _.merge(metadata, {
 				isFetching: true,
 				hasError: false,
-				lastFetchError: undefined,
-				timedOut: false
+				lastFetchError: undefined
 			})
 			return _fp.setWith(Object, path, valueAtPath, state)
 
@@ -135,7 +131,6 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 				isFetching: false,
 				hasError: false,
 				lastFetchError: undefined,
-				timedOut: false,
 				fetchedAt: new Date()
 			})
 			return _fp.setWith(Object, path, valueAtPath, state)
@@ -146,8 +141,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			valueAtPath._metadata = _.merge(metadata, {
 				isFetching: false,
 				hasError: true,
-				lastFetchError: action.errorData,
-				timedOut: !!action.didTimeOut
+				lastFetchError: action.errorData
 			})
 			return _fp.setWith(Object, path, valueAtPath, state)
 
