@@ -88,10 +88,10 @@ function prepareFetch(model, action, models) {
 
 	// set or merge "body"
 	// If the body is a string, we are assuming it's an application/x-www-form-urlencoded
-	if (action.body && (typeof action.body === 'string' || action.body instanceof FormData)) {
+	if (!!action.body && (typeof action.body === 'string' || action.body instanceof FormData)) {
 		fetchConfig.body = action.body
 		fetchConfig.contentType = 'application/x-www-form-urlencoded'
-	} else if (fetchConfig.body || action.body) {
+	} else if (!!fetchConfig.body || !!action.body) {
 		const isBodyArray =
 			(fetchConfig.body && _.isArray(fetchConfig.body)) || (action.body && _.isArray(action.body))
 		fetchConfig.body = isBodyArray
@@ -109,9 +109,11 @@ function prepareFetch(model, action, models) {
 	let isCollectionItemFetch: boolean = false
 	let isCollectionItemCreate: boolean = false
 	let isUrlValid: boolean = true
-	const pathParams = action.pathParams || []
+	// copy pathParams into two arrays, to manage them separately
+	let pathParams = _.merge([], action.pathParams)
+	let modelNameParams = _.merge([], action.pathParams)
 
-	// collection "fetchConfig.path" and "modelName"
+	// find all the model levels from modelName
 	const modelNameLevels = modelName.split('.')
 	let lastModelLevel = models
 	const modelLevels = modelNameLevels.map(levelName => {
@@ -119,11 +121,15 @@ function prepareFetch(model, action, models) {
 		lastModelLevel = modelLevel
 		return modelLevel
 	})
-	const isAnyLevelCollection = modelLevels.some(
+
+	// find the levels that are collections
+	const collectionModelLevels = modelLevels.filter(
 		level => level._config && level._config.isCollection
 	)
+	const isAnyLevelCollection = collectionModelLevels.length > 0
+
+	// if any level is a collection, we need to concat their fetch paths and modelNames
 	if (isAnyLevelCollection) {
-		// construct modelName and path
 		if (modelNameLevels.length > 1) {
 			modelLevels.forEach((modelLevel, index) => {
 				const levelName = modelNameLevels[index]
@@ -134,11 +140,16 @@ function prepareFetch(model, action, models) {
 					: index === 0
 						? `/api/${levelName}`
 						: levelName
+
+				// first level, just use its values
 				if (index === 0) {
 					fetchConfig.path = currentPath
 					modelName = levelName
 					return
 				}
+
+				// if previous level isCollection, we need to use "{:id}" hooks when appending new level
+				// otherwise, just append using the divider
 				const prevModelConfig = _.merge({}, modelLevels[index - 1]._config)
 				const divider = fetchConfig.path.length > 0 && currentPath.length > 0 ? '/' : ''
 				if (prevModelConfig.isCollection) {
@@ -148,16 +159,27 @@ function prepareFetch(model, action, models) {
 					fetchConfig.path = `${fetchConfig.path}${divider}${currentPath}`
 					modelName = `${modelName}.${levelName}`
 				}
+
+				// an absolute path resets the fetch path, and ignores previous pathParams moving forward
+				// it does not affect modelName params for redux
+				if (currentPath.indexOf('/') === 0) {
+					fetchConfig.path = currentPath
+					const collectionLevelIndex = collectionModelLevels.indexOf(modelLevel)
+					if (collectionLevelIndex > 0) {
+						pathParams = pathParams.slice(collectionLevelIndex, pathParams.length)
+					}
+				}
 			})
 		} else if (!fetchConfig.path) {
 			fetchConfig.path = `/api/${modelName}`
 		}
-		// determine if we need to add pathParam hooks
+
+		// determine if we need to append an "{:id}" hook
 		const pathLevels = (fetchConfig.path.match(/{:id}/g) || []).length
 		// GET, PUT, PATCH, DELETE => append '/{:id}'
-		isCollectionItemFetch = modelConfig.isCollection && pathParams.length > pathLevels
+		isCollectionItemFetch = !!modelConfig.isCollection && pathParams.length > pathLevels
 		// POST
-		isCollectionItemCreate = modelConfig.isCollection && fetchConfig.method === 'POST'
+		isCollectionItemCreate = !!modelConfig.isCollection && fetchConfig.method === 'POST'
 
 		// insert pathParam hooks into path and modelName
 		// track collection item requests by id (update, delete) or guid (create)
@@ -168,7 +190,8 @@ function prepareFetch(model, action, models) {
 			modelName = `${modelName}.${action.guid || uuid.v4()}`
 		}
 	}
-	// substitute any pathParams in path, e.g. /api/group/{:id}
+
+	// substitute any params in path, e.g. /api/group/{:id}
 	if (/{:.+}/.test(fetchConfig.path)) {
 		let index = 0
 		fetchConfig.path = fetchConfig.path.replace(/{:(.+?)}/g, (matches, backref) => {
@@ -181,11 +204,11 @@ function prepareFetch(model, action, models) {
 		})
 	}
 
-	// substitute any pathParams in modelName, e.g. groups.{:id}
+	// substitute any params in modelName, e.g. groups.{:id}
 	if (/{:.+}/.test(modelName)) {
 		let index = 0
 		modelName = modelName.replace(/{:(.+?)}/g, (matches, backref) => {
-			const value = pathParams[index]
+			const value = modelNameParams[index]
 			if (value === undefined || value === null) {
 				isUrlValid = false
 			}
@@ -200,8 +223,7 @@ function prepareFetch(model, action, models) {
 		modelName,
 		isCollectionItemFetch,
 		isCollectionItemCreate,
-		isUrlValid,
-		pathParams
+		isUrlValid
 	}
 }
 
@@ -225,7 +247,7 @@ function* fetchData(action: FetchAction) {
 	}
 
 	const result = prepareFetch(model, action, models)
-	const { fetchConfig, modelConfig, pathParams } = result
+	const { fetchConfig, modelConfig } = result
 	let { modelName, isCollectionItemFetch, isCollectionItemCreate, isUrlValid } = result
 
 	// TODO: Figure out how to move this into prepareFetch() without causing the

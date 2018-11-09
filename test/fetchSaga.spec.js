@@ -174,7 +174,160 @@ describe('prepareFetch', () => {
 				}
 			}
 		)
-		expect(result.fetchConfig.path).toEqual('/api/bar/1/baz')
+		expect(result).toEqual({
+			fetchConfig: {
+				headers: {},
+				path: '/api/bar/1/baz',
+				queryParams: {}
+			},
+			isCollectionItemCreate: false,
+			isCollectionItemFetch: false,
+			isUrlValid: true,
+			modelConfig: {
+				isCollection: true
+			},
+			modelName: 'foo.bar.1.baz'
+		})
+	})
+	test('should use absolute path for non-collection under collection with absolute path, and not append pathParams to path', () => {
+		var result = prepareFetch(
+			{
+				_config: {
+					fetch: {
+						path: '/api/bar'
+					}
+				}
+			},
+			{ type: 'SOME_ACTION', modelName: 'foo.bar', pathParams: [1] },
+			{
+				foo: {
+					_config: {
+						isCollection: true,
+						fetch: {
+							path: '/api/foo'
+						}
+					},
+					bar: {
+						_config: {
+							fetch: {
+								path: '/api/bar'
+							}
+						}
+					}
+				}
+			}
+		)
+		expect(result).toEqual({
+			fetchConfig: {
+				headers: {},
+				path: '/api/bar',
+				queryParams: {}
+			},
+			isCollectionItemCreate: false,
+			isCollectionItemFetch: false,
+			isUrlValid: true,
+			modelConfig: {
+				fetch: {
+					path: '/api/bar'
+				}
+			},
+			modelName: 'foo.1.bar'
+		})
+	})
+	test('should use absolute path for collection under collection with absolute path, and exclude first pathParam from path', () => {
+		var result = prepareFetch(
+			{
+				_config: {
+					isCollection: true,
+					fetch: {
+						path: '/api/bar'
+					}
+				}
+			},
+			{ type: 'SOME_ACTION', modelName: 'foo.bar', pathParams: [1, 2] },
+			{
+				foo: {
+					_config: {
+						isCollection: true,
+						fetch: {
+							path: '/api/foo'
+						}
+					},
+					bar: {
+						_config: {
+							isCollection: true,
+							fetch: {
+								path: '/api/bar'
+							}
+						}
+					}
+				}
+			}
+		)
+		expect(result).toEqual({
+			fetchConfig: {
+				headers: {},
+				path: '/api/bar/2',
+				queryParams: {}
+			},
+			isCollectionItemCreate: false,
+			isCollectionItemFetch: true,
+			isUrlValid: true,
+			modelConfig: {
+				isCollection: true,
+				fetch: {
+					path: '/api/bar'
+				}
+			},
+			modelName: 'foo.1.bar.2'
+		})
+	})
+	test('should use absolute path for two nested collections under collection with absolute path, and exclude correct pathParams from path', () => {
+		var result = prepareFetch(
+			{
+				_config: {
+					isCollection: true
+				}
+			},
+			{ type: 'SOME_ACTION', modelName: 'foo.bar.baz', pathParams: [1, 2, 3] },
+			{
+				foo: {
+					_config: {
+						isCollection: true,
+						fetch: {
+							path: '/api/foo'
+						}
+					},
+					bar: {
+						_config: {
+							isCollection: true,
+							fetch: {
+								path: '/api/bar'
+							}
+						},
+						baz: {
+							_config: {
+								isCollection: true
+							}
+						}
+					}
+				}
+			}
+		)
+		expect(result).toEqual({
+			fetchConfig: {
+				headers: {},
+				path: '/api/bar/2/baz/3',
+				queryParams: {}
+			},
+			isCollectionItemCreate: false,
+			isCollectionItemFetch: true,
+			isUrlValid: true,
+			modelConfig: {
+				isCollection: true
+			},
+			modelName: 'foo.1.bar.2.baz.3'
+		})
 	})
 })
 
