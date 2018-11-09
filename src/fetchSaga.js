@@ -109,10 +109,11 @@ function prepareFetch(model, action, models) {
 	let isCollectionItemFetch: boolean = false
 	let isCollectionItemCreate: boolean = false
 	let isUrlValid: boolean = true
-	let pathParams = _.merge([], action.pathParams) || []
-	let modelNameParams = _.merge([], action.pathParams) || []
+	// copy pathParams into two arrays, to manage them separately
+	let pathParams = _.merge([], action.pathParams)
+	let modelNameParams = _.merge([], action.pathParams)
 
-	// find all model levels from modelName
+	// find all the model levels from modelName
 	const modelNameLevels = modelName.split('.')
 	let lastModelLevel = models
 	const modelLevels = modelNameLevels.map(levelName => {
@@ -121,13 +122,14 @@ function prepareFetch(model, action, models) {
 		return modelLevel
 	})
 
+	// find the levels that are collections
 	const collectionModelLevels = modelLevels.filter(
 		level => level._config && level._config.isCollection
 	)
 	const isAnyLevelCollection = collectionModelLevels.length > 0
 
+	// if any level is a collection, we need to concat their fetch paths and modelNames
 	if (isAnyLevelCollection) {
-		// construct modelName and path
 		if (modelNameLevels.length > 1) {
 			modelLevels.forEach((modelLevel, index) => {
 				const levelName = modelNameLevels[index]
@@ -139,12 +141,15 @@ function prepareFetch(model, action, models) {
 						? `/api/${levelName}`
 						: levelName
 
+				// first level, just use its values
 				if (index === 0) {
 					fetchConfig.path = currentPath
 					modelName = levelName
 					return
 				}
 
+				// if previous level isCollection, we need to use "{:id}" hooks when appending new level
+				// otherwise, just append using the divider
 				const prevModelConfig = _.merge({}, modelLevels[index - 1]._config)
 				const divider = fetchConfig.path.length > 0 && currentPath.length > 0 ? '/' : ''
 				if (prevModelConfig.isCollection) {
@@ -155,6 +160,8 @@ function prepareFetch(model, action, models) {
 					modelName = `${modelName}.${levelName}`
 				}
 
+				// an absolute path resets the fetch path, and ignores previous pathParams moving forward
+				// it does not affect modelName params for redux
 				if (currentPath.indexOf('/') === 0) {
 					fetchConfig.path = currentPath
 					const collectionLevelIndex = collectionModelLevels.indexOf(modelLevel)
@@ -167,7 +174,7 @@ function prepareFetch(model, action, models) {
 			fetchConfig.path = `/api/${modelName}`
 		}
 
-		// determine if we need to add pathParam hooks
+		// determine if we need to append an "{:id}" hook
 		const pathLevels = (fetchConfig.path.match(/{:id}/g) || []).length
 		// GET, PUT, PATCH, DELETE => append '/{:id}'
 		isCollectionItemFetch = !!modelConfig.isCollection && pathParams.length > pathLevels
