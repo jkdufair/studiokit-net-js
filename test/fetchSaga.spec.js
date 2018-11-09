@@ -234,7 +234,7 @@ describe('prepareFetch', () => {
 			modelName: 'foo.1.bar'
 		})
 	})
-	test('should use absolute path for collection under collection with absolute path, and exlude first pathParam from path', () => {
+	test('should use absolute path for collection under collection with absolute path, and exclude first pathParam from path', () => {
 		var result = prepareFetch(
 			{
 				_config: {
@@ -282,7 +282,7 @@ describe('prepareFetch', () => {
 			modelName: 'foo.1.bar.2'
 		})
 	})
-	test('should use absolute path for two nested collections under collection with absolute path, and exlude correct pathParams from path', () => {
+	test('should use absolute path for two nested collections under collection with absolute path, and exclude correct pathParams from path', () => {
 		var result = prepareFetch(
 			{
 				_config: {
