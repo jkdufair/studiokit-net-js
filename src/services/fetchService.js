@@ -86,7 +86,8 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 
 	const isBodyJson =
 		headers['Content-Type'] && _.includes(headers['Content-Type'], 'application/json')
-	const body = !isBodyJson ? config.body : JSON.stringify(config.body)
+	const body =
+		method === 'GET' ? undefined : !isBodyJson ? config.body : JSON.stringify(config.body)
 	const response = yield call(fetch, constructPath(config), {
 		method: method,
 		headers: headers,

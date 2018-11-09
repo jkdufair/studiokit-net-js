@@ -85,6 +85,23 @@ describe('doFetch', () => {
 		global.fetch = _fetch
 	})
 
+	test('GET does not send body', () => {
+		const _fetch = global.fetch
+		global.fetch = jest.fn(() => {})
+		const gen = doFetch({ path: 'http://www.google.com', body: { somekey: 'somevalue' } })
+		const response = gen.next()
+		expect(response.value.CALL.args).toEqual([
+			'http://www.google.com',
+			{
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json; charset=utf-8'
+				}
+			}
+		])
+		global.fetch = _fetch
+	})
+
 	test('Basic GET with contentType', () => {
 		const _fetch = global.fetch
 		global.fetch = jest.fn(() => {})
