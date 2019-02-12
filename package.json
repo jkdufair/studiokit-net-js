@@ -36,7 +36,7 @@
 		"cross-env": "^5.2.0",
 		"eslint": "5.12.0",
 		"eslint-config-prettier": "^4.0.0",
-		"eslint-config-studiokit": "^0.2.1",
+		"eslint-config-studiokit": "^1.0.0",
 		"eslint-plugin-prettier": "^3.0.1",
 		"eslint-plugin-redux-saga": "^1.0.0",
 		"flow-bin": "^0.92.1",

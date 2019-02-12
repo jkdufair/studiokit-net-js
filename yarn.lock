@@ -1858,10 +1858,10 @@ eslint-config-prettier@^4.0.0:
   dependencies:
     get-stdin "^6.0.0"
 
-eslint-config-studiokit@^0.2.1:
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/eslint-config-studiokit/-/eslint-config-studiokit-0.2.1.tgz#bb23320eab7b1175ba716e32a919652499fdc8fe"
-  integrity sha512-DiHK8bP+Qyzeq6Bz/Y/73qkBwIt6jDvphlOCTBbmbRyAL4XdYtxlrm3ZSVYkwZZyGtBRx4q7jKBLAc96YM0WcQ==
+eslint-config-studiokit@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/eslint-config-studiokit/-/eslint-config-studiokit-1.0.0.tgz#51737bfe13cae0cf3ed12fdcb6e009a68feb0dd7"
+  integrity sha512-rAp6GB8BtAHEwkiRKrBKbVqjSAiVKX3pgXFcVAsW1ouJ63Vli5C5sBLKovM2kzLLjl2gtj3/a+Ckdxmmp1/jLQ==
 
 eslint-plugin-prettier@^3.0.1:
   version "3.0.1"
