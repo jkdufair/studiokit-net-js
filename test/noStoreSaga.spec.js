@@ -1,5 +1,4 @@
 import actions, { createAction } from '../src/actions'
-import { delay } from 'redux-saga'
 import {
 	call,
 	cancel,

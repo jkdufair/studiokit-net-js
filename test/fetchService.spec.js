@@ -5,8 +5,9 @@ import {
 	__RewireAPI__ as FetchServiceRewireAPI
 } from '../src/services/fetchService'
 
-describe('Path construction', () => {
-	const constructPath = FetchServiceRewireAPI.__get__('constructPath')
+const constructPath = FetchServiceRewireAPI.__get__('constructPath')
+
+describe('constructPath', () => {
 	test('Should not add a question mark to a path without query params', () => {
 		const path = constructPath({ path: 'http://abc.xyz/api/foo' })
 		expect(path).toEqual('http://abc.xyz/api/foo')
@@ -54,6 +55,14 @@ describe('Path construction', () => {
 })
 
 describe('doFetch', () => {
+	let _fetch
+	beforeAll(() => {
+		_fetch = global.fetch
+		global.fetch = jest.fn(() => {})
+	})
+	afterAll(() => {
+		global.fetch = _fetch
+	})
 	test('Require config.path', () => {
 		expect(() => {
 			const gen = doFetch()
@@ -69,11 +78,9 @@ describe('doFetch', () => {
 	})
 
 	test('Basic GET', () => {
-		const _fetch = global.fetch
-		global.fetch = jest.fn(() => {})
 		const gen = doFetch({ path: 'http://www.google.com' })
 		const response = gen.next()
-		expect(response.value.CALL.args).toEqual([
+		expect(response.value.payload.args).toEqual([
 			'http://www.google.com',
 			{
 				method: 'GET',
@@ -82,15 +89,12 @@ describe('doFetch', () => {
 				}
 			}
 		])
-		global.fetch = _fetch
 	})
 
 	test('GET does not send body', () => {
-		const _fetch = global.fetch
-		global.fetch = jest.fn(() => {})
 		const gen = doFetch({ path: 'http://www.google.com', body: { somekey: 'somevalue' } })
 		const response = gen.next()
-		expect(response.value.CALL.args).toEqual([
+		expect(response.value.payload.args).toEqual([
 			'http://www.google.com',
 			{
 				method: 'GET',
@@ -99,15 +103,12 @@ describe('doFetch', () => {
 				}
 			}
 		])
-		global.fetch = _fetch
 	})
 
 	test('Basic GET with contentType', () => {
-		const _fetch = global.fetch
-		global.fetch = jest.fn(() => {})
 		const gen = doFetch({ path: 'http://www.google.com', contentType: 'text/html; charset=utf-8' })
 		const response = gen.next()
-		expect(response.value.CALL.args).toEqual([
+		expect(response.value.payload.args).toEqual([
 			'http://www.google.com',
 			{
 				method: 'GET',
@@ -116,19 +117,16 @@ describe('doFetch', () => {
 				}
 			}
 		])
-		global.fetch = _fetch
 	})
 
 	test('Basic GET with contentType and other headers', () => {
-		const _fetch = global.fetch
-		global.fetch = jest.fn(() => {})
 		const gen = doFetch({
 			path: 'http://www.google.com',
 			contentType: 'text/html; charset=utf-8',
 			headers: { 'some-header': 'some-header-value' }
 		})
 		const response = gen.next()
-		expect(response.value.CALL.args).toEqual([
+		expect(response.value.payload.args).toEqual([
 			'http://www.google.com',
 			{
 				method: 'GET',
@@ -138,15 +136,12 @@ describe('doFetch', () => {
 				}
 			}
 		])
-		global.fetch = _fetch
 	})
 
 	test('Basic POST w/ headers', () => {
-		const _fetch = global.fetch
-		global.fetch = jest.fn(() => {})
 		const gen = doFetch({ path: 'http://www.google.com', method: 'POST', body: { foo: 'bar' } })
 		const response = gen.next()
-		expect(response.value.CALL.args).toEqual([
+		expect(response.value.payload.args).toEqual([
 			'http://www.google.com',
 			{
 				method: 'POST',
@@ -156,12 +151,9 @@ describe('doFetch', () => {
 				body: JSON.stringify({ foo: 'bar' })
 			}
 		])
-		global.fetch = _fetch
 	})
 
 	test('Basic POST w/ form data', () => {
-		const _fetch = global.fetch
-		global.fetch = jest.fn(() => {})
 		const gen = doFetch({
 			path: 'http://www.google.com',
 			method: 'POST',
@@ -169,14 +161,11 @@ describe('doFetch', () => {
 			contentType: 'multipart/form-data'
 		})
 		const response = gen.next()
-		expect(response.value.CALL.args[1].method).toEqual('POST')
-		expect(response.value.CALL.args[1].body).toBeInstanceOf(FormData)
-		global.fetch = _fetch
+		expect(response.value.payload.args[1].method).toEqual('POST')
+		expect(response.value.payload.args[1].body).toBeInstanceOf(FormData)
 	})
 
 	test('Basic GET w/ headers & form urlencoded', () => {
-		const _fetch = global.fetch
-		global.fetch = jest.fn(() => {})
 		const gen = doFetch({
 			path: 'http://www.google.com',
 			method: 'POST',
@@ -184,7 +173,7 @@ describe('doFetch', () => {
 			headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
 		})
 		const response = gen.next()
-		expect(response.value.CALL.args).toEqual([
+		expect(response.value.payload.args).toEqual([
 			'http://www.google.com',
 			{
 				method: 'POST',
@@ -194,12 +183,9 @@ describe('doFetch', () => {
 				body: 'foo=bar&baz=quux'
 			}
 		])
-		global.fetch = _fetch
 	})
 
 	test('Basic GET test non-empty JSON response from server', () => {
-		const _fetch = global.fetch
-		global.fetch = jest.fn(() => {})
 		const gen = doFetch({ path: 'http://www.google.com' })
 		const callFetchEffect = gen.next()
 		const response = {
@@ -209,7 +195,7 @@ describe('doFetch', () => {
 			json: () => ({ foo: 'bar' })
 		}
 		const callResponseJsonEffect = gen.next(response)
-		expect(callResponseJsonEffect.value.CALL.fn()).toEqual({ foo: 'bar' })
+		expect(callResponseJsonEffect.value.payload.fn()).toEqual({ foo: 'bar' })
 		const sagaDone = gen.next(response.json())
 		expect(sagaDone.value).toEqual({
 			ok: true,
@@ -219,12 +205,9 @@ describe('doFetch', () => {
 			}
 		})
 		expect(sagaDone.done).toEqual(true)
-		global.fetch = _fetch
 	})
 
 	test('Basic GET test non-empty Text response from server', () => {
-		const _fetch = global.fetch
-		global.fetch = jest.fn(() => {})
 		const gen = doFetch({ path: 'http://www.google.com' })
 		const callFetchEffect = gen.next()
 		const response = {
@@ -234,7 +217,7 @@ describe('doFetch', () => {
 			text: () => 'bar'
 		}
 		const callResponseJsonEffect = gen.next(response)
-		expect(callResponseJsonEffect.value.CALL.fn()).toEqual('bar')
+		expect(callResponseJsonEffect.value.payload.fn()).toEqual('bar')
 		const sagaDone = gen.next(response.text())
 		expect(sagaDone.value).toEqual({
 			ok: true,
@@ -242,23 +225,17 @@ describe('doFetch', () => {
 			data: 'bar'
 		})
 		expect(sagaDone.done).toEqual(true)
-		global.fetch = _fetch
 	})
 
 	test('Basic GET test empty response from server', () => {
-		const _fetch = global.fetch
-		global.fetch = jest.fn(() => {})
 		const gen = doFetch({ path: 'http://www.google.com' })
 		const callFetchEffect = gen.next()
 		const sagaDone = gen.next()
 		expect(sagaDone.value).toEqual()
 		expect(sagaDone.done).toEqual(true)
-		global.fetch = _fetch
 	})
 
 	test('Basic GET JSON error response from server', () => {
-		const _fetch = global.fetch
-		global.fetch = jest.fn(() => {})
 		const gen = doFetch({ path: 'http://www.google.com' })
 		const callFetchEffect = gen.next()
 		const response = {
@@ -269,7 +246,7 @@ describe('doFetch', () => {
 			json: () => ({ message: 'Bad Request: reasons' })
 		}
 		const callResponseJsonEffect = gen.next(response)
-		expect(callResponseJsonEffect.value.CALL.fn()).toEqual({ message: 'Bad Request: reasons' })
+		expect(callResponseJsonEffect.value.payload.fn()).toEqual({ message: 'Bad Request: reasons' })
 		const sagaDone = gen.next(response.json())
 		expect(sagaDone.value).toEqual({
 			ok: false,
@@ -281,16 +258,13 @@ describe('doFetch', () => {
 			}
 		})
 		expect(sagaDone.done).toEqual(true)
-		global.fetch = _fetch
 	})
 
 	test('PUT JSON with 204 response', () => {
-		const _fetch = global.fetch
-		global.fetch = jest.fn(() => {})
 		const putBody = { foo: 'bar', baz: 'quux' }
 		const gen = doFetch({ path: 'http://www.google.com', method: 'PUT', body: putBody })
 		const callFetchEffect = gen.next()
-		expect(callFetchEffect.value.CALL.args).toEqual([
+		expect(callFetchEffect.value.payload.args).toEqual([
 			'http://www.google.com',
 			{
 				method: 'PUT',
@@ -314,12 +288,9 @@ describe('doFetch', () => {
 		const sagaDone = gen.next()
 		expect(sagaDone.value).toEqual()
 		expect(sagaDone.done).toEqual(true)
-		global.fetch = _fetch
 	})
 
 	test('PUT Text content with 204 response', () => {
-		const _fetch = global.fetch
-		global.fetch = jest.fn(() => {})
 		const putBody = 'something'
 		const gen = doFetch({
 			path: 'http://www.google.com',
@@ -330,7 +301,7 @@ describe('doFetch', () => {
 			}
 		})
 		const callFetchEffect = gen.next()
-		expect(callFetchEffect.value.CALL.args).toEqual([
+		expect(callFetchEffect.value.payload.args).toEqual([
 			'http://www.google.com',
 			{
 				method: 'PUT',
@@ -354,15 +325,12 @@ describe('doFetch', () => {
 		const sagaDone = gen.next()
 		expect(sagaDone.value).toEqual()
 		expect(sagaDone.done).toEqual(true)
-		global.fetch = _fetch
 	})
 
 	test('DELETE with 204 response', () => {
-		const _fetch = global.fetch
-		global.fetch = jest.fn(() => {})
 		const gen = doFetch({ path: 'http://www.google.com', method: 'DELETE' })
 		const callFetchEffect = gen.next()
-		expect(callFetchEffect.value.CALL.args).toEqual([
+		expect(callFetchEffect.value.payload.args).toEqual([
 			'http://www.google.com',
 			{
 				method: 'DELETE',
@@ -385,6 +353,5 @@ describe('doFetch', () => {
 		const sagaDone = gen.next()
 		expect(sagaDone.value).toEqual()
 		expect(sagaDone.done).toEqual(true)
-		global.fetch = _fetch
 	})
 })

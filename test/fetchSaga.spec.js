@@ -1,5 +1,4 @@
 import actions, { createAction } from '../src/actions'
-import { delay } from 'redux-saga'
 import {
 	call,
 	cancel,
@@ -9,9 +8,10 @@ import {
 	takeLatest,
 	fork,
 	put,
-	select
+	select,
+	delay
 } from 'redux-saga/effects'
-import { createMockTask } from 'redux-saga/utils'
+import { createMockTask } from '@redux-saga/testing-utils'
 import uuid from 'uuid'
 import { doFetch } from '../src/services/fetchService'
 import fetchSaga, { __RewireAPI__ as FetchSagaRewireAPI } from '../src/fetchSaga'
@@ -1692,12 +1692,12 @@ describe('fetchDataLoop', () => {
 		let callFetchDataEffect = gen.next()
 		expect(callFetchDataEffect.value).toEqual(call(fetchData, action))
 		let delayEffect = gen.next()
-		expect(delayEffect.value).toEqual(call(delay, 1000))
+		expect(delayEffect.value).toEqual(delay(1000))
 
 		callFetchDataEffect = gen.next()
 		expect(callFetchDataEffect.value).toEqual(call(fetchData, action))
 		delayEffect = gen.next()
-		expect(delayEffect.value).toEqual(call(delay, 1000))
+		expect(delayEffect.value).toEqual(delay(1000))
 
 		const cancelledSaga = gen.return()
 		expect(cancelledSaga.value).toEqual(cancelled())
@@ -1721,12 +1721,12 @@ describe('fetchDataLoop', () => {
 		let callFetchDataEffect = gen.next()
 		expect(callFetchDataEffect.value).toEqual(call(fetchData, action))
 		let delayEffect = gen.next()
-		expect(delayEffect.value).toEqual(call(delay, 1000))
+		expect(delayEffect.value).toEqual(delay(1000))
 
 		callFetchDataEffect = gen.next()
 		expect(callFetchDataEffect.value).toEqual(call(fetchData, action))
 		delayEffect = gen.next()
-		expect(delayEffect.value).toEqual(call(delay, 1000))
+		expect(delayEffect.value).toEqual(delay(1000))
 
 		const error = {}
 		callFetchDataEffect = gen.throw('error')
