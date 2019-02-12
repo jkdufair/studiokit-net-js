@@ -3,7 +3,7 @@
 	"version": "2.0.0",
 	"scripts": {
 		"eslint-check": "eslint --print-config .eslintrc.js | eslint-config-prettier-check",
-		"lint": "eslint --ext=js ./*.js src test",
+		"lint": "eslint --ext=js --ignore-pattern '!.eslintrc.js' src test",
 		"fix": "npm run lint -- --fix",
 		"test": "cross-env BABEL_ENV=test jest",
 		"test:watch": "cross-env BABEL_ENV=test jest --watch",
