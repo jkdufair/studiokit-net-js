@@ -1,6 +1,5 @@
 // @flow
 
-import { delay } from 'redux-saga'
 import {
 	call,
 	cancel,
@@ -10,7 +9,8 @@ import {
 	select,
 	take,
 	takeEvery,
-	takeLatest
+	takeLatest,
+	delay
 } from 'redux-saga/effects'
 import _ from 'lodash'
 import uuid from 'uuid'
@@ -138,8 +138,8 @@ function prepareFetch(model, action, models) {
 				const currentPath = !_.isUndefined(currentFetchConfig.path)
 					? currentFetchConfig.path
 					: index === 0
-						? `/api/${levelName}`
-						: levelName
+					? `/api/${levelName}`
+					: levelName
 
 				// first level, just use its values
 				if (index === 0) {
@@ -386,7 +386,7 @@ function* fetchData(action: FetchAction) {
 
 			didFail = true
 			lastError = error
-			yield call(delay, 2 ^ (tryCount * 100)) // 100, 200, 400...
+			yield delay(2 ^ (tryCount * 100)) // 100, 200, 400...
 		}
 	} while (tryCount < tryLimit && didFail)
 
@@ -428,7 +428,7 @@ function* fetchDataLoop(action: FetchAction) {
 	try {
 		while (true) {
 			yield call(fetchData, action)
-			yield call(delay, action.period)
+			yield delay(action.period)
 		}
 	} catch (error) {
 		errorFunction(error.message)
