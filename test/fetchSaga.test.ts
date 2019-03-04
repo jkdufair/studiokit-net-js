@@ -1,3 +1,4 @@
+import rewire from 'rewire'
 import actions, { createAction } from '../src/actions'
 import {
 	call,
@@ -12,7 +13,7 @@ import {
 	delay
 } from 'redux-saga/effects'
 import { createMockTask } from '@redux-saga/testing-utils'
-import uuid from 'uuid'
+import * as uuid from 'uuid'
 import { doFetch } from '../src/services/fetchService'
 import fetchSaga, { __RewireAPI__ as FetchSagaRewireAPI } from '../src/fetchSaga'
 import { returnEntireStore } from '../src/fetchReducer'

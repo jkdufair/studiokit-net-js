@@ -1,28 +1,8 @@
-// @flow
-
 import actions from './actions'
-import _ from 'lodash'
-import _fp from 'lodash/fp'
+import * as _ from 'lodash'
+import * as _fp from 'lodash/fp'
 
-import type { Action } from 'redux'
-
-type FetchState = {}
-
-type FetchError = {
-	modelName: string,
-	errorData: any
-}
-
-type MetadataState = {
-	isFetching: boolean,
-	hasError: boolean,
-	lastFetchError: FetchError,
-	fetchedAt?: Date
-}
-
-type ModelState = {
-	_metadata: MetadataState
-}
+import { FetchState, MetadataState, FetchAction, IDictionary } from './types';
 
 /**
  * Given the state and a path into that state object, return the prop that
@@ -40,7 +20,7 @@ function getMetadata(state: FetchState, path: Array<string>): MetadataState {
  * @param {*} obj
  * @returns A boolean
  */
-function isCollection(obj) {
+function isCollection(obj: any) {
 	return (
 		_.isPlainObject(obj) &&
 		Object.keys(obj).length > 0 &&
@@ -65,8 +45,8 @@ function isCollection(obj) {
  * @param {*} current
  * @param {*} incoming
  */
-function mergeRelations(current, incoming) {
-	return Object.keys(current).reduce((prev, k) => {
+function mergeRelations(current: IDictionary<any>, incoming: IDictionary<any>) {
+	return Object.keys(current).reduce((prev: IDictionary<any>, k) => {
 		const c = current[k]
 		const i = incoming && incoming[k]
 		// skip all non-relations
@@ -100,7 +80,7 @@ function mergeRelations(current, incoming) {
  * @param {Action} action - The action upon which we dispatch
  * @returns
  */
-export default function fetchReducer(state: FetchState = {}, action: Action) {
+export default function fetchReducer(state: FetchState = {}, action: FetchAction) {
 	if (!action.modelName) {
 		return state
 	}

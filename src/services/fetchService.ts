@@ -1,17 +1,6 @@
-// @flow
-
 import { call } from 'redux-saga/effects'
-import _ from 'lodash'
-
-type FetchConfig = {
-	queryParams: Object,
-	routeParams: Object,
-	path: string,
-	method: string,
-	headers: Object,
-	body: Object,
-	contentType: string
-}
+import * as _ from 'lodash'
+import { FetchConfig } from '../types';
 
 let apiRoot: string
 

@@ -1,4 +1,3 @@
-// @flow
 import actions from './actions'
 import fetchReducer from './fetchReducer'
 import fetchSaga from './fetchSaga'

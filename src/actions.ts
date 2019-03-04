@@ -1,5 +1,4 @@
-// @flow
-import _ from 'lodash'
+import { merge } from 'lodash'
 
 // App-level request
 const DATA_REQUESTED = 'application/DATA_REQUESTED'
@@ -23,7 +22,7 @@ const TRANSIENT_FETCH_FAILED = 'net/TRANSIENT_FETCH_FAILED'
 const TRY_FETCH_FAILED = 'net/TRY_FETCH_FAILED'
 
 export function createAction(type: string, payload: Object) {
-	return _.merge({}, { type }, payload)
+	return merge({}, { type }, payload)
 }
 
 export default {

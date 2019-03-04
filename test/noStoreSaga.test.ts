@@ -1,23 +1,15 @@
-import actions, { createAction } from '../src/actions'
+import rewire from 'rewire'
+import actions from '../src/actions'
 import {
-	call,
-	cancel,
-	cancelled,
-	take,
-	takeEvery,
-	takeLatest,
-	fork,
-	put,
-	race,
-	select
+	takeEvery
 } from 'redux-saga/effects'
-import uuid from 'uuid'
+import * as uuid from 'uuid'
 import noStoreSaga, {
 	registerNoStoreActionHook,
-	unregisterNoStoreActionHook,
-	__RewireAPI__ as NoStoreSagaRewireAPI
+	unregisterNoStoreActionHook
 } from '../src/noStoreSaga'
 
+const NoStoreSagaRewireAPI = rewire('../src/noStoreSaga')
 const matchesNoStoreAction = NoStoreSagaRewireAPI.__get__('matchesNoStoreAction')
 const takeMatchesNoStoreAction = NoStoreSagaRewireAPI.__get__('takeMatchesNoStoreAction')
 const matchesFailedNoStoreHookAction = NoStoreSagaRewireAPI.__get__(

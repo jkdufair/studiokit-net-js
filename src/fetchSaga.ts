@@ -1,5 +1,3 @@
-// @flow
-
 import {
 	call,
 	cancel,
@@ -12,39 +10,39 @@ import {
 	takeLatest,
 	delay
 } from 'redux-saga/effects'
-import _ from 'lodash'
-import uuid from 'uuid'
+import * as _ from 'lodash'
+import * as uuid from 'uuid'
 import { doFetch, setApiRoot } from './services/fetchService'
 import actions, { createAction } from './actions'
-import type { OAuthToken, FetchAction, FetchError } from './types'
+import { OAuthToken, FetchAction, FetchError } from './types'
 
 //#region Types
 
-type LoggerFunction = string => void
-type TokenAccessFunction = void => ?OAuthToken
-type ErrorFunction = string => void
+type LoggerFunction = (message: string) => void
+type TokenAccessFunction = () => OAuthToken | undefined
+type ErrorFunction = (error: string) => void
 
 //#endregion Types
 
 //#region Helpers
 
-const getState = state => state
+const getState = (state: any) => state
 
-const matchesTerminationAction = (incomingAction, fetchAction) => {
+const matchesTerminationAction = (incomingAction: FetchAction, fetchAction: FetchAction) => {
 	return (
 		incomingAction.type === actions.PERIODIC_TERMINATION_REQUESTED &&
 		incomingAction.taskId === fetchAction.taskId
 	)
 }
 
-const takeMatchesTerminationAction = action => incomingAction =>
+const takeMatchesTerminationAction = (action: FetchAction) => (incomingAction: FetchAction) =>
 	matchesTerminationAction(incomingAction, action)
 
 const defaultTokenAccessFunction: TokenAccessFunction = () => {
 	return undefined
 }
 
-const defaultErrorFunction: ErrorFunction = (message: string) => {}
+const defaultErrorFunction: ErrorFunction = () => {}
 
 /**
  * A default logger function that logs to the console. Used if no other logger is provided
@@ -74,7 +72,7 @@ let errorFunction: ErrorFunction
  * @param {FetchAction} action - The action dispatched by the client
  * @param {Object} models - The entire models object, passed in for testability
  */
-function prepareFetch(model, action, models) {
+function prepareFetch(model: Object, action: FetchAction, models: Object) {
 	const modelConfig = _.merge({}, model._config)
 	const fetchConfig = _.merge({}, modelConfig.fetch, {
 		headers: _.merge({}, action.headers),
