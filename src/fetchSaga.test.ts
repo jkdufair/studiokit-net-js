@@ -1,5 +1,5 @@
 import rewire from 'rewire'
-import actions, { createAction } from '../src/actions'
+import actions, { createAction } from './actions'
 import {
 	call,
 	cancel,
@@ -14,9 +14,9 @@ import {
 } from 'redux-saga/effects'
 import { createMockTask } from '@redux-saga/testing-utils'
 import * as uuid from 'uuid'
-import { doFetch } from '../src/services/fetchService'
-import fetchSaga, { __RewireAPI__ as FetchSagaRewireAPI } from '../src/fetchSaga'
-import { returnEntireStore } from '../src/fetchReducer'
+import { doFetch } from './services/fetchService'
+import fetchSaga, { __RewireAPI__ as FetchSagaRewireAPI } from './fetchSaga'
+import { returnEntireStore } from './fetchReducer'
 
 // TODO: retry
 const fetchData = FetchSagaRewireAPI.__get__('fetchData')

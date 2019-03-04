@@ -1,5 +1,5 @@
 import rewire from 'rewire'
-import actions from '../src/actions'
+import actions from './actions'
 import {
 	takeEvery
 } from 'redux-saga/effects'
@@ -7,7 +7,7 @@ import * as uuid from 'uuid'
 import noStoreSaga, {
 	registerNoStoreActionHook,
 	unregisterNoStoreActionHook
-} from '../src/noStoreSaga'
+} from './noStoreSaga'
 
 const NoStoreSagaRewireAPI = rewire('../src/noStoreSaga')
 const matchesNoStoreAction = NoStoreSagaRewireAPI.__get__('matchesNoStoreAction')

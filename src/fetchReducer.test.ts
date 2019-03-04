@@ -1,5 +1,5 @@
-import fetchReducer, { __RewireAPI as FetchReducerRewireAPI } from '../src/fetchReducer'
-import actions from '../src/actions'
+import fetchReducer, { __RewireAPI as FetchReducerRewireAPI } from './fetchReducer'
+import actions from './actions'
 import * as _ from 'lodash'
 
 const getMetadata = FetchReducerRewireAPI.__get__('getMetadata')
