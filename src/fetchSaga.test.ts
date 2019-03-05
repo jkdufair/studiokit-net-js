@@ -195,6 +195,7 @@ describe('prepareFetch', () => {
 			modelName: 'foo.bar.1.baz',
 		})
 	})
+	// tslint:disable-next-line
 	test('should use absolute path for non-collection under collection with absolute path, and not append pathParams to path', () => {
 		const result = prepareFetch(
 			{
@@ -240,6 +241,7 @@ describe('prepareFetch', () => {
 			modelName: 'foo.1.bar',
 		})
 	})
+	// tslint:disable-next-line
 	test('should use absolute path for collection under collection with absolute path, and exclude first pathParam from path', () => {
 		const result = prepareFetch(
 			{
@@ -288,6 +290,7 @@ describe('prepareFetch', () => {
 			modelName: 'foo.1.bar.2',
 		})
 	})
+	// tslint:disable-next-line
 	test('should use absolute path for two nested collections under collection with absolute path, and exclude correct pathParams from path', () => {
 		const result = prepareFetch(
 			{
