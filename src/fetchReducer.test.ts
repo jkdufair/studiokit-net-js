@@ -1,7 +1,10 @@
-import fetchReducer, { __RewireAPI as FetchReducerRewireAPI } from './fetchReducer'
+import rewire from 'rewire'
+import fetchReducer from './fetchReducer'
 import actions from './actions'
-import * as _ from 'lodash'
+import _ from 'lodash'
+import MockDate from 'mockdate'
 
+const FetchReducerRewireAPI = rewire('./fetchReducer')
 const getMetadata = FetchReducerRewireAPI.__get__('getMetadata')
 const isCollection = FetchReducerRewireAPI.__get__('isCollection')
 const mergeRelations = FetchReducerRewireAPI.__get__('mergeRelations')
@@ -28,11 +31,11 @@ describe('supporting functions', () => {
 		test('should return true for a collection obj', () => {
 			const obj = {
 				1: {
-					id: 1
+					id: 1,
 				},
 				2: {
-					id: 2
-				}
+					id: 2,
+				},
 			}
 			expect(isCollection(obj)).toEqual(true)
 		})
@@ -40,16 +43,16 @@ describe('supporting functions', () => {
 		test('should return true for a collection obj with _metadata', () => {
 			const obj = {
 				1: {
-					id: 1
+					id: 1,
 				},
 				2: {
-					id: 2
+					id: 2,
 				},
 				_metadata: {
 					isFetching: false,
 					hasError: false,
-					lastFetchError: undefined
-				}
+					lastFetchError: undefined,
+				},
 			}
 			expect(isCollection(obj)).toEqual(true)
 		})
@@ -57,11 +60,11 @@ describe('supporting functions', () => {
 		test('should return false for a collection array', () => {
 			const obj = [
 				{
-					id: 1
+					id: 1,
 				},
 				{
-					id: 2
-				}
+					id: 2,
+				},
 			]
 			expect(isCollection(obj)).toEqual(false)
 		})
@@ -75,8 +78,8 @@ describe('supporting functions', () => {
 				_metadata: {
 					isFetching: false,
 					hasError: false,
-					lastFetchError: undefined
-				}
+					lastFetchError: undefined,
+				},
 			}
 			expect(isCollection(obj)).toEqual(false)
 		})
@@ -91,8 +94,8 @@ describe('supporting functions', () => {
 				isCollection({
 					child: {
 						id: 1,
-						foo: false
-					}
+						foo: false,
+					},
 				})
 			).toEqual(false)
 		})
@@ -124,11 +127,11 @@ describe('supporting functions', () => {
 
 		test('should remove nested collection items not included in incoming array', () => {
 			const current = {
-				1: { id: 1, children: { 1: { id: 1, foo: 'bar' }, 2: { id: 2, boo: 'bah' } } }
+				1: { id: 1, children: { 1: { id: 1, foo: 'bar' }, 2: { id: 2, boo: 'bah' } } },
 			}
 			const incoming = { 1: { id: 1, children: { 2: { id: 2 } } } }
 			expect(mergeRelations(current, incoming)).toEqual({
-				1: { children: { 2: {} } }
+				1: { children: { 2: {} } },
 			})
 		})
 
@@ -142,15 +145,15 @@ describe('supporting functions', () => {
 			const current = {
 				child: {
 					id: 1,
-					foo: false
-				}
+					foo: false,
+				},
 			}
 			const incoming = { id: 1, name: 'Bob' }
 			expect(mergeRelations(current, incoming)).toEqual({
 				child: {
 					id: 1,
-					foo: false
-				}
+					foo: false,
+				},
 			})
 		})
 	})
@@ -158,7 +161,13 @@ describe('supporting functions', () => {
 
 describe('fetchReducer', () => {
 	test('Do nothing without action.modelName', () => {
-		const state = fetchReducer({ foo: 'bar' }, {})
+		const state = fetchReducer(
+			{ foo: 'bar' },
+			{
+				modelName: '',
+				type: '',
+			}
+		)
 		expect(state).toEqual({ foo: 'bar' })
 	})
 
@@ -170,24 +179,27 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: true,
 						hasError: false,
-						lastFetchError: undefined
-					}
-				}
+						lastFetchError: undefined,
+					},
+				},
 			})
 		})
 
 		test('nested level', () => {
-			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'user.test' })
+			const state = fetchReducer(
+				{},
+				{ type: actions.FETCH_REQUESTED, modelName: 'user.test' }
+			)
 			expect(state).toEqual({
 				user: {
 					test: {
 						_metadata: {
 							isFetching: true,
 							hasError: false,
-							lastFetchError: undefined
-						}
-					}
-				}
+							lastFetchError: undefined,
+						},
+					},
+				},
 			})
 		})
 
@@ -199,15 +211,18 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: true,
 							hasError: false,
-							lastFetchError: undefined
-						}
-					}
-				}
+							lastFetchError: undefined,
+						},
+					},
+				},
 			})
 		})
 
 		test('nested level with multiple level numbers', () => {
-			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'user.1.info.2' })
+			const state = fetchReducer(
+				{},
+				{ type: actions.FETCH_REQUESTED, modelName: 'user.1.info.2' }
+			)
 			expect(state).toEqual({
 				user: {
 					'1': {
@@ -216,12 +231,12 @@ describe('fetchReducer', () => {
 								_metadata: {
 									isFetching: true,
 									hasError: false,
-									lastFetchError: undefined
-								}
-							}
-						}
-					}
-				}
+									lastFetchError: undefined,
+								},
+							},
+						},
+					},
+				},
 			})
 		})
 
@@ -237,10 +252,10 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: true,
 							hasError: false,
-							lastFetchError: undefined
-						}
-					}
-				}
+							lastFetchError: undefined,
+						},
+					},
+				},
 			})
 		})
 
@@ -256,10 +271,10 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: true,
 							hasError: false,
-							lastFetchError: undefined
-						}
-					}
-				}
+							lastFetchError: undefined,
+						},
+					},
+				},
 			})
 		})
 
@@ -273,9 +288,9 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							fetchedAt: fetchedDate
-						}
-					}
+							fetchedAt: fetchedDate,
+						},
+					},
 				},
 				{ type: actions.FETCH_REQUESTED, modelName: 'test' }
 			)
@@ -285,9 +300,9 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: true,
 						hasError: false,
-						fetchedAt: fetchedDate
-					}
-				}
+						fetchedAt: fetchedDate,
+					},
+				},
 			})
 		})
 
@@ -298,22 +313,22 @@ describe('fetchReducer', () => {
 				{
 					test: {
 						foo: {
-							bar: 'baz'
+							bar: 'baz',
 						},
 						_metadata: {
 							isFetching: false,
 							hasError: false,
 
-							fetchedAt: fetchedDate
-						}
-					}
+							fetchedAt: fetchedDate,
+						},
+					},
 				},
 				{ type: actions.FETCH_REQUESTED, modelName: 'test.qux.1.corge' }
 			)
 			expect(state).toEqual({
 				test: {
 					foo: {
-						bar: 'baz'
+						bar: 'baz',
 					},
 					qux: {
 						'1': {
@@ -321,32 +336,35 @@ describe('fetchReducer', () => {
 								_metadata: {
 									isFetching: true,
 									hasError: false,
-									lastFetchError: undefined
-								}
-							}
-						}
+									lastFetchError: undefined,
+								},
+							},
+						},
 					},
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						fetchedAt: fetchedDate
-					}
-				}
+						fetchedAt: fetchedDate,
+					},
+				},
 			})
 		})
 	})
 
 	describe('FETCH_RESULT_RECEIVED', () => {
+		let fetchedAtDate: Date
+		beforeEach(() => {
+			fetchedAtDate = new Date()
+			MockDate.set(fetchedAtDate)
+		})
+
 		test('single level', () => {
-			const fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
 			const state = fetchReducer(
 				{},
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'test',
-					data: { key: 'value' }
+					data: { key: 'value' },
 				}
 			)
 			expect(state).toEqual({
@@ -354,24 +372,20 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						fetchedAt: fetchedAtDate
+						fetchedAt: fetchedAtDate,
 					},
-					key: 'value'
-				}
+					key: 'value',
+				},
 			})
-			global.Date = _Date
 		})
 
 		test('nested level', () => {
-			const fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
 			const state = fetchReducer(
 				{},
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
-					data: { key: 'value' }
+					data: { key: 'value' },
 				}
 			)
 			expect(state).toEqual({
@@ -380,24 +394,21 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							fetchedAt: fetchedAtDate
+							fetchedAt: fetchedAtDate,
 						},
-						key: 'value'
-					}
-				}
+						key: 'value',
+					},
+				},
 			})
 		})
 
 		test('nested add sibling key', () => {
-			const fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
 			const state = fetchReducer(
 				{ foo: 'bar' },
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
-					data: { key: 'value' }
+					data: { key: 'value' },
 				}
 			)
 			expect(state).toEqual({
@@ -407,28 +418,25 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							fetchedAt: fetchedAtDate
+							fetchedAt: fetchedAtDate,
 						},
-						key: 'value'
-					}
-				}
+						key: 'value',
+					},
+				},
 			})
 		})
 
 		test('nested level replace existing key', () => {
-			const fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
 			const state = fetchReducer(
 				{
 					user: {
-						test: { key: 'oldValue' }
-					}
+						test: { key: 'oldValue' },
+					},
 				},
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
-					data: { key: 'value' }
+					data: { key: 'value' },
 				}
 			)
 			expect(state).toEqual({
@@ -437,28 +445,25 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							fetchedAt: fetchedAtDate
+							fetchedAt: fetchedAtDate,
 						},
-						key: 'value'
-					}
-				}
+						key: 'value',
+					},
+				},
 			})
 		})
 
 		test('nested level merge existing key', () => {
-			const fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
 			const state = fetchReducer(
 				{
 					user: {
-						existingKey: { foo: 'bar' }
-					}
+						existingKey: { foo: 'bar' },
+					},
 				},
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
-					data: { key: 'value' }
+					data: { key: 'value' },
 				}
 			)
 			expect(state).toEqual({
@@ -468,19 +473,16 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							fetchedAt: fetchedAtDate
+							fetchedAt: fetchedAtDate,
 						},
-						key: 'value'
-					}
-				}
+						key: 'value',
+					},
+				},
 			})
 		})
 
 		test('nested level replace existing data on same key', () => {
 			// makes sure "data" key gets completely replaced and not merged
-			const fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
 			const state = fetchReducer(
 				{
 					user: {
@@ -488,17 +490,17 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedAtDate
+								fetchedAt: fetchedAtDate,
 							},
 							key: 'value',
-							key2: 'value2'
-						}
-					}
+							key2: 'value2',
+						},
+					},
 				},
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
-					data: { key: 'value' }
+					data: { key: 'value' },
 				}
 			)
 			expect(state).toEqual({
@@ -507,19 +509,16 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							fetchedAt: fetchedAtDate
+							fetchedAt: fetchedAtDate,
 						},
-						key: 'value'
-					}
-				}
+						key: 'value',
+					},
+				},
 			})
 		})
 
 		test('collection nested level replace existing data on same key', () => {
 			// makes sure "data" key gets completely replaced and not merged
-			const fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
 			const state = fetchReducer(
 				{
 					groups: {
@@ -527,17 +526,17 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedAtDate
+								fetchedAt: fetchedAtDate,
 							},
 							key: 'value',
-							key2: 'value2'
-						}
-					}
+							key2: 'value2',
+						},
+					},
 				},
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'groups.1',
-					data: { key: 'value' }
+					data: { key: 'value' },
 				}
 			)
 			expect(state).toEqual({
@@ -546,22 +545,20 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							fetchedAt: fetchedAtDate
+							fetchedAt: fetchedAtDate,
 						},
-						key: 'value'
-					}
-				}
+						key: 'value',
+					},
+				},
 			})
 		})
 
 		test('should preserve data in nested level', () => {
-			const fetchedDate = new Date()
-
 			const state = fetchReducer(
 				{
 					test: {
 						foo: {
-							bar: 'baz'
+							bar: 'baz',
 						},
 						qux: {
 							'1': {
@@ -569,28 +566,28 @@ describe('fetchReducer', () => {
 									_metadata: {
 										isFetching: true,
 										hasError: false,
-										lastFetchError: undefined
-									}
-								}
-							}
+										lastFetchError: undefined,
+									},
+								},
+							},
 						},
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							fetchedAt: fetchedDate
-						}
-					}
+							fetchedAt: fetchedAtDate,
+						},
+					},
 				},
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'test.qux.1.corge',
-					data: { key: 'value' }
+					data: { key: 'value' },
 				}
 			)
 			expect(state).toEqual({
 				test: {
 					foo: {
-						bar: 'baz'
+						bar: 'baz',
 					},
 					qux: {
 						'1': {
@@ -599,28 +596,26 @@ describe('fetchReducer', () => {
 								_metadata: {
 									isFetching: false,
 									hasError: false,
-									fetchedAt: fetchedDate
-								}
-							}
-						}
+									fetchedAt: fetchedAtDate,
+								},
+							},
+						},
 					},
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						fetchedAt: fetchedDate
-					}
-				}
+						fetchedAt: fetchedAtDate,
+					},
+				},
 			})
 		})
 
 		test('should preserve nested collection relation that contains an id, but is not its key', () => {
-			const fetchedDate = new Date()
-
 			let state = {}
 			state = fetchReducer(state, {
 				type: actions.FETCH_RESULT_RECEIVED,
 				modelName: 'groups.1.child',
-				data: { id: 1, foo: false }
+				data: { id: 1, foo: false },
 			})
 			expect(state).toEqual({
 				groups: {
@@ -631,16 +626,16 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedDate
-							}
-						}
-					}
-				}
+								fetchedAt: fetchedAtDate,
+							},
+						},
+					},
+				},
 			})
 			state = fetchReducer(state, {
 				type: actions.FETCH_RESULT_RECEIVED,
 				modelName: 'groups.1',
-				data: { id: 1, name: 'Group 1' }
+				data: { id: 1, name: 'Group 1' },
 			})
 			expect(state).toEqual({
 				groups: {
@@ -653,24 +648,22 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedDate
-							}
+								fetchedAt: fetchedAtDate,
+							},
 						},
 						_metadata: {
 							isFetching: false,
 							hasError: false,
 
-							fetchedAt: fetchedDate
-						}
-					}
-				}
+							fetchedAt: fetchedAtDate,
+						},
+					},
+				},
 			})
 		})
 
 		test('should remove nested collection key, if incoming is a collection and key is not included', () => {
-			const fetchedDate = new Date()
-
-			let state = {
+			let state: any = {
 				groups: {
 					2: {
 						child: {
@@ -679,16 +672,16 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedDate
-							}
-						}
-					}
-				}
+								fetchedAt: fetchedAtDate,
+							},
+						},
+					},
+				},
 			}
 			state = fetchReducer(state, {
 				type: actions.FETCH_RESULT_RECEIVED,
 				modelName: 'groups.1.child',
-				data: { id: 1, foo: false }
+				data: { id: 1, foo: false },
 			})
 			expect(state).toEqual({
 				groups: {
@@ -699,9 +692,9 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedDate
-							}
-						}
+								fetchedAt: fetchedAtDate,
+							},
+						},
 					},
 					2: {
 						child: {
@@ -710,16 +703,16 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedDate
-							}
-						}
-					}
-				}
+								fetchedAt: fetchedAtDate,
+							},
+						},
+					},
+				},
 			})
 			state = fetchReducer(state, {
 				type: actions.FETCH_RESULT_RECEIVED,
 				modelName: 'groups',
-				data: { 2: { id: 2, name: 'Group 2' } }
+				data: { 2: { id: 2, name: 'Group 2' } },
 			})
 			expect(state).toEqual({
 				groups: {
@@ -732,29 +725,26 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedDate
-							}
-						}
+								fetchedAt: fetchedAtDate,
+							},
+						},
 					},
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						fetchedAt: fetchedDate
-					}
-				}
+						fetchedAt: fetchedAtDate,
+					},
+				},
 			})
 		})
 
 		test('handle string response', () => {
-			const fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
 			const state = fetchReducer(
 				{},
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'class',
-					data: 'value'
+					data: 'value',
 				}
 			)
 			expect(state).toEqual({
@@ -762,18 +752,15 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						fetchedAt: fetchedAtDate
+						fetchedAt: fetchedAtDate,
 					},
-					response: 'value'
-				}
+					response: 'value',
+				},
 			})
 		})
 
 		test('any level preserve children', () => {
-			const fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
-			let state = fetchReducer(
+			const state = fetchReducer(
 				{
 					user: {
 						testChildren: {
@@ -781,23 +768,23 @@ describe('fetchReducer', () => {
 								isFetching: false,
 								lastFetchError: undefined,
 								hasError: false,
-								fetchedAt: fetchedAtDate
+								fetchedAt: fetchedAtDate,
 							},
 							key: 'value',
 							child1: [1, 2, 3],
 							child2: {
 								eeny: 'meeny',
-								miney: 'mo'
-							}
-						}
-					}
+								miney: 'mo',
+							},
+						},
+					},
 				},
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'user.testChildren',
 					data: {
-						key: 'new value'
-					}
+						key: 'new value',
+					},
 				}
 			)
 			expect(state).toEqual({
@@ -807,16 +794,16 @@ describe('fetchReducer', () => {
 							isFetching: false,
 							lastFetchError: undefined,
 							hasError: false,
-							fetchedAt: fetchedAtDate
+							fetchedAt: fetchedAtDate,
 						},
 						key: 'new value',
 						child1: [1, 2, 3],
 						child2: {
 							eeny: 'meeny',
-							miney: 'mo'
-						}
-					}
-				}
+							miney: 'mo',
+						},
+					},
+				},
 			})
 		})
 	})
@@ -832,9 +819,9 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: true,
-						lastFetchError: 'server fire'
-					}
-				}
+						lastFetchError: 'server fire',
+					},
+				},
 			})
 		})
 
@@ -845,9 +832,9 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: true,
-						lastFetchError: undefined
-					}
-				}
+						lastFetchError: undefined,
+					},
+				},
 			})
 		})
 
@@ -862,10 +849,10 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: true,
-							lastFetchError: 'server fire'
-						}
-					}
-				}
+							lastFetchError: 'server fire',
+						},
+					},
+				},
 			})
 		})
 
@@ -881,10 +868,10 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: true,
-							lastFetchError: 'server fire'
-						}
-					}
-				}
+							lastFetchError: 'server fire',
+						},
+					},
+				},
 			})
 		})
 
@@ -900,17 +887,17 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: true,
-							lastFetchError: 'server fire'
-						}
-					}
-				}
+							lastFetchError: 'server fire',
+						},
+					},
+				},
 			})
 		})
 
 		test('collection nested level replace state', () => {
-			const fetchedAt = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAt)
+			const fetchedAtDate = new Date()
+			MockDate.set(fetchedAtDate)
+
 			const state = fetchReducer(
 				{
 					groups: {
@@ -920,10 +907,10 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: true,
 								hasError: false,
-								fetchedAt
-							}
-						}
-					}
+								fetchedAt: fetchedAtDate,
+							},
+						},
+					},
 				},
 				{ type: actions.FETCH_FAILED, modelName: 'groups.1', errorData: 'server fire' }
 			)
@@ -936,10 +923,10 @@ describe('fetchReducer', () => {
 							isFetching: false,
 							hasError: true,
 							lastFetchError: 'server fire',
-							fetchedAt
-						}
-					}
-				}
+							fetchedAt: fetchedAtDate,
+						},
+					},
+				},
 			})
 		})
 	})
@@ -980,68 +967,71 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: true,
 						hasError: false,
-						lastFetchError: undefined
-					}
-				}
+						lastFetchError: undefined,
+					},
+				},
 			})
 
 			const state3 = fetchReducer(state2, {
 				type: actions.FETCH_RESULT_RECEIVED,
 				modelName: 'test',
-				data: { foo: 'bar' }
+				data: { foo: 'bar' },
 			})
 			let fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
+			MockDate.set(fetchedAtDate)
 			expect(state3).toEqual({
 				test: {
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						fetchedAt: fetchedAtDate
+						fetchedAt: fetchedAtDate,
 					},
-					foo: 'bar'
-				}
+					foo: 'bar',
+				},
 			})
 
 			fetchedAtDate = new Date()
 			const state4 = fetchReducer(state3, {
 				type: actions.FETCH_RESULT_RECEIVED,
 				modelName: 'test',
-				data: { baz: 'quux', bleb: 'fleb' }
+				data: { baz: 'quux', bleb: 'fleb' },
 			})
 			expect(state4).toEqual({
 				test: {
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						fetchedAt: fetchedAtDate
+						fetchedAt: fetchedAtDate,
 					},
 					baz: 'quux',
-					bleb: 'fleb'
-				}
+					bleb: 'fleb',
+				},
 			})
-
-			global.Date = _Date
 		})
 	})
 
 	describe('default action', () => {
 		test("don't do nada", () => {
-			const state = fetchReducer({ test: { foo: 'bar' } }, { type: 'FOOBAR', modelName: 'test' })
+			const state = fetchReducer(
+				{ test: { foo: 'bar' } },
+				{ type: 'FOOBAR', modelName: 'test' }
+			)
 			expect(state).toEqual({ test: { foo: 'bar' } })
 		})
 
 		test('no state parameter passed', () => {
-			const state = fetchReducer(undefined, { type: actions.FETCH_REQUESTED, modelName: 'test' })
+			const state = fetchReducer(undefined, {
+				type: actions.FETCH_REQUESTED,
+				modelName: 'test',
+			})
 			expect(state).toEqual({
 				test: {
 					_metadata: {
 						isFetching: true,
 						hasError: false,
-						lastFetchError: undefined
-					}
-				}
+						lastFetchError: undefined,
+					},
+				},
 			})
 		})
 	})

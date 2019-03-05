@@ -18,6 +18,9 @@
 		"no-console": false,
 		"trailing-comma": false,
 		"object-literal-sort-keys": false,
-		"ordered-imports": false
+		"object-literal-key-quotes": false,
+		"ordered-imports": false,
+		"interface-name": false,
+		"no-bitwise": false
 	}
 }

@@ -2,16 +2,16 @@ import actions from './actions'
 import * as _ from 'lodash'
 import * as _fp from 'lodash/fp'
 
-import { FetchState, MetadataState, FetchAction, IDictionary } from './types';
+import { MetadataState, FetchAction, Dictionary } from './types'
 
 /**
  * Given the state and a path into that state object, return the prop that
  * is named "_metadata"
  *
- * @param {FetchState} state - The redux state object
+ * @param {object} state - The redux state object
  * @param {Array<string>} path - An array of keys that represent the path to the entity in question
  */
-function getMetadata(state: FetchState, path: Array<string>): MetadataState {
+function getMetadata(state: object, path: string[]): MetadataState {
 	return _.merge({}, _.get(state, path.concat('_metadata')))
 }
 
@@ -29,7 +29,8 @@ function isCollection(obj: any) {
 			return (
 				_.isPlainObject(child) &&
 				(key === '_metadata' ||
-					(child.hasOwnProperty('id') && (child.id === parseInt(key, 10) || child.id === key)))
+					(child.hasOwnProperty('id') &&
+						(child.id === parseInt(key, 10) || child.id === key)))
 			)
 		})
 	)
@@ -45,8 +46,8 @@ function isCollection(obj: any) {
  * @param {*} current
  * @param {*} incoming
  */
-function mergeRelations(current: IDictionary<any>, incoming: IDictionary<any>) {
-	return Object.keys(current).reduce((prev: IDictionary<any>, k) => {
+function mergeRelations(current: Dictionary<any>, incoming: Dictionary<any>) {
+	return Object.keys(current).reduce((prev: Dictionary<any>, k) => {
 		const c = current[k]
 		const i = incoming && incoming[k]
 		// skip all non-relations
@@ -76,15 +77,15 @@ function mergeRelations(current: IDictionary<any>, incoming: IDictionary<any>) {
  * as the key and the entire object used as the value
  *
  * @export
- * @param {FetchState} [state={}] - The state of the models. Initially empty
+ * @param {object} [state={}] - The state of the models. Initially empty
  * @param {Action} action - The action upon which we dispatch
  * @returns
  */
-export default function fetchReducer(state: FetchState = {}, action: FetchAction) {
+export default function fetchReducer(state: object = {}, action: FetchAction) {
 	if (!action.modelName) {
 		return state
 	}
-	let path: Array<string> = action.modelName.split('.')
+	const path: string[] = action.modelName.split('.')
 	// the object value at the specified path
 	let valueAtPath = _.merge({}, _.get(state, path))
 	const metadata = getMetadata(state, path)
@@ -96,7 +97,7 @@ export default function fetchReducer(state: FetchState = {}, action: FetchAction
 			valueAtPath._metadata = _.merge(metadata, {
 				isFetching: true,
 				hasError: false,
-				lastFetchError: undefined
+				lastFetchError: undefined,
 			})
 			return _fp.setWith(Object, path, valueAtPath, state)
 
@@ -111,7 +112,7 @@ export default function fetchReducer(state: FetchState = {}, action: FetchAction
 				isFetching: false,
 				hasError: false,
 				lastFetchError: undefined,
-				fetchedAt: new Date()
+				fetchedAt: new Date(),
 			})
 			return _fp.setWith(Object, path, valueAtPath, state)
 
@@ -121,7 +122,7 @@ export default function fetchReducer(state: FetchState = {}, action: FetchAction
 			valueAtPath._metadata = _.merge(metadata, {
 				isFetching: false,
 				hasError: true,
-				lastFetchError: action.errorData
+				lastFetchError: action.errorData,
 			})
 			return _fp.setWith(Object, path, valueAtPath, state)
 

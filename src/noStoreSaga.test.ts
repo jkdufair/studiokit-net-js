@@ -1,15 +1,10 @@
 import rewire from 'rewire'
 import actions from './actions'
-import {
-	takeEvery
-} from 'redux-saga/effects'
+import { takeEvery } from 'redux-saga/effects'
 import * as uuid from 'uuid'
-import noStoreSaga, {
-	registerNoStoreActionHook,
-	unregisterNoStoreActionHook
-} from './noStoreSaga'
+import noStoreSaga, { registerNoStoreActionHook, unregisterNoStoreActionHook } from './noStoreSaga'
 
-const NoStoreSagaRewireAPI = rewire('../src/noStoreSaga')
+const NoStoreSagaRewireAPI = rewire('./noStoreSaga')
 const matchesNoStoreAction = NoStoreSagaRewireAPI.__get__('matchesNoStoreAction')
 const takeMatchesNoStoreAction = NoStoreSagaRewireAPI.__get__('takeMatchesNoStoreAction')
 const matchesFailedNoStoreHookAction = NoStoreSagaRewireAPI.__get__(
@@ -34,7 +29,7 @@ describe('helpers', () => {
 				matchesNoStoreAction({
 					modelName: 'someModel',
 					type: actions.DATA_REQUESTED,
-					noStore: true
+					noStore: true,
 				})
 			).toEqual(true)
 		})
@@ -42,7 +37,7 @@ describe('helpers', () => {
 			expect(
 				matchesNoStoreAction({
 					modelName: 'someModel',
-					type: actions.DATA_REQUESTED
+					type: actions.DATA_REQUESTED,
 				})
 			).toEqual(false)
 		})
@@ -51,7 +46,7 @@ describe('helpers', () => {
 				matchesNoStoreAction({
 					modelName: 'someModel',
 					type: actions.KEY_REMOVAL_REQUESTED,
-					noStore: true
+					noStore: true,
 				})
 			).toEqual(false)
 		})
@@ -60,7 +55,7 @@ describe('helpers', () => {
 				takeMatchesNoStoreAction()({
 					modelName: 'someModel',
 					type: actions.DATA_REQUESTED,
-					noStore: true
+					noStore: true,
 				})
 			).toEqual(true)
 		})
@@ -74,7 +69,7 @@ describe('helpers', () => {
 					{
 						modelName: 'someModel',
 						type: actions.TRANSIENT_FETCH_FAILED,
-						guid
+						guid,
 					},
 					{ modelName: 'someModel', noStore: true, guid }
 				)
@@ -87,7 +82,7 @@ describe('helpers', () => {
 					{
 						modelName: 'someModel',
 						type: actions.KEY_REMOVAL_REQUESTED,
-						guid
+						guid,
 					},
 					{ modelName: 'someModel', noStore: true, guid }
 				)
@@ -99,7 +94,7 @@ describe('helpers', () => {
 					{
 						modelName: 'someModel',
 						type: actions.TRANSIENT_FETCH_FAILED,
-						guid: uuid.v4()
+						guid: uuid.v4(),
 					},
 					{ modelName: 'someModel', noStore: true, guid: uuid.v4() }
 				)
@@ -108,11 +103,13 @@ describe('helpers', () => {
 		test('should call matchesFailedNoStoreHookAction from takeMatchesFailedNoStoreHookAction', () => {
 			const guid = uuid.v4()
 			expect(
-				takeMatchesFailedNoStoreHookAction({ modelName: 'someModel', noStore: true, guid })({
-					modelName: 'someModel',
-					type: actions.TRANSIENT_FETCH_FAILED,
-					guid
-				})
+				takeMatchesFailedNoStoreHookAction({ modelName: 'someModel', noStore: true, guid })(
+					{
+						modelName: 'someModel',
+						type: actions.TRANSIENT_FETCH_FAILED,
+						guid,
+					}
+				)
 			).toEqual(true)
 		})
 	})
@@ -125,7 +122,7 @@ describe('helpers', () => {
 					{
 						modelName: 'someModel',
 						type: actions.TRANSIENT_FETCH_RESULT_RECEIVED,
-						guid
+						guid,
 					},
 					{ modelName: 'someModel', noStore: true, guid }
 				)
@@ -138,7 +135,7 @@ describe('helpers', () => {
 					{
 						modelName: 'someModel',
 						type: actions.KEY_REMOVAL_REQUESTED,
-						guid
+						guid,
 					},
 					{ modelName: 'someModel', noStore: true, guid }
 				)
@@ -150,7 +147,7 @@ describe('helpers', () => {
 					{
 						modelName: 'someModel',
 						type: actions.TRANSIENT_FETCH_FAILED,
-						guid: uuid.v4()
+						guid: uuid.v4(),
 					},
 					{ modelName: 'someModel', noStore: true, guid: uuid.v4() }
 				)
@@ -159,10 +156,14 @@ describe('helpers', () => {
 		test('should call matchesReceivedNoStoreHookAction from takeMatchesReceivedNoStoreHookAction', () => {
 			const guid = uuid.v4()
 			expect(
-				takeMatchesReceivedNoStoreHookAction({ modelName: 'someModel', noStore: true, guid })({
+				takeMatchesReceivedNoStoreHookAction({
+					modelName: 'someModel',
+					noStore: true,
+					guid,
+				})({
 					modelName: 'someModel',
 					type: actions.TRANSIENT_FETCH_RESULT_RECEIVED,
-					guid
+					guid,
 				})
 			).toEqual(true)
 		})
@@ -171,7 +172,7 @@ describe('helpers', () => {
 
 describe('noStoreSaga', () => {
 	test('should set up takeEvery', () => {
-		const gen = noStoreSaga({})
+		const gen = noStoreSaga()
 		const takeEveryEffect = gen.next()
 		expect(takeEveryEffect.value).toEqual(takeEvery(takeMatchesNoStoreAction, handleAction))
 	})
@@ -179,36 +180,36 @@ describe('noStoreSaga', () => {
 
 describe('registerNoStoreActionHook', () => {
 	test('should succeed', () => {
-		const hook = data => {
-			let foo = 1
+		const hook = () => {
+			const foo = 1
 		}
 		registerNoStoreActionHook('key', hook)
-		expect(hooks['key']).toEqual(hook)
+		expect(hooks.key).toEqual(hook)
 	})
 })
 
 describe('unregisterNoStoreActionHook', () => {
 	test('should succeed', () => {
-		const hook = data => {
-			let foo = 1
+		const hook = () => {
+			const foo = 1
 		}
 		registerNoStoreActionHook('key', hook)
-		expect(hooks['key']).toEqual(hook)
+		expect(hooks.key).toEqual(hook)
 		unregisterNoStoreActionHook('key')
-		expect(hooks['key']).toEqual(undefined)
+		expect(hooks.key).toEqual(undefined)
 	})
 })
 
 describe('handleAction', () => {
 	const firstKey = uuid.v4()
 	const secondKey = uuid.v4()
-	let hookCalled
-	let hookData
-	const firstHook = data => {
+	let hookCalled: string | undefined
+	let hookData: any
+	const firstHook = (data: any) => {
 		hookCalled = 'first'
 		hookData = data
 	}
-	const secondHook = data => {
+	const secondHook = (data: any) => {
 		hookCalled = 'second'
 		hookData = data
 	}
@@ -230,12 +231,12 @@ describe('handleAction', () => {
 			modelName: 'someModel',
 			type: actions.DATA_REQUESTED,
 			noStore: true,
-			guid: firstKey
+			guid: firstKey,
 		}
 		const gen = handleAction(action)
-		const raceEffect = gen.next()
+		gen.next() // raceEffect
 		const sagaDone = gen.next({
-			receivedResult: { data: 'blah' }
+			receivedResult: { data: 'blah' },
 		})
 		expect(sagaDone.done).toEqual(true)
 		expect(hookCalled).toEqual('first')
@@ -247,12 +248,12 @@ describe('handleAction', () => {
 			modelName: 'someModel',
 			type: actions.DATA_REQUESTED,
 			noStore: true,
-			guid: firstKey
+			guid: firstKey,
 		}
 		const gen = handleAction(firstAction)
-		const raceEffect = gen.next()
+		gen.next() // raceEffect
 		const sagaDone = gen.next({
-			receivedResult: { data: 'blah' }
+			receivedResult: { data: 'blah' },
 		})
 		expect(sagaDone.done).toEqual(true)
 		expect(hookCalled).toEqual('first')
@@ -262,12 +263,12 @@ describe('handleAction', () => {
 			modelName: 'someModel',
 			type: actions.DATA_REQUESTED,
 			noStore: true,
-			guid: secondKey
+			guid: secondKey,
 		}
 		const gen2 = handleAction(secondAction)
-		const raceEffect2 = gen2.next()
+		gen2.next() // raceEffect2
 		const sagaDone2 = gen2.next({
-			receivedResult: { data: 'bloo' }
+			receivedResult: { data: 'bloo' },
 		})
 		expect(sagaDone2.done).toEqual(true)
 		expect(hookCalled).toEqual('second')
@@ -279,12 +280,12 @@ describe('handleAction', () => {
 			modelName: 'someModel',
 			type: actions.DATA_REQUESTED,
 			noStore: true,
-			guid: firstKey
+			guid: firstKey,
 		}
 		const gen = handleAction(action)
-		const raceEffect = gen.next()
+		gen.next() // raceEffect
 		const sagaDone = gen.next({
-			failedResult: { error: 'boo' }
+			failedResult: { error: 'boo' },
 		})
 		expect(sagaDone.done).toEqual(true)
 		expect(hookCalled).toEqual('first')
@@ -295,7 +296,7 @@ describe('handleAction', () => {
 		const action = {
 			modelName: 'someModel',
 			type: actions.DATA_REQUESTED,
-			noStore: true
+			noStore: true,
 		}
 		const gen = handleAction(action)
 		const sagaDone = gen.next()
@@ -309,7 +310,7 @@ describe('handleAction', () => {
 			modelName: 'someModel',
 			type: actions.DATA_REQUESTED,
 			noStore: true,
-			guid: uuid.v4()
+			guid: uuid.v4(),
 		}
 		const gen = handleAction(action)
 		const sagaDone = gen.next()
@@ -323,13 +324,13 @@ describe('handleAction', () => {
 			modelName: 'someModel',
 			type: actions.DATA_REQUESTED,
 			noStore: true,
-			guid: firstKey
+			guid: firstKey,
 		}
 		const gen = handleAction(action)
-		const raceEffect = gen.next()
+		gen.next() // raceEffect
 		unregisterNoStoreActionHook(firstKey)
 		const sagaDone = gen.next({
-			receivedResult: { data: 'blah' }
+			receivedResult: { data: 'blah' },
 		})
 		expect(sagaDone.done).toEqual(true)
 		expect(hookCalled).toEqual(undefined)

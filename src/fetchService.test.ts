@@ -1,11 +1,7 @@
 import rewire from 'rewire'
-import {
-	setApiRoot,
-	getApiRoot,
-	doFetch
-} from './fetchService'
+import { setApiRoot, getApiRoot, doFetch } from './fetchService'
 
-const FetchServiceRewireAPI = rewire('../src/services/fetchService')
+const FetchServiceRewireAPI = rewire('./fetchService')
 const constructPath = FetchServiceRewireAPI.__get__('constructPath')
 
 describe('constructPath', () => {
@@ -18,8 +14,8 @@ describe('constructPath', () => {
 		const path = constructPath({
 			path: 'http://abc.xyz/api/foo',
 			queryParams: {
-				bar: 'baz'
-			}
+				bar: 'baz',
+			},
 		})
 		expect(path).toEqual('http://abc.xyz/api/foo?bar=baz')
 	})
@@ -29,8 +25,8 @@ describe('constructPath', () => {
 			path: 'http://abc.xyz/api/foo',
 			queryParams: {
 				bar: 'baz',
-				quux: 'wawa'
-			}
+				quux: 'wawa',
+			},
 		})
 		expect(path).toEqual('http://abc.xyz/api/foo?bar=baz&quux=wawa')
 	})
@@ -40,8 +36,8 @@ describe('constructPath', () => {
 			path: 'http://abc.xyz/api/foo',
 			queryParams: {
 				bar: 'baz',
-				$foo: '/bar'
-			}
+				$foo: '/bar',
+			},
 		})
 		expect(path).toEqual('http://abc.xyz/api/foo?bar=baz&%24foo=%2Fbar')
 	})
@@ -56,26 +52,13 @@ describe('constructPath', () => {
 })
 
 describe('doFetch', () => {
-	let _fetch
-	beforeAll(() => {
-		_fetch = global.fetch
-		global.fetch = jest.fn(() => {})
-	})
-	afterAll(() => {
-		global.fetch = _fetch
-	})
 	test('Require config.path', () => {
 		expect(() => {
-			const gen = doFetch()
+			const gen = doFetch({
+				path: '',
+			})
 			gen.next()
-		}).toThrow(/Cannot read property 'path' of undefined/)
-	})
-
-	test('Require config.path 2', () => {
-		expect(() => {
-			const gen = doFetch({})
-			gen.next()
-		}).toThrow(/'config.path' is required/)
+		}).toThrow(/'config.path' is required for fetchService/)
 	})
 
 	test('Basic GET', () => {
@@ -86,9 +69,9 @@ describe('doFetch', () => {
 			{
 				method: 'GET',
 				headers: {
-					'Content-Type': 'application/json; charset=utf-8'
-				}
-			}
+					'Content-Type': 'application/json; charset=utf-8',
+				},
+			},
 		])
 	})
 
@@ -100,31 +83,16 @@ describe('doFetch', () => {
 			{
 				method: 'GET',
 				headers: {
-					'Content-Type': 'application/json; charset=utf-8'
-				}
-			}
+					'Content-Type': 'application/json; charset=utf-8',
+				},
+			},
 		])
 	})
 
 	test('Basic GET with contentType', () => {
-		const gen = doFetch({ path: 'http://www.google.com', contentType: 'text/html; charset=utf-8' })
-		const response = gen.next()
-		expect(response.value.payload.args).toEqual([
-			'http://www.google.com',
-			{
-				method: 'GET',
-				headers: {
-					'Content-Type': 'text/html; charset=utf-8'
-				}
-			}
-		])
-	})
-
-	test('Basic GET with contentType and other headers', () => {
 		const gen = doFetch({
 			path: 'http://www.google.com',
 			contentType: 'text/html; charset=utf-8',
-			headers: { 'some-header': 'some-header-value' }
 		})
 		const response = gen.next()
 		expect(response.value.payload.args).toEqual([
@@ -133,9 +101,27 @@ describe('doFetch', () => {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'text/html; charset=utf-8',
-					'some-header': 'some-header-value'
-				}
-			}
+				},
+			},
+		])
+	})
+
+	test('Basic GET with contentType and other headers', () => {
+		const gen = doFetch({
+			path: 'http://www.google.com',
+			contentType: 'text/html; charset=utf-8',
+			headers: { 'some-header': 'some-header-value' },
+		})
+		const response = gen.next()
+		expect(response.value.payload.args).toEqual([
+			'http://www.google.com',
+			{
+				method: 'GET',
+				headers: {
+					'Content-Type': 'text/html; charset=utf-8',
+					'some-header': 'some-header-value',
+				},
+			},
 		])
 	})
 
@@ -147,10 +133,10 @@ describe('doFetch', () => {
 			{
 				method: 'POST',
 				headers: {
-					'Content-Type': 'application/json; charset=utf-8'
+					'Content-Type': 'application/json; charset=utf-8',
 				},
-				body: JSON.stringify({ foo: 'bar' })
-			}
+				body: JSON.stringify({ foo: 'bar' }),
+			},
 		])
 	})
 
@@ -159,7 +145,7 @@ describe('doFetch', () => {
 			path: 'http://www.google.com',
 			method: 'POST',
 			body: new FormData(),
-			contentType: 'multipart/form-data'
+			contentType: 'multipart/form-data',
 		})
 		const response = gen.next()
 		expect(response.value.payload.args[1].method).toEqual('POST')
@@ -171,7 +157,7 @@ describe('doFetch', () => {
 			path: 'http://www.google.com',
 			method: 'POST',
 			body: 'foo=bar&baz=quux',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 		})
 		const response = gen.next()
 		expect(response.value.payload.args).toEqual([
@@ -179,10 +165,10 @@ describe('doFetch', () => {
 			{
 				method: 'POST',
 				headers: {
-					'Content-Type': 'application/x-www-form-urlencoded'
+					'Content-Type': 'application/x-www-form-urlencoded',
 				},
-				body: 'foo=bar&baz=quux'
-			}
+				body: 'foo=bar&baz=quux',
+			},
 		])
 	})
 
@@ -193,7 +179,7 @@ describe('doFetch', () => {
 			ok: true,
 			status: 200,
 			headers: { has: () => true, get: () => 'application/json; charset=utf-8' },
-			json: () => ({ foo: 'bar' })
+			json: () => ({ foo: 'bar' }),
 		}
 		const callResponseJsonEffect = gen.next(response)
 		expect(callResponseJsonEffect.value.payload.fn()).toEqual({ foo: 'bar' })
@@ -202,8 +188,8 @@ describe('doFetch', () => {
 			ok: true,
 			status: 200,
 			data: {
-				foo: 'bar'
-			}
+				foo: 'bar',
+			},
 		})
 		expect(sagaDone.done).toEqual(true)
 	})
@@ -215,7 +201,7 @@ describe('doFetch', () => {
 			ok: true,
 			status: 200,
 			headers: { has: () => true, get: () => 'text/plain' },
-			text: () => 'bar'
+			text: () => 'bar',
 		}
 		const callResponseJsonEffect = gen.next(response)
 		expect(callResponseJsonEffect.value.payload.fn()).toEqual('bar')
@@ -223,7 +209,7 @@ describe('doFetch', () => {
 		expect(sagaDone.value).toEqual({
 			ok: true,
 			status: 200,
-			data: 'bar'
+			data: 'bar',
 		})
 		expect(sagaDone.done).toEqual(true)
 	})
@@ -232,7 +218,7 @@ describe('doFetch', () => {
 		const gen = doFetch({ path: 'http://www.google.com' })
 		const callFetchEffect = gen.next()
 		const sagaDone = gen.next()
-		expect(sagaDone.value).toEqual()
+		expect(sagaDone.value).toEqual(undefined)
 		expect(sagaDone.done).toEqual(true)
 	})
 
@@ -244,10 +230,12 @@ describe('doFetch', () => {
 			status: 400,
 			statusText: 'Bad Request',
 			headers: { has: () => true, get: () => 'application/json; charset=utf-8' },
-			json: () => ({ message: 'Bad Request: reasons' })
+			json: () => ({ message: 'Bad Request: reasons' }),
 		}
 		const callResponseJsonEffect = gen.next(response)
-		expect(callResponseJsonEffect.value.payload.fn()).toEqual({ message: 'Bad Request: reasons' })
+		expect(callResponseJsonEffect.value.payload.fn()).toEqual({
+			message: 'Bad Request: reasons',
+		})
 		const sagaDone = gen.next(response.json())
 		expect(sagaDone.value).toEqual({
 			ok: false,
@@ -255,8 +243,8 @@ describe('doFetch', () => {
 			data: {
 				title: 'Error',
 				message: 'Bad Request: reasons',
-				code: 400
-			}
+				code: 400,
+			},
 		})
 		expect(sagaDone.done).toEqual(true)
 	})
@@ -270,24 +258,24 @@ describe('doFetch', () => {
 			{
 				method: 'PUT',
 				headers: {
-					'Content-Type': 'application/json; charset=utf-8'
+					'Content-Type': 'application/json; charset=utf-8',
 				},
-				body: JSON.stringify(putBody)
-			}
+				body: JSON.stringify(putBody),
+			},
 		])
 		const response = {
 			ok: true,
 			status: 204,
-			statusText: 'NoContent'
+			statusText: 'NoContent',
 		}
 		const callResponseJsonEffect = gen.next(response)
 		expect(callResponseJsonEffect.value).toEqual({
 			ok: true,
 			status: 204,
-			data: putBody
+			data: putBody,
 		})
 		const sagaDone = gen.next()
-		expect(sagaDone.value).toEqual()
+		expect(sagaDone.value).toEqual(undefined)
 		expect(sagaDone.done).toEqual(true)
 	})
 
@@ -298,8 +286,8 @@ describe('doFetch', () => {
 			method: 'PUT',
 			body: putBody,
 			headers: {
-				'Content-Type': 'text/plain'
-			}
+				'Content-Type': 'text/plain',
+			},
 		})
 		const callFetchEffect = gen.next()
 		expect(callFetchEffect.value.payload.args).toEqual([
@@ -307,24 +295,24 @@ describe('doFetch', () => {
 			{
 				method: 'PUT',
 				headers: {
-					'Content-Type': 'text/plain'
+					'Content-Type': 'text/plain',
 				},
-				body: putBody
-			}
+				body: putBody,
+			},
 		])
 		const response = {
 			ok: true,
 			status: 204,
-			statusText: 'NoContent'
+			statusText: 'NoContent',
 		}
 		const callResponseJsonEffect = gen.next(response)
 		expect(callResponseJsonEffect.value).toEqual({
 			ok: true,
 			status: 204,
-			data: undefined
+			data: undefined,
 		})
 		const sagaDone = gen.next()
-		expect(sagaDone.value).toEqual()
+		expect(sagaDone.value).toEqual(undefined)
 		expect(sagaDone.done).toEqual(true)
 	})
 
@@ -336,23 +324,23 @@ describe('doFetch', () => {
 			{
 				method: 'DELETE',
 				headers: {
-					'Content-Type': 'application/json; charset=utf-8'
-				}
-			}
+					'Content-Type': 'application/json; charset=utf-8',
+				},
+			},
 		])
 		const response = {
 			ok: true,
 			status: 204,
-			statusText: 'NoContent'
+			statusText: 'NoContent',
 		}
 		const callResponseJsonEffect = gen.next(response)
 		expect(callResponseJsonEffect.value).toEqual({
 			ok: true,
 			status: 204,
-			data: undefined
+			data: undefined,
 		})
 		const sagaDone = gen.next()
-		expect(sagaDone.value).toEqual()
+		expect(sagaDone.value).toEqual(undefined)
 		expect(sagaDone.done).toEqual(true)
 	})
 })

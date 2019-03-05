@@ -1,8 +1,9 @@
 import { call } from 'redux-saga/effects'
-import * as _ from 'lodash'
-import { FetchConfig } from '../types';
+import _ from 'lodash'
+import { FetchConfig } from './types'
+import { SagaIterator } from '@redux-saga/core'
 
-let apiRoot: string
+let apiRoot: string | undefined
 
 /**
  * Add query params to path. Prepend with apiRoot if necessary
@@ -11,10 +12,17 @@ let apiRoot: string
  * @returns A string with query params populated and prepended
  */
 function constructPath(config: FetchConfig) {
+	if (!config.path) {
+		throw new Error("'config.path' is required for fetchService")
+	}
 	let queryParams
-	if (config.queryParams) {
+	if (!!config.queryParams) {
 		queryParams = Object.keys(config.queryParams)
-			.map(key => `${encodeURIComponent(key)}=${encodeURIComponent(config.queryParams[key])}`)
+			.map(
+				key =>
+					`${encodeURIComponent(key)}=${!!config.queryParams &&
+						encodeURIComponent(config.queryParams[key])}`
+			)
 			.join('&')
 	}
 
@@ -31,7 +39,7 @@ function constructPath(config: FetchConfig) {
  * @export
  * @param {string} uri - The uri to save and prepend later
  */
-export function setApiRoot(uri: string) {
+export function setApiRoot(uri: string | undefined) {
 	apiRoot = uri
 }
 
@@ -43,15 +51,16 @@ export function getApiRoot() {
  * The function that actually sends the HTTP request and returns the response, handling errors.
  * Requests default to using GET method. Content-Type defaults to 'application/json'. Body is sent
  * as stringified JSON unless the 'application/x-www-form-urlencoded' Content-Type is detected, in which case
- * it's sent as provided. If it is a 'multipart/form-data', we are assuming that the data is being sent as a FormData, and
- * we do not set the Content-type (https://stackoverflow.com/questions/39280438/fetch-missing-boundary-in-multipart-form-data-post).
- * TODO: provide logging injection
+ * it's sent as provided. If it is a 'multipart/form-data', we are assuming that the data
+ * is being sent as a FormData, and we do not set the Content-type
+ * (https://stackoverflow.com/questions/39280438/fetch-missing-boundary-in-multipart-form-data-post).
  *
  * @export
  * @param {FetchConfig} config - The configuration used to construct a fetch request
  * @returns {Object?} - The response, parsed as JSON
  */
-export function* doFetch(config: FetchConfig): Generator<*, *, *> {
+// TODO: provide logging injection
+export function* doFetch(config: FetchConfig): SagaIterator {
 	if (!config.path) {
 		throw new Error("'config.path' is required for fetchService")
 	}
@@ -68,7 +77,7 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 					{
 						'Content-Type': !!config.contentType
 							? config.contentType
-							: 'application/json; charset=utf-8'
+							: 'application/json; charset=utf-8',
 					},
 					config.headers
 			  )
@@ -78,9 +87,9 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 	const body =
 		method === 'GET' ? undefined : !isBodyJson ? config.body : JSON.stringify(config.body)
 	const response = yield call(fetch, constructPath(config), {
-		method: method,
-		headers: headers,
-		body
+		method,
+		headers,
+		body,
 	})
 	if (!response) {
 		return undefined
@@ -90,7 +99,7 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 	const result = {
 		ok: response.ok,
 		status: response.status,
-		data: undefined
+		data: undefined,
 	}
 
 	// If the request was a 204, use the body (if any) that was PUT in the request as the "response"
@@ -118,7 +127,7 @@ export function* doFetch(config: FetchConfig): Generator<*, *, *> {
 			{
 				title: 'Error',
 				message: response.statusText,
-				code: response.status
+				code: response.status,
 			},
 			result.data
 		)

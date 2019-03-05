@@ -21,7 +21,7 @@ const TRANSIENT_FETCH_RESULT_RECEIVED = 'net/TRANSIENT_FETCH_RESULT_RECEIVED'
 const TRANSIENT_FETCH_FAILED = 'net/TRANSIENT_FETCH_FAILED'
 const TRY_FETCH_FAILED = 'net/TRY_FETCH_FAILED'
 
-export function createAction(type: string, payload: Object) {
+export function createAction(type: string, payload: any) {
 	return merge({}, { type }, payload)
 }
 
@@ -38,5 +38,5 @@ export default {
 	FETCH_FAILED,
 	TRANSIENT_FETCH_RESULT_RECEIVED,
 	TRANSIENT_FETCH_FAILED,
-	TRY_FETCH_FAILED
+	TRY_FETCH_FAILED,
 }

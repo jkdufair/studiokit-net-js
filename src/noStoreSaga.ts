@@ -1,20 +1,19 @@
 import * as _ from 'lodash'
 import { take, takeEvery, race } from 'redux-saga/effects'
 import actions from './actions'
-import { FetchAction } from './types'
-import { SagaIterator } from '@redux-saga/core';
+import { SagaIterator } from '@redux-saga/core'
 
 type HookFunction = (input: any) => void
 
 //#region Helpers
 
-const matchesNoStoreAction = (incomingAction: FetchAction) => {
+const matchesNoStoreAction = (incomingAction: any) => {
 	return incomingAction.type === actions.DATA_REQUESTED && incomingAction.noStore === true
 }
 
-const takeMatchesNoStoreAction = () => (incomingAction: FetchAction) => matchesNoStoreAction(incomingAction)
+const takeMatchesNoStoreAction = () => (incomingAction: any) => matchesNoStoreAction(incomingAction)
 
-const matchesFailedNoStoreHookAction = (incomingAction: FetchAction, fetchAction: FetchAction) => {
+const matchesFailedNoStoreHookAction = (incomingAction: any, fetchAction: any) => {
 	return (
 		incomingAction.type === actions.TRANSIENT_FETCH_FAILED &&
 		fetchAction.noStore === true &&
@@ -22,10 +21,10 @@ const matchesFailedNoStoreHookAction = (incomingAction: FetchAction, fetchAction
 	)
 }
 
-const takeMatchesFailedNoStoreHookAction = (action: FetchAction) => (incomingAction: FetchAction) =>
+const takeMatchesFailedNoStoreHookAction = (action: any) => (incomingAction: any) =>
 	matchesFailedNoStoreHookAction(incomingAction, action)
 
-const matchesReceivedNoStoreHookAction = (incomingAction: FetchAction, fetchAction: FetchAction) => {
+const matchesReceivedNoStoreHookAction = (incomingAction: any, fetchAction: any) => {
 	return (
 		incomingAction.type === actions.TRANSIENT_FETCH_RESULT_RECEIVED &&
 		fetchAction.noStore === true &&
@@ -33,7 +32,7 @@ const matchesReceivedNoStoreHookAction = (incomingAction: FetchAction, fetchActi
 	)
 }
 
-const takeMatchesReceivedNoStoreHookAction = (action: FetchAction) => (incomingAction: FetchAction) =>
+const takeMatchesReceivedNoStoreHookAction = (action: any) => (incomingAction: any) =>
 	matchesReceivedNoStoreHookAction(incomingAction, action)
 
 //#endregion Helpers
@@ -52,18 +51,24 @@ export const unregisterNoStoreActionHook = (key: string) => {
 
 //#endregion Hooks
 
-function* handleAction(action: FetchAction): SagaIterator {
+function* handleAction(action: any): SagaIterator {
 	const guid = action.guid
-	if (_.isNil(guid)) return
-	if (_.isNil(hooks[guid])) return
+	if (_.isNil(guid)) {
+		return
+	}
+	if (_.isNil(hooks[guid])) {
+		return
+	}
 
 	const { receivedResult, failedResult } = yield race({
 		receivedResult: take(takeMatchesReceivedNoStoreHookAction(action)),
-		failedResult: take(takeMatchesFailedNoStoreHookAction(action))
+		failedResult: take(takeMatchesFailedNoStoreHookAction(action)),
 	})
 
 	const hook = hooks[guid]
-	if (_.isNil(hook)) return
+	if (_.isNil(hook)) {
+		return
+	}
 
 	if (!receivedResult || !receivedResult.data || !!failedResult) {
 		hook(null)
@@ -73,5 +78,5 @@ function* handleAction(action: FetchAction): SagaIterator {
 }
 
 export default function* noStoreSaga(): SagaIterator {
-	yield takeEvery(takeMatchesNoStoreAction, handleAction)
+	yield takeEvery(takeMatchesNoStoreAction(), handleAction)
 }

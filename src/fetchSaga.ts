@@ -8,18 +8,27 @@ import {
 	take,
 	takeEvery,
 	takeLatest,
-	delay
+	delay,
 } from 'redux-saga/effects'
-import * as _ from 'lodash'
-import * as uuid from 'uuid'
-import { doFetch, setApiRoot } from './services/fetchService'
+import _ from 'lodash'
+import uuid from 'uuid'
+import { doFetch, setApiRoot } from './fetchService'
 import actions, { createAction } from './actions'
-import { OAuthToken, FetchAction, FetchError } from './types'
+import {
+	OAuthToken,
+	FetchAction,
+	FetchError,
+	Models,
+	Model,
+	Dictionary,
+	ModelConfig,
+} from './types'
+import { SagaIterator } from '@redux-saga/core'
 
 //#region Types
 
-type LoggerFunction = (message: string) => void
-type TokenAccessFunction = () => OAuthToken | undefined
+type LoggerFunction = (message: any) => void
+type TokenAccessFunction = (action: any) => OAuthToken | undefined
 type ErrorFunction = (error: string) => void
 
 //#endregion Types
@@ -28,21 +37,23 @@ type ErrorFunction = (error: string) => void
 
 const getState = (state: any) => state
 
-const matchesTerminationAction = (incomingAction: FetchAction, fetchAction: FetchAction) => {
+const matchesTerminationAction = (incomingAction: any, fetchAction: any) => {
 	return (
 		incomingAction.type === actions.PERIODIC_TERMINATION_REQUESTED &&
 		incomingAction.taskId === fetchAction.taskId
 	)
 }
 
-const takeMatchesTerminationAction = (action: FetchAction) => (incomingAction: FetchAction) =>
+const takeMatchesTerminationAction = (action: any) => (incomingAction: any) =>
 	matchesTerminationAction(incomingAction, action)
 
 const defaultTokenAccessFunction: TokenAccessFunction = () => {
 	return undefined
 }
 
-const defaultErrorFunction: ErrorFunction = () => {}
+const defaultErrorFunction: ErrorFunction = () => {
+	return
+}
 
 /**
  * A default logger function that logs to the console. Used if no other logger is provided
@@ -58,7 +69,7 @@ const defaultLogger: LoggerFunction = (message: string) => {
 //#region Local Variables
 
 let logger: LoggerFunction
-let models: Object
+let models: Models
 let tokenAccessFunction: TokenAccessFunction
 let errorFunction: ErrorFunction
 
@@ -68,15 +79,15 @@ let errorFunction: ErrorFunction
  * Prepare fetchConfig to pass to fetchService. Also set up state
  * to handle response correctly.
  *
- * @param {Object} model - The model selected from the models object
+ * @param {Model} model - The model selected from the models object
  * @param {FetchAction} action - The action dispatched by the client
- * @param {Object} models - The entire models object, passed in for testability
+ * @param {Models} modelsParam - The entire models object, passed in for testability
  */
-function prepareFetch(model: Object, action: FetchAction, models: Object) {
+function prepareFetch(model: Model, action: FetchAction, modelsParam: Models) {
 	const modelConfig = _.merge({}, model._config)
 	const fetchConfig = _.merge({}, modelConfig.fetch, {
 		headers: _.merge({}, action.headers),
-		queryParams: _.merge({}, action.queryParams)
+		queryParams: _.merge({}, action.queryParams),
 	})
 
 	// set "method" if defined
@@ -91,7 +102,8 @@ function prepareFetch(model: Object, action: FetchAction, models: Object) {
 		fetchConfig.contentType = 'application/x-www-form-urlencoded'
 	} else if (!!fetchConfig.body || !!action.body) {
 		const isBodyArray =
-			(fetchConfig.body && _.isArray(fetchConfig.body)) || (action.body && _.isArray(action.body))
+			(fetchConfig.body && _.isArray(fetchConfig.body)) ||
+			(action.body && _.isArray(action.body))
 		fetchConfig.body = isBodyArray
 			? _.union([], fetchConfig.body, action.body)
 			: _.merge({}, fetchConfig.body, action.body)
@@ -109,11 +121,11 @@ function prepareFetch(model: Object, action: FetchAction, models: Object) {
 	let isUrlValid: boolean = true
 	// copy pathParams into two arrays, to manage them separately
 	let pathParams = _.merge([], action.pathParams)
-	let modelNameParams = _.merge([], action.pathParams)
+	const modelNameParams = _.merge([], action.pathParams)
 
 	// find all the model levels from modelName
 	const modelNameLevels = modelName.split('.')
-	let lastModelLevel = models
+	let lastModelLevel: Model | ModelConfig = modelsParam
 	const modelLevels = modelNameLevels.map(levelName => {
 		const modelLevel = _.get(lastModelLevel, levelName)
 		lastModelLevel = modelLevel
@@ -149,7 +161,10 @@ function prepareFetch(model: Object, action: FetchAction, models: Object) {
 				// if previous level isCollection, we need to use "{:id}" hooks when appending new level
 				// otherwise, just append using the divider
 				const prevModelConfig = _.merge({}, modelLevels[index - 1]._config)
-				const divider = fetchConfig.path.length > 0 && currentPath.length > 0 ? '/' : ''
+				const divider =
+					!!fetchConfig.path && fetchConfig.path.length > 0 && currentPath.length > 0
+						? '/'
+						: ''
 				if (prevModelConfig.isCollection) {
 					fetchConfig.path = `${fetchConfig.path}${divider}{:id}/${currentPath}`
 					modelName = `${modelName}.{:id}.${levelName}`
@@ -173,7 +188,7 @@ function prepareFetch(model: Object, action: FetchAction, models: Object) {
 		}
 
 		// determine if we need to append an "{:id}" hook
-		const pathLevels = (fetchConfig.path.match(/{:id}/g) || []).length
+		const pathLevels = !!fetchConfig.path ? (fetchConfig.path.match(/{:id}/g) || []).length : 0
 		// GET, PUT, PATCH, DELETE => append '/{:id}'
 		isCollectionItemFetch = !!modelConfig.isCollection && pathParams.length > pathLevels
 		// POST
@@ -190,7 +205,7 @@ function prepareFetch(model: Object, action: FetchAction, models: Object) {
 	}
 
 	// substitute any params in path, e.g. /api/group/{:id}
-	if (/{:.+}/.test(fetchConfig.path)) {
+	if (!!fetchConfig.path && /{:.+}/.test(fetchConfig.path)) {
 		let index = 0
 		fetchConfig.path = fetchConfig.path.replace(/{:(.+?)}/g, (matches, backref) => {
 			const value = pathParams[index]
@@ -221,7 +236,7 @@ function prepareFetch(model: Object, action: FetchAction, models: Object) {
 		modelName,
 		isCollectionItemFetch,
 		isCollectionItemCreate,
-		isUrlValid
+		isUrlValid,
 	}
 }
 
@@ -246,12 +261,13 @@ function* fetchData(action: FetchAction) {
 
 	const result = prepareFetch(model, action, models)
 	const { fetchConfig, modelConfig } = result
-	let { modelName, isCollectionItemFetch, isCollectionItemCreate, isUrlValid } = result
+	const { modelName, isCollectionItemFetch, isCollectionItemCreate } = result
+	let { isUrlValid } = result
 
 	// TODO: Figure out how to move this into prepareFetch() without causing the
 	// carefully constructed tower of yield()s in the tests from crashing down
 	// substitute any path parameters from the redux store, e.g. '{{apiRoot}}/groups'
-	if (/{{.+}}/.test(fetchConfig.path)) {
+	if (!!fetchConfig.path && /{{.+}}/.test(fetchConfig.path)) {
 		// have to get reference to the whole store here
 		// since there is no yield in an arrow fn
 		const store = yield select(getState)
@@ -269,7 +285,7 @@ function* fetchData(action: FetchAction) {
 			createAction(action.noStore ? actions.TRANSIENT_FETCH_FAILED : actions.FETCH_FAILED, {
 				modelName: action.modelName,
 				guid: action.guid,
-				errorData: 'Invalid URL'
+				errorData: 'Invalid URL',
 			})
 		)
 		return
@@ -279,23 +295,26 @@ function* fetchData(action: FetchAction) {
 	const tryLimit: number = action.noRetry ? 1 : 4
 	let tryCount: number = 0
 	let didFail: boolean = false
-	let lastFetchError: ?FetchError
-	let lastError: ?Error
+	let lastFetchError: FetchError | undefined
+	let lastError: Error | undefined
 	// Run retry loop
 	do {
 		didFail = false
 		tryCount++
 		// Indicate fetch action has begun
 		yield put(
-			createAction(action.noStore ? actions.TRANSIENT_FETCH_REQUESTED : actions.FETCH_REQUESTED, {
-				modelName,
-				guid: action.guid
-			})
+			createAction(
+				action.noStore ? actions.TRANSIENT_FETCH_REQUESTED : actions.FETCH_REQUESTED,
+				{
+					modelName,
+					guid: action.guid,
+				}
+			)
 		)
 		try {
 			const oauthToken = yield call(tokenAccessFunction, action.modelName)
 			if (oauthToken && oauthToken.access_token) {
-				fetchConfig.headers['Authorization'] = `Bearer ${oauthToken.access_token}`
+				fetchConfig.headers.Authorization = `Bearer ${oauthToken.access_token}`
 			}
 			const fetchResult = yield call(doFetch, fetchConfig)
 			if (fetchResult && fetchResult.ok) {
@@ -314,14 +333,14 @@ function* fetchData(action: FetchAction) {
 						// convert to a key-value collection
 						// handles arrays or objects
 						// set item metadata
-						data = Object.keys(fetchResult.data).reduce((out, key) => {
+						data = Object.keys(fetchResult.data).reduce((out: Dictionary<any>, key) => {
 							const item = fetchResult.data[key]
 							out[item.id] = _.merge({}, item, {
 								_metadata: {
 									isFetching: false,
 									hasError: false,
-									fetchedAt
-								}
+									fetchedAt,
+								},
 							})
 							return out
 						}, {})
@@ -343,7 +362,7 @@ function* fetchData(action: FetchAction) {
 						createAction(storeAction, {
 							modelName: `${modelNameLevels.join('.')}.${data.id}`,
 							guid: action.guid,
-							data
+							data,
 						})
 					)
 					// remove temp item under guid key
@@ -353,19 +372,22 @@ function* fetchData(action: FetchAction) {
 						createAction(storeAction, {
 							modelName,
 							guid: action.guid,
-							data
+							data,
 						})
 					)
 				}
 			} else {
 				lastFetchError = {
 					modelName,
-					errorData: _.merge({}, !!fetchResult && !!fetchResult.data ? fetchResult.data : {})
+					errorData: _.merge(
+						{},
+						!!fetchResult && !!fetchResult.data ? fetchResult.data : {}
+					),
 				}
 				throw new Error(JSON.stringify(lastFetchError))
 			}
 		} catch (error) {
-			let errorData = !!lastFetchError ? lastFetchError.errorData : null
+			const errorData = !!lastFetchError ? lastFetchError.errorData : null
 
 			yield put(
 				createAction(
@@ -396,7 +418,7 @@ function* fetchData(action: FetchAction) {
 				_.merge(
 					{
 						modelName,
-						guid: action.guid
+						guid: action.guid,
 					},
 					lastFetchError
 				)
@@ -423,6 +445,9 @@ function* fetchOnce(action: FetchAction) {
  * @param {FetchAction} action - An action with the request configuration
  */
 function* fetchDataLoop(action: FetchAction) {
+	if (_.isNil(action.period)) {
+		throw new Error('`action.period` is required')
+	}
 	try {
 		while (true) {
 			yield call(fetchData, action)
@@ -435,7 +460,9 @@ function* fetchDataLoop(action: FetchAction) {
 	} finally {
 		if (yield cancelled()) {
 			yield put(
-				createAction(actions.PERIODIC_TERMINATION_SUCCEEDED, { modelName: action.modelName })
+				createAction(actions.PERIODIC_TERMINATION_SUCCEEDED, {
+					modelName: action.modelName,
+				})
 			)
 		}
 	}
@@ -485,19 +512,20 @@ function* fetchDataRecurring(action: FetchAction) {
  * { type: actions.DATA_REQUESTED, { modelName: 'groupOfModels.leelaModel' } }
  *
  * @export
- * @param {Object} modelsParam - An object indicating the APIs available in a application with which to make requests
- * @param {string} apiRootParam - A url to which partial URLs are appended (i.e.) 'https://myapp.com'
- * @param {TokenAccessFunction} [tokenAccessParam=defaultTokenAccessFunction] - function that returns an optional OAuth token
+ * @param {Models} modelsParam - An object indicating the APIs available in a application with which to make requests
+ * @param {string | undefined} apiRootParam - A url to which partial URLs are appended (i.e.) 'https://myapp.com'
+ * @param {TokenAccessFunction} [tokenAccessParam=defaultTokenAccessFunction] -
+ * function that returns an optional OAuth token
  * @param {ErrorFunction} [errorParam=defaultErrorFunction]  - A function to perform on errors
  * @param {LoggerFunction} [loggerParam=defaultLogger] - A function that accepts a string and logs it real good
  */
 export default function* fetchSaga(
-	modelsParam: Object,
-	apiRootParam: string,
-	tokenAccessFunctionParam: TokenAccessFunction = defaultTokenAccessFunction,
-	errorFunctionParam: ErrorFunction = defaultErrorFunction,
-	loggerParam: LoggerFunction = defaultLogger
-): Generator<*, *, *> {
+	modelsParam: Models,
+	apiRootParam?: string,
+	tokenAccessFunctionParam: TokenAccessFunction | undefined = defaultTokenAccessFunction,
+	errorFunctionParam: ErrorFunction | undefined = defaultErrorFunction,
+	loggerParam: LoggerFunction | undefined = defaultLogger
+): SagaIterator {
 	if (!modelsParam) {
 		throw new Error("'modelsParam' is required for fetchSaga")
 	}
