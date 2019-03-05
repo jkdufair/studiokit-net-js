@@ -1,13 +1,7 @@
-import rewire from 'rewire'
-import fetchReducer from './fetchReducer'
+import fetchReducer, { getMetadata, isCollection, mergeRelations } from './fetchReducer'
 import actions from './actions'
 import _ from 'lodash'
 import MockDate from 'mockdate'
-
-const FetchReducerRewireAPI = rewire('./fetchReducer')
-const getMetadata = FetchReducerRewireAPI.__get__('getMetadata')
-const isCollection = FetchReducerRewireAPI.__get__('isCollection')
-const mergeRelations = FetchReducerRewireAPI.__get__('mergeRelations')
 
 describe('supporting functions', () => {
 	describe('getMetadata', () => {
@@ -108,9 +102,9 @@ describe('supporting functions', () => {
 			expect(mergeRelations(current, incoming)).toEqual({})
 		})
 
-		test('should succeed if incoming is `null`', () => {
+		test('should succeed if incoming is `undefined`', () => {
 			const current = {}
-			expect(mergeRelations(current, null)).toEqual({})
+			expect(mergeRelations(current, undefined)).toEqual({})
 		})
 
 		test('should return objects without non-relations', () => {

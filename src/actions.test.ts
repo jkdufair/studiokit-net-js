@@ -1,7 +1,7 @@
 import { createAction } from './actions'
 
-describe('Utilities', () => {
-	test('Basic createAction', () => {
+describe('createAction', () => {
+	it('creates a basic action', () => {
 		const action = createAction('aType', { foo: 'bar' })
 		expect(action).toEqual({ type: 'aType', foo: 'bar' })
 	})

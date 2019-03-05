@@ -48,8 +48,8 @@ export interface ModelConfig {
 	fetch?: FetchConfig
 }
 
-export interface Model extends Dictionary<Model | ModelConfig> {
-	_config: ModelConfig
+export interface Model extends Dictionary<Model | ModelConfig | undefined> {
+	_config?: ModelConfig
 }
 
 export interface Models extends Dictionary<Model> {}
@@ -80,7 +80,7 @@ export interface FetchAction extends Action {
 	method?: string
 	headers?: Dictionary<string>
 	queryParams?: Dictionary<string>
-	pathParams?: string[]
+	pathParams?: Array<string | number | undefined | null>
 	body?: any
 	noStore?: boolean
 	period?: number

@@ -35,23 +35,23 @@ type ErrorFunction = (error: string) => void
 
 //#region Helpers
 
-const getState = (state: any) => state
+export const getState = (state?: any) => state
 
-const matchesTerminationAction = (incomingAction: any, fetchAction: any) => {
+export const matchesTerminationAction = (incomingAction: any, fetchAction: any) => {
 	return (
 		incomingAction.type === actions.PERIODIC_TERMINATION_REQUESTED &&
 		incomingAction.taskId === fetchAction.taskId
 	)
 }
 
-const takeMatchesTerminationAction = (action: any) => (incomingAction: any) =>
+export const takeMatchesTerminationAction = (action: any) => (incomingAction: any) =>
 	matchesTerminationAction(incomingAction, action)
 
-const defaultTokenAccessFunction: TokenAccessFunction = () => {
+export const defaultTokenAccessFunction: TokenAccessFunction = () => {
 	return undefined
 }
 
-const defaultErrorFunction: ErrorFunction = () => {
+export const defaultErrorFunction: ErrorFunction = () => {
 	return
 }
 
@@ -83,7 +83,7 @@ let errorFunction: ErrorFunction
  * @param {FetchAction} action - The action dispatched by the client
  * @param {Models} modelsParam - The entire models object, passed in for testability
  */
-function prepareFetch(model: Model, action: FetchAction, modelsParam: Models) {
+export function prepareFetch(model: Model, action: FetchAction, modelsParam: Models) {
 	const modelConfig = _.merge({}, model._config)
 	const fetchConfig = _.merge({}, modelConfig.fetch, {
 		headers: _.merge({}, action.headers),
@@ -246,7 +246,7 @@ function prepareFetch(model: Model, action: FetchAction, modelsParam: Models) {
  *
  * @param {FetchAction} action - An action with the request configuration
  */
-function* fetchData(action: FetchAction) {
+export function* fetchData(action: FetchAction) {
 	// Validate
 	if (!action || !action.modelName) {
 		throw new Error("'modelName' config parameter is required for fetchData")
@@ -434,7 +434,7 @@ function* fetchData(action: FetchAction) {
  *
  * @param {FetchAction} action - An action with the request configuration
  */
-function* fetchOnce(action: FetchAction) {
+export function* fetchOnce(action: FetchAction) {
 	yield call(fetchData, action)
 }
 
@@ -444,7 +444,7 @@ function* fetchOnce(action: FetchAction) {
  *
  * @param {FetchAction} action - An action with the request configuration
  */
-function* fetchDataLoop(action: FetchAction) {
+export function* fetchDataLoop(action: FetchAction) {
 	if (_.isNil(action.period)) {
 		throw new Error('`action.period` is required')
 	}
@@ -474,7 +474,7 @@ function* fetchDataLoop(action: FetchAction) {
  *
  * @param {FetchAction} action - An action with the request configuration
  */
-function* fetchDataRecurring(action: FetchAction) {
+export function* fetchDataRecurring(action: FetchAction) {
 	if (!action || !action.period) {
 		throw new Error("'period' config parameter is required for fetchDataRecurring")
 	}

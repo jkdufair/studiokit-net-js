@@ -1,10 +1,14 @@
-import rewire from 'rewire'
-import { setApiRoot, getApiRoot, doFetch } from './fetchService'
-
-const FetchServiceRewireAPI = rewire('./fetchService')
-const constructPath = FetchServiceRewireAPI.__get__('constructPath')
+import { setApiRoot, getApiRoot, doFetch, constructPath } from './fetchService'
 
 describe('constructPath', () => {
+	test('should require config.path', () => {
+		expect(() => {
+			constructPath({
+				path: undefined,
+			})
+		}).toThrow(/'config.path' is required for fetchService/)
+	})
+
 	test('Should not add a question mark to a path without query params', () => {
 		const path = constructPath({ path: 'http://abc.xyz/api/foo' })
 		expect(path).toEqual('http://abc.xyz/api/foo')

@@ -7,13 +7,14 @@ type HookFunction = (input: any) => void
 
 //#region Helpers
 
-const matchesNoStoreAction = (incomingAction: any) => {
+export const matchesNoStoreAction = (incomingAction: any) => {
 	return incomingAction.type === actions.DATA_REQUESTED && incomingAction.noStore === true
 }
 
-const takeMatchesNoStoreAction = () => (incomingAction: any) => matchesNoStoreAction(incomingAction)
+export const takeMatchesNoStoreAction = () => (incomingAction: any) =>
+	matchesNoStoreAction(incomingAction)
 
-const matchesFailedNoStoreHookAction = (incomingAction: any, fetchAction: any) => {
+export const matchesFailedNoStoreHookAction = (incomingAction: any, fetchAction: any) => {
 	return (
 		incomingAction.type === actions.TRANSIENT_FETCH_FAILED &&
 		fetchAction.noStore === true &&
@@ -21,10 +22,10 @@ const matchesFailedNoStoreHookAction = (incomingAction: any, fetchAction: any) =
 	)
 }
 
-const takeMatchesFailedNoStoreHookAction = (action: any) => (incomingAction: any) =>
+export const takeMatchesFailedNoStoreHookAction = (action: any) => (incomingAction: any) =>
 	matchesFailedNoStoreHookAction(incomingAction, action)
 
-const matchesReceivedNoStoreHookAction = (incomingAction: any, fetchAction: any) => {
+export const matchesReceivedNoStoreHookAction = (incomingAction: any, fetchAction: any) => {
 	return (
 		incomingAction.type === actions.TRANSIENT_FETCH_RESULT_RECEIVED &&
 		fetchAction.noStore === true &&
@@ -32,7 +33,7 @@ const matchesReceivedNoStoreHookAction = (incomingAction: any, fetchAction: any)
 	)
 }
 
-const takeMatchesReceivedNoStoreHookAction = (action: any) => (incomingAction: any) =>
+export const takeMatchesReceivedNoStoreHookAction = (action: any) => (incomingAction: any) =>
 	matchesReceivedNoStoreHookAction(incomingAction, action)
 
 //#endregion Helpers
@@ -51,7 +52,7 @@ export const unregisterNoStoreActionHook = (key: string) => {
 
 //#endregion Hooks
 
-function* handleAction(action: any): SagaIterator {
+export function* handleAction(action: any): SagaIterator {
 	const guid = action.guid
 	if (_.isNil(guid)) {
 		return

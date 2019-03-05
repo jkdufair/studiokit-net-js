@@ -11,7 +11,7 @@ import { MetadataState, FetchAction, Dictionary } from './types'
  * @param {object} state - The redux state object
  * @param {Array<string>} path - An array of keys that represent the path to the entity in question
  */
-function getMetadata(state: object, path: string[]): MetadataState {
+export function getMetadata(state: object, path: string[]): MetadataState {
 	return _.merge({}, _.get(state, path.concat('_metadata')))
 }
 
@@ -20,7 +20,7 @@ function getMetadata(state: object, path: string[]): MetadataState {
  * @param {*} obj
  * @returns A boolean
  */
-function isCollection(obj: any) {
+export function isCollection(obj: any) {
 	return (
 		_.isPlainObject(obj) &&
 		Object.keys(obj).length > 0 &&
@@ -46,7 +46,7 @@ function isCollection(obj: any) {
  * @param {*} current
  * @param {*} incoming
  */
-function mergeRelations(current: Dictionary<any>, incoming: Dictionary<any>) {
+export function mergeRelations(current: Dictionary<any>, incoming?: Dictionary<any>) {
 	return Object.keys(current).reduce((prev: Dictionary<any>, k) => {
 		const c = current[k]
 		const i = incoming && incoming[k]

@@ -11,7 +11,7 @@ let apiRoot: string | undefined
  * @param {FetchConfig} config - The fetch configuration containing the path and query params
  * @returns A string with query params populated and prepended
  */
-function constructPath(config: FetchConfig) {
+export function constructPath(config: FetchConfig) {
 	if (!config.path) {
 		throw new Error("'config.path' is required for fetchService")
 	}
