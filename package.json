@@ -15,7 +15,7 @@
 		"coverage": "jest --coverage",
 		"coveralls": "npm run coverage && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
 		"install": "yarn build",
-		"prepare": "yarn build"
+		"prepublishOnly": "yarn build"
 	},
 	"description": "Network/API functions for Studio apps at Purdue",
 	"main": "lib/index.js",
