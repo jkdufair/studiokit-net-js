@@ -2,7 +2,7 @@
 	"name": "studiokit-net-js",
 	"version": "2.0.0",
 	"scripts": {
-		"build": "tsc",
+		"build": "rm -rf ./lib && tsc",
 		"build:watch": "tsc -w",
 		"test": "jest",
 		"test:ci": "cross-env CI=true yarn test",

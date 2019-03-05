@@ -1,4 +1,4 @@
-import * as _ from 'lodash'
+import _ from 'lodash'
 import { take, takeEvery, race } from 'redux-saga/effects'
 import actions from './actions'
 import { SagaIterator } from '@redux-saga/core'

@@ -73,7 +73,7 @@ let models: Models
 let tokenAccessFunction: TokenAccessFunction
 let errorFunction: ErrorFunction
 
-//#endregion Shared Variables
+//#endregion Local Variables
 
 /**
  * Prepare fetchConfig to pass to fetchService. Also set up state

@@ -1,6 +1,6 @@
 import actions from './actions'
-import * as _ from 'lodash'
-import * as _fp from 'lodash/fp'
+import _ from 'lodash'
+import _fp from 'lodash/fp'
 
 import { MetadataState, FetchAction, Dictionary } from './types'
 
