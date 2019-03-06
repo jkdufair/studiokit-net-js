@@ -75,9 +75,6 @@
 		"transform": {
 			"^.+\\.tsx?$": "ts-jest"
 		},
-		"collectCoverageFrom": [
-			"src/**/*.{ts,tsx}"
-		],
 		"automock": false,
 		"setupFiles": [
 			"./setupJest.ts"

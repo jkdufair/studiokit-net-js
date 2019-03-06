@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { take, takeEvery, race } from 'redux-saga/effects'
-import actions from './actions'
+import NET_ACTION from './actions'
 import { SagaIterator } from '@redux-saga/core'
 
 type HookFunction = (input: any) => void
@@ -8,7 +8,7 @@ type HookFunction = (input: any) => void
 //#region Helpers
 
 export const matchesNoStoreAction = (incomingAction: any) => {
-	return incomingAction.type === actions.DATA_REQUESTED && incomingAction.noStore === true
+	return incomingAction.type === NET_ACTION.DATA_REQUESTED && incomingAction.noStore === true
 }
 
 export const takeMatchesNoStoreAction = () => (incomingAction: any) =>
@@ -16,7 +16,7 @@ export const takeMatchesNoStoreAction = () => (incomingAction: any) =>
 
 export const matchesFailedNoStoreHookAction = (incomingAction: any, fetchAction: any) => {
 	return (
-		incomingAction.type === actions.TRANSIENT_FETCH_FAILED &&
+		incomingAction.type === NET_ACTION.TRANSIENT_FETCH_FAILED &&
 		fetchAction.noStore === true &&
 		incomingAction.guid === fetchAction.guid
 	)
@@ -27,7 +27,7 @@ export const takeMatchesFailedNoStoreHookAction = (action: any) => (incomingActi
 
 export const matchesReceivedNoStoreHookAction = (incomingAction: any, fetchAction: any) => {
 	return (
-		incomingAction.type === actions.TRANSIENT_FETCH_RESULT_RECEIVED &&
+		incomingAction.type === NET_ACTION.TRANSIENT_FETCH_RESULT_RECEIVED &&
 		fetchAction.noStore === true &&
 		incomingAction.guid === fetchAction.guid
 	)
@@ -79,5 +79,6 @@ export function* handleAction(action: any): SagaIterator {
 }
 
 export default function* noStoreSaga(): SagaIterator {
+	/* istanbul ignore next */
 	yield takeEvery(takeMatchesNoStoreAction(), handleAction)
 }

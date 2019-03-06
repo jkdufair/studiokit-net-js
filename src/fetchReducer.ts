@@ -2,7 +2,7 @@ import actions from './actions'
 import _ from 'lodash'
 import _fp from 'lodash/fp'
 
-import { MetadataState, FetchAction, Dictionary } from './types'
+import { Metadata, FetchAction, Dictionary } from './types'
 
 /**
  * Given the state and a path into that state object, return the prop that
@@ -11,7 +11,7 @@ import { MetadataState, FetchAction, Dictionary } from './types'
  * @param {object} state - The redux state object
  * @param {Array<string>} path - An array of keys that represent the path to the entity in question
  */
-export function getMetadata(state: object, path: string[]): MetadataState {
+export function getMetadata(state: object, path: string[]): Metadata {
 	return _.merge({}, _.get(state, path.concat('_metadata')))
 }
 
