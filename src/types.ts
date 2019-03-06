@@ -25,11 +25,11 @@ export interface FetchError {
 export interface MetadataState {
 	isFetching: boolean
 	hasError: boolean
-	lastFetchError: FetchError
+	lastFetchError?: FetchError
 	fetchedAt?: Date
 }
 
-export interface ModelState {
+export interface ModelState extends Dictionary<any> {
 	_metadata: MetadataState
 }
 
