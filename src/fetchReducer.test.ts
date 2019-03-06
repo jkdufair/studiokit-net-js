@@ -2,6 +2,7 @@ import fetchReducer, { getMetadata, isCollection, mergeRelations } from './fetch
 import actions from './actions'
 import _ from 'lodash'
 import MockDate from 'mockdate'
+import NET_ACTION from './actions'
 
 describe('supporting functions', () => {
 	describe('getMetadata', () => {
@@ -159,7 +160,7 @@ describe('fetchReducer', () => {
 			{ foo: 'bar' },
 			{
 				modelName: '',
-				type: '',
+				type: NET_ACTION.FETCH_RESULT_RECEIVED,
 			}
 		)
 		expect(state).toEqual({ foo: 'bar' })
@@ -1008,7 +1009,7 @@ describe('fetchReducer', () => {
 		test("don't do nada", () => {
 			const state = fetchReducer(
 				{ test: { foo: 'bar' } },
-				{ type: 'FOOBAR', modelName: 'test' }
+				{ type: NET_ACTION.DATA_REQUESTED, modelName: 'test' }
 			)
 			expect(state).toEqual({ test: { foo: 'bar' } })
 		})
