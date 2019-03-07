@@ -1,15 +1,4 @@
-import {
-	call,
-	cancel,
-	cancelled,
-	fork,
-	put,
-	select,
-	take,
-	takeEvery,
-	takeLatest,
-	delay
-} from 'redux-saga/effects'
+import { call, cancel, cancelled, fork, put, select, take, takeEvery, takeLatest, delay } from 'redux-saga/effects'
 import _ from 'lodash'
 import uuid from 'uuid'
 import { doFetch, setApiRoot } from './fetchService'
@@ -107,9 +96,7 @@ export function prepareFetch(
 		fetchConfig.body = action.body
 		fetchConfig.contentType = 'application/x-www-form-urlencoded'
 	} else if (!!fetchConfig.body || !!action.body) {
-		const isBodyArray =
-			(fetchConfig.body && _.isArray(fetchConfig.body)) ||
-			(action.body && _.isArray(action.body))
+		const isBodyArray = (fetchConfig.body && _.isArray(fetchConfig.body)) || (action.body && _.isArray(action.body))
 		fetchConfig.body = isBodyArray
 			? _.union([], fetchConfig.body, action.body)
 			: _.merge({}, fetchConfig.body, action.body)
@@ -139,9 +126,7 @@ export function prepareFetch(
 	})
 
 	// find the levels that are collections
-	const collectionModelLevels = modelLevels.filter(
-		level => level._config && level._config.isCollection
-	)
+	const collectionModelLevels = modelLevels.filter(level => level._config && level._config.isCollection)
 	const isAnyLevelCollection = collectionModelLevels.length > 0
 
 	// if any level is a collection, we need to concat their fetch paths and modelNames
@@ -167,10 +152,7 @@ export function prepareFetch(
 				// if previous level isCollection, we need to use "{:id}" hooks when appending new level
 				// otherwise, just append using the divider
 				const prevModelConfig = _.merge({}, modelLevels[index - 1]._config)
-				const divider =
-					!!fetchConfig.path && fetchConfig.path.length > 0 && currentPath.length > 0
-						? '/'
-						: ''
+				const divider = !!fetchConfig.path && fetchConfig.path.length > 0 && currentPath.length > 0 ? '/' : ''
 				if (prevModelConfig.isCollection) {
 					fetchConfig.path = `${fetchConfig.path}${divider}{:id}/${currentPath}`
 					modelName = `${modelName}.{:id}.${levelName}`
@@ -290,14 +272,11 @@ export function* fetchData(action: FetchAction) {
 
 	if (!isUrlValid) {
 		yield put(
-			createAction(
-				action.noStore ? NET_ACTION.TRANSIENT_FETCH_FAILED : NET_ACTION.FETCH_FAILED,
-				{
-					modelName: action.modelName,
-					guid: action.guid,
-					errorData: 'Invalid URL'
-				}
-			)
+			createAction(action.noStore ? NET_ACTION.TRANSIENT_FETCH_FAILED : NET_ACTION.FETCH_FAILED, {
+				modelName: action.modelName,
+				guid: action.guid,
+				errorData: 'Invalid URL'
+			})
 		)
 		return
 	}
@@ -314,13 +293,10 @@ export function* fetchData(action: FetchAction) {
 		tryCount++
 		// Indicate fetch action has begun
 		yield put(
-			createAction(
-				action.noStore ? NET_ACTION.TRANSIENT_FETCH_REQUESTED : NET_ACTION.FETCH_REQUESTED,
-				{
-					modelName,
-					guid: action.guid
-				}
-			)
+			createAction(action.noStore ? NET_ACTION.TRANSIENT_FETCH_REQUESTED : NET_ACTION.FETCH_REQUESTED, {
+				modelName,
+				guid: action.guid
+			})
 		)
 		try {
 			const oauthToken = yield call(tokenAccessFunction, action.modelName)
@@ -388,10 +364,7 @@ export function* fetchData(action: FetchAction) {
 			} else {
 				lastFetchError = {
 					modelName,
-					errorData: _.merge(
-						{},
-						!!fetchResult && !!fetchResult.data ? fetchResult.data : {}
-					)
+					errorData: _.merge({}, !!fetchResult && !!fetchResult.data ? fetchResult.data : {})
 				}
 				throw new Error(JSON.stringify(lastFetchError))
 			}
@@ -399,10 +372,7 @@ export function* fetchData(action: FetchAction) {
 			const errorData = !!lastFetchError ? lastFetchError.errorData : null
 
 			yield put(
-				createAction(
-					NET_ACTION.TRY_FETCH_FAILED,
-					_.merge({ modelName, guid: action.guid }, lastFetchError)
-				)
+				createAction(NET_ACTION.TRY_FETCH_FAILED, _.merge({ modelName, guid: action.guid }, lastFetchError))
 			)
 
 			// Don't do anything with 401 errors

@@ -94,13 +94,11 @@ describe('helpers', () => {
 		test('should call matchesFailedNoStoreHookAction from takeMatchesFailedNoStoreHookAction', () => {
 			const guid = uuid.v4()
 			expect(
-				takeMatchesFailedNoStoreHookAction({ modelName: 'someModel', noStore: true, guid })(
-					{
-						modelName: 'someModel',
-						type: actions.TRANSIENT_FETCH_FAILED,
-						guid
-					}
-				)
+				takeMatchesFailedNoStoreHookAction({ modelName: 'someModel', noStore: true, guid })({
+					modelName: 'someModel',
+					type: actions.TRANSIENT_FETCH_FAILED,
+					guid
+				})
 			).toEqual(true)
 		})
 	})

@@ -1,14 +1,5 @@
 import NET_ACTION, { createAction } from './actions'
-import {
-	call,
-	cancel,
-	cancelled,
-	takeEvery,
-	takeLatest,
-	fork,
-	put,
-	delay
-} from 'redux-saga/effects'
+import { call, cancel, cancelled, takeEvery, takeLatest, fork, put, delay } from 'redux-saga/effects'
 import { createMockTask } from '@redux-saga/testing-utils'
 import uuid from 'uuid'
 import MockDate from 'mockdate'
@@ -55,17 +46,13 @@ describe('fetchSaga', () => {
 		const gen = fetchSaga({})
 
 		const takeEveryDataRequestEffect = gen.next()
-		expect(takeEveryDataRequestEffect.value).toEqual(
-			takeEvery(NET_ACTION.DATA_REQUESTED, fetchOnce)
-		)
+		expect(takeEveryDataRequestEffect.value).toEqual(takeEvery(NET_ACTION.DATA_REQUESTED, fetchOnce))
 		const takeEveryPeriodicDataRequestEffect = gen.next()
 		expect(takeEveryPeriodicDataRequestEffect.value).toEqual(
 			takeEvery(NET_ACTION.PERIODIC_DATA_REQUESTED, fetchDataRecurring)
 		)
 		const takeLatestDataRequestedEffect = gen.next()
-		expect(takeLatestDataRequestedEffect.value).toEqual(
-			takeLatest(NET_ACTION.DATA_REQUESTED_USE_LATEST, fetchOnce)
-		)
+		expect(takeLatestDataRequestedEffect.value).toEqual(takeLatest(NET_ACTION.DATA_REQUESTED_USE_LATEST, fetchOnce))
 	})
 
 	test('should use default logger', () => {
@@ -1754,8 +1741,7 @@ describe('fetchData', () => {
 				const fetchEffect = gen.next(getOauthToken())
 				expect(fetchEffect.value).toEqual(
 					call(doFetch, {
-						path:
-							'http://www.google.com/topLevelEntities/1/secondLevelEntities/999/entityAction',
+						path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999/entityAction',
 						headers: { Authorization: 'Bearer some-access-token' },
 						queryParams: {}
 					})
@@ -1913,9 +1899,7 @@ describe('fetchDataRecurring', () => {
 	})
 
 	test('should not cancel if action is not a cancel for that task', () => {
-		expect(
-			matchesTerminationAction({ type: 'foo' }, { period: 1000, taskId: 'fooTask' })
-		).toEqual(false)
+		expect(matchesTerminationAction({ type: 'foo' }, { period: 1000, taskId: 'fooTask' })).toEqual(false)
 	})
 
 	test('should not cancel if action is a cancel for another task', () => {

@@ -20,8 +20,7 @@ export function constructPath(config: FetchConfig) {
 		queryParams = Object.keys(config.queryParams)
 			.map(
 				key =>
-					`${encodeURIComponent(key)}=${!!config.queryParams &&
-						encodeURIComponent(config.queryParams[key])}`
+					`${encodeURIComponent(key)}=${!!config.queryParams && encodeURIComponent(config.queryParams[key])}`
 			)
 			.join('&')
 	}
@@ -75,17 +74,13 @@ export function* doFetch(config: FetchConfig): SagaIterator {
 			: _.merge(
 					{},
 					{
-						'Content-Type': !!config.contentType
-							? config.contentType
-							: 'application/json; charset=utf-8'
+						'Content-Type': !!config.contentType ? config.contentType : 'application/json; charset=utf-8'
 					},
 					config.headers
 			  )
 
-	const isBodyJson =
-		headers['Content-Type'] && _.includes(headers['Content-Type'], 'application/json')
-	const body =
-		method === 'GET' ? undefined : !isBodyJson ? config.body : JSON.stringify(config.body)
+	const isBodyJson = headers['Content-Type'] && _.includes(headers['Content-Type'], 'application/json')
+	const body = method === 'GET' ? undefined : !isBodyJson ? config.body : JSON.stringify(config.body)
 	const response = yield call(fetch, constructPath(config), {
 		method,
 		headers,
@@ -115,9 +110,7 @@ export function* doFetch(config: FetchConfig): SagaIterator {
 	if (response.status === 204) {
 		result.data = isBodyJson ? config.body : undefined
 	} else {
-		result.data = isResponseJson
-			? yield call(() => response.json())
-			: yield call(() => response.text())
+		result.data = isResponseJson ? yield call(() => response.json()) : yield call(() => response.text())
 	}
 
 	if (!response.ok) {

@@ -29,8 +29,7 @@ export function isCollection(obj: any) {
 			return (
 				_.isPlainObject(child) &&
 				(key === '_metadata' ||
-					(child.hasOwnProperty('id') &&
-						(child.id === parseInt(key, 10) || child.id === key)))
+					(child.hasOwnProperty('id') && (child.id === parseInt(key, 10) || child.id === key)))
 			)
 		})
 	)
@@ -103,9 +102,7 @@ export default function fetchReducer(state: object = {}, action: FetchAction) {
 
 		case actions.FETCH_RESULT_RECEIVED:
 			const incoming =
-				!_.isPlainObject(action.data) && !_.isArray(action.data)
-					? { response: action.data }
-					: action.data
+				!_.isPlainObject(action.data) && !_.isArray(action.data) ? { response: action.data } : action.data
 			valueAtPath = _.merge({}, mergeRelations(valueAtPath, incoming), incoming)
 			// Update the metadata to reflect fetch is complete.
 			valueAtPath._metadata = _.merge(metadata, {

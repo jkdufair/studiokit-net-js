@@ -11,8 +11,7 @@ export const matchesNoStoreAction = (incomingAction: any) => {
 	return incomingAction.type === NET_ACTION.DATA_REQUESTED && incomingAction.noStore === true
 }
 
-export const takeMatchesNoStoreAction = () => (incomingAction: any) =>
-	matchesNoStoreAction(incomingAction)
+export const takeMatchesNoStoreAction = () => (incomingAction: any) => matchesNoStoreAction(incomingAction)
 
 export const matchesFailedNoStoreHookAction = (incomingAction: any, fetchAction: any) => {
 	return (

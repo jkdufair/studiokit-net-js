@@ -181,10 +181,7 @@ describe('fetchReducer', () => {
 		})
 
 		test('nested level', () => {
-			const state = fetchReducer(
-				{},
-				{ type: actions.FETCH_REQUESTED, modelName: 'user.test' }
-			)
+			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'user.test' })
 			expect(state).toEqual({
 				user: {
 					test: {
@@ -214,10 +211,7 @@ describe('fetchReducer', () => {
 		})
 
 		test('nested level with multiple level numbers', () => {
-			const state = fetchReducer(
-				{},
-				{ type: actions.FETCH_REQUESTED, modelName: 'user.1.info.2' }
-			)
+			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'user.1.info.2' })
 			expect(state).toEqual({
 				user: {
 					'1': {
@@ -236,10 +230,7 @@ describe('fetchReducer', () => {
 		})
 
 		test('nested level merge state', () => {
-			const state = fetchReducer(
-				{ foo: 'bar' },
-				{ type: actions.FETCH_REQUESTED, modelName: 'user.test' }
-			)
+			const state = fetchReducer({ foo: 'bar' }, { type: actions.FETCH_REQUESTED, modelName: 'user.test' })
 			expect(state).toEqual({
 				foo: 'bar',
 				user: {
@@ -805,10 +796,7 @@ describe('fetchReducer', () => {
 
 	describe('FETCH_FAILED', () => {
 		test('single level with fetch error data', () => {
-			const state = fetchReducer(
-				{},
-				{ type: actions.FETCH_FAILED, modelName: 'test', errorData: 'server fire' }
-			)
+			const state = fetchReducer({}, { type: actions.FETCH_FAILED, modelName: 'test', errorData: 'server fire' })
 			expect(state).toEqual({
 				test: {
 					_metadata: {
@@ -1007,10 +995,7 @@ describe('fetchReducer', () => {
 
 	describe('default action', () => {
 		test("don't do nada", () => {
-			const state = fetchReducer(
-				{ test: { foo: 'bar' } },
-				{ type: NET_ACTION.DATA_REQUESTED, modelName: 'test' }
-			)
+			const state = fetchReducer({ test: { foo: 'bar' } }, { type: NET_ACTION.DATA_REQUESTED, modelName: 'test' })
 			expect(state).toEqual({ test: { foo: 'bar' } })
 		})
 
