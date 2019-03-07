@@ -50,7 +50,7 @@
 	},
 	"prettier": {
 		"parser": "typescript",
-		"trailingComma": "es5",
+		"trailingComma": "none",
 		"useTabs": true,
 		"tabWidth": 4,
 		"semi": false,

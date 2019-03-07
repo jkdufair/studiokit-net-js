@@ -63,7 +63,7 @@ export function* handleAction(action: any): SagaIterator {
 
 	const { receivedResult, failedResult } = yield race({
 		receivedResult: take(takeMatchesReceivedNoStoreHookAction(action)),
-		failedResult: take(takeMatchesFailedNoStoreHookAction(action)),
+		failedResult: take(takeMatchesFailedNoStoreHookAction(action))
 	})
 
 	const hook = hooks[guid]

@@ -97,7 +97,7 @@ export default function fetchReducer(state: object = {}, action: FetchAction) {
 			valueAtPath._metadata = _.merge(metadata, {
 				isFetching: true,
 				hasError: false,
-				lastFetchError: undefined,
+				lastFetchError: undefined
 			})
 			return _fp.setWith(Object, path, valueAtPath, state)
 
@@ -112,7 +112,7 @@ export default function fetchReducer(state: object = {}, action: FetchAction) {
 				isFetching: false,
 				hasError: false,
 				lastFetchError: undefined,
-				fetchedAt: new Date(),
+				fetchedAt: new Date()
 			})
 			return _fp.setWith(Object, path, valueAtPath, state)
 
@@ -122,7 +122,7 @@ export default function fetchReducer(state: object = {}, action: FetchAction) {
 			valueAtPath._metadata = _.merge(metadata, {
 				isFetching: false,
 				hasError: true,
-				lastFetchError: action.errorData,
+				lastFetchError: action.errorData
 			})
 			return _fp.setWith(Object, path, valueAtPath, state)
 

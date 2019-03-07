@@ -7,7 +7,7 @@ import {
 	takeLatest,
 	fork,
 	put,
-	delay,
+	delay
 } from 'redux-saga/effects'
 import { createMockTask } from '@redux-saga/testing-utils'
 import uuid from 'uuid'
@@ -21,7 +21,7 @@ import fetchSaga, {
 	getState,
 	matchesTerminationAction,
 	takeMatchesTerminationAction,
-	prepareFetch,
+	prepareFetch
 } from './fetchSaga'
 import { OAuthToken } from './types'
 
@@ -46,7 +46,7 @@ const getOauthToken = (): OAuthToken => {
 		token_type: 'Bearer',
 		expires_in: 3600,
 		'.expires': '2019-01-02',
-		'.issued': '2019-01-01',
+		'.issued': '2019-01-01'
 	}
 }
 
@@ -97,28 +97,28 @@ describe('prepareFetch', () => {
 			{
 				_config: {
 					fetch: {
-						path: '/api/foo/{:id}/bar/{:id}/baz',
+						path: '/api/foo/{:id}/bar/{:id}/baz'
 					},
-					isCollection: true,
-				},
+					isCollection: true
+				}
 			},
 			{ type: NET_ACTION.DATA_REQUESTED, modelName: 'foo.bar.baz', pathParams: [1, 2] },
 			{
 				foo: {
 					_config: {
-						isCollection: true,
+						isCollection: true
 					},
 					bar: {
 						_config: {
-							isCollection: true,
+							isCollection: true
 						},
 						baz: {
 							_config: {
-								isCollection: true,
-							},
-						},
-					},
-				},
+								isCollection: true
+							}
+						}
+					}
+				}
 			}
 		)
 		expect(result.fetchConfig.path).toEqual('/api/foo/1/bar/2/baz')
@@ -127,8 +127,8 @@ describe('prepareFetch', () => {
 		const result = prepareFetch(
 			{
 				_config: {
-					isCollection: true,
-				},
+					isCollection: true
+				}
 			},
 			{ type: NET_ACTION.DATA_REQUESTED, modelName: 'foo.bar.baz', pathParams: [1] },
 			{
@@ -136,11 +136,11 @@ describe('prepareFetch', () => {
 					bar: {
 						baz: {
 							_config: {
-								isCollection: true,
-							},
-						},
-					},
-				},
+								isCollection: true
+							}
+						}
+					}
+				}
 			}
 		)
 		expect(result.fetchConfig.path).toEqual('/api/foo/bar/baz/1')
@@ -149,46 +149,46 @@ describe('prepareFetch', () => {
 		const result = prepareFetch(
 			{
 				_config: {
-					isCollection: true,
-				},
+					isCollection: true
+				}
 			},
 			{ type: NET_ACTION.DATA_REQUESTED, modelName: 'foo.bar.baz', pathParams: [1] },
 			{
 				foo: {
 					_config: {
 						fetch: {
-							path: '',
-						},
+							path: ''
+						}
 					},
 					bar: {
 						_config: {
 							fetch: {
-								path: '/api/bar',
+								path: '/api/bar'
 							},
-							isCollection: true,
+							isCollection: true
 						},
 						baz: {
 							_config: {
-								isCollection: true,
-							},
-						},
-					},
-				},
+								isCollection: true
+							}
+						}
+					}
+				}
 			}
 		)
 		expect(result).toEqual({
 			fetchConfig: {
 				headers: {},
 				path: '/api/bar/1/baz',
-				queryParams: {},
+				queryParams: {}
 			},
 			isCollectionItemCreate: false,
 			isCollectionItemFetch: false,
 			isUrlValid: true,
 			endpointConfig: {
-				isCollection: true,
+				isCollection: true
 			},
-			modelName: 'foo.bar.1.baz',
+			modelName: 'foo.bar.1.baz'
 		})
 	})
 	// tslint:disable-next-line
@@ -197,9 +197,9 @@ describe('prepareFetch', () => {
 			{
 				_config: {
 					fetch: {
-						path: '/api/bar',
-					},
-				},
+						path: '/api/bar'
+					}
+				}
 			},
 			{ type: NET_ACTION.DATA_REQUESTED, modelName: 'foo.bar', pathParams: [1] },
 			{
@@ -207,34 +207,34 @@ describe('prepareFetch', () => {
 					_config: {
 						isCollection: true,
 						fetch: {
-							path: '/api/foo',
-						},
+							path: '/api/foo'
+						}
 					},
 					bar: {
 						_config: {
 							fetch: {
-								path: '/api/bar',
-							},
-						},
-					},
-				},
+								path: '/api/bar'
+							}
+						}
+					}
+				}
 			}
 		)
 		expect(result).toEqual({
 			fetchConfig: {
 				headers: {},
 				path: '/api/bar',
-				queryParams: {},
+				queryParams: {}
 			},
 			isCollectionItemCreate: false,
 			isCollectionItemFetch: false,
 			isUrlValid: true,
 			endpointConfig: {
 				fetch: {
-					path: '/api/bar',
-				},
+					path: '/api/bar'
+				}
 			},
-			modelName: 'foo.1.bar',
+			modelName: 'foo.1.bar'
 		})
 	})
 	// tslint:disable-next-line
@@ -244,9 +244,9 @@ describe('prepareFetch', () => {
 				_config: {
 					isCollection: true,
 					fetch: {
-						path: '/api/bar',
-					},
-				},
+						path: '/api/bar'
+					}
+				}
 			},
 			{ type: NET_ACTION.DATA_REQUESTED, modelName: 'foo.bar', pathParams: [1, 2] },
 			{
@@ -254,25 +254,25 @@ describe('prepareFetch', () => {
 					_config: {
 						isCollection: true,
 						fetch: {
-							path: '/api/foo',
-						},
+							path: '/api/foo'
+						}
 					},
 					bar: {
 						_config: {
 							isCollection: true,
 							fetch: {
-								path: '/api/bar',
-							},
-						},
-					},
-				},
+								path: '/api/bar'
+							}
+						}
+					}
+				}
 			}
 		)
 		expect(result).toEqual({
 			fetchConfig: {
 				headers: {},
 				path: '/api/bar/2',
-				queryParams: {},
+				queryParams: {}
 			},
 			isCollectionItemCreate: false,
 			isCollectionItemFetch: true,
@@ -280,10 +280,10 @@ describe('prepareFetch', () => {
 			endpointConfig: {
 				isCollection: true,
 				fetch: {
-					path: '/api/bar',
-				},
+					path: '/api/bar'
+				}
 			},
-			modelName: 'foo.1.bar.2',
+			modelName: 'foo.1.bar.2'
 		})
 	})
 	// tslint:disable-next-line
@@ -291,8 +291,8 @@ describe('prepareFetch', () => {
 		const result = prepareFetch(
 			{
 				_config: {
-					isCollection: true,
-				},
+					isCollection: true
+				}
 			},
 			{ type: NET_ACTION.DATA_REQUESTED, modelName: 'foo.bar.baz', pathParams: [1, 2, 3] },
 			{
@@ -300,38 +300,38 @@ describe('prepareFetch', () => {
 					_config: {
 						isCollection: true,
 						fetch: {
-							path: '/api/foo',
-						},
+							path: '/api/foo'
+						}
 					},
 					bar: {
 						_config: {
 							isCollection: true,
 							fetch: {
-								path: '/api/bar',
-							},
+								path: '/api/bar'
+							}
 						},
 						baz: {
 							_config: {
-								isCollection: true,
-							},
-						},
-					},
-				},
+								isCollection: true
+							}
+						}
+					}
+				}
 			}
 		)
 		expect(result).toEqual({
 			fetchConfig: {
 				headers: {},
 				path: '/api/bar/2/baz/3',
-				queryParams: {},
+				queryParams: {}
 			},
 			isCollectionItemCreate: false,
 			isCollectionItemFetch: true,
 			isUrlValid: true,
 			endpointConfig: {
-				isCollection: true,
+				isCollection: true
 			},
-			modelName: 'foo.1.bar.2.baz.3',
+			modelName: 'foo.1.bar.2.baz.3'
 		})
 	})
 })
@@ -344,126 +344,126 @@ describe('fetchData', () => {
 				test: {
 					_config: {
 						fetch: {
-							path: 'http://www.google.com',
-						},
-					},
+							path: 'http://www.google.com'
+						}
+					}
 				},
 				test2: {
 					_config: {
 						fetch: {
 							path: 'http://news.ycombinator.com',
-							body: 'string',
-						},
-					},
+							body: 'string'
+						}
+					}
 				},
 				test3: {
 					_config: {
 						fetch: {
 							path: 'http://news.ycombinator.com',
-							body: { foo: 'bar' },
-						},
-					},
+							body: { foo: 'bar' }
+						}
+					}
 				},
 				arrayBodyDefault: {
 					_config: {
 						fetch: {
 							path: 'http://news.ycombinator.com',
-							body: ['foo'],
-						},
-					},
+							body: ['foo']
+						}
+					}
 				},
 				arrayBody: {
 					_config: {
 						fetch: {
-							path: 'http://news.ycombinator.com',
-						},
-					},
+							path: 'http://news.ycombinator.com'
+						}
+					}
 				},
 				test4: {
 					_config: {
 						fetch: {
-							path: 'http://{{testServer}}',
-						},
-					},
+							path: 'http://{{testServer}}'
+						}
+					}
 				},
 				test5: {
 					_config: {
 						fetch: {
-							path: 'http://www.google.com/{:entityId}',
-						},
-					},
+							path: 'http://www.google.com/{:entityId}'
+						}
+					}
 				},
 				test6: {
 					_config: {
 						fetch: {
-							path: 'http://{{testServer}}/{:entityId}',
-						},
-					},
+							path: 'http://{{testServer}}/{:entityId}'
+						}
+					}
 				},
 				entities: {
 					_config: {
 						fetch: {
-							path: 'http://www.google.com/entities',
+							path: 'http://www.google.com/entities'
 						},
-						isCollection: true,
-					},
+						isCollection: true
+					}
 				},
 				topLevelEntities: {
 					_config: {
 						fetch: {
-							path: 'http://www.google.com/topLevelEntities',
+							path: 'http://www.google.com/topLevelEntities'
 						},
-						isCollection: true,
+						isCollection: true
 					},
 					entityAction: {
 						_config: {
 							fetch: {
 								path: 'entityAction',
-								method: 'POST',
-							},
-						},
+								method: 'POST'
+							}
+						}
 					},
 					secondLevelEntities: {
 						_config: {
 							fetch: {
-								path: 'secondLevelEntities',
+								path: 'secondLevelEntities'
 							},
-							isCollection: true,
+							isCollection: true
 						},
 						entityAction: {
 							_config: {
 								fetch: {
-									path: 'entityAction',
-								},
-							},
-						},
-					},
+									path: 'entityAction'
+								}
+							}
+						}
+					}
 				},
 				topLevelEntitiesNoPath: {
 					_config: {
-						isCollection: true,
+						isCollection: true
 					},
 					entityAction: {
 						_config: {
 							fetch: {
 								path: 'entityAction',
-								method: 'POST',
-							},
-						},
+								method: 'POST'
+							}
+						}
 					},
 					secondLevelEntities: {
 						_config: {
-							isCollection: true,
+							isCollection: true
 						},
 						entityAction: {
 							_config: {
 								fetch: {
-									path: 'entityAction',
-								},
-							},
-						},
-					},
-				},
+									path: 'entityAction'
+								}
+							}
+						}
+					}
+				}
 			},
 			'http://google.com',
 			getOauthToken, // this won't get called directly
@@ -496,7 +496,7 @@ describe('fetchData', () => {
 			const gen = fetchData({
 				modelName: 'test',
 				method: 'POST',
-				type: NET_ACTION.DATA_REQUESTED,
+				type: NET_ACTION.DATA_REQUESTED
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
@@ -506,7 +506,7 @@ describe('fetchData', () => {
 					path: 'http://www.google.com',
 					headers: { Authorization: 'Bearer some-access-token' },
 					method: 'POST',
-					queryParams: {},
+					queryParams: {}
 				})
 			)
 		})
@@ -514,7 +514,7 @@ describe('fetchData', () => {
 			const gen = fetchData({
 				modelName: 'test2',
 				type: NET_ACTION.DATA_REQUESTED,
-				body: 'body',
+				body: 'body'
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
@@ -525,7 +525,7 @@ describe('fetchData', () => {
 					contentType: 'application/x-www-form-urlencoded',
 					headers: { Authorization: 'Bearer some-access-token' },
 					queryParams: {},
-					body: 'body',
+					body: 'body'
 				})
 			)
 		})
@@ -534,7 +534,7 @@ describe('fetchData', () => {
 			const gen = fetchData({
 				modelName: 'test3',
 				type: NET_ACTION.DATA_REQUESTED,
-				body: { baz: 'quux' },
+				body: { baz: 'quux' }
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
@@ -546,8 +546,8 @@ describe('fetchData', () => {
 					queryParams: {},
 					body: {
 						foo: 'bar',
-						baz: 'quux',
-					},
+						baz: 'quux'
+					}
 				})
 			)
 		})
@@ -556,7 +556,7 @@ describe('fetchData', () => {
 			const gen = fetchData({
 				modelName: 'arrayBodyDefault',
 				type: NET_ACTION.DATA_REQUESTED,
-				body: ['bar'],
+				body: ['bar']
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
@@ -566,7 +566,7 @@ describe('fetchData', () => {
 					path: 'http://news.ycombinator.com',
 					headers: { Authorization: 'Bearer some-access-token' },
 					queryParams: {},
-					body: ['foo', 'bar'],
+					body: ['foo', 'bar']
 				})
 			)
 		})
@@ -574,7 +574,7 @@ describe('fetchData', () => {
 		test('should send with default body', () => {
 			const gen = fetchData({
 				modelName: 'arrayBodyDefault',
-				type: NET_ACTION.DATA_REQUESTED,
+				type: NET_ACTION.DATA_REQUESTED
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
@@ -584,7 +584,7 @@ describe('fetchData', () => {
 					path: 'http://news.ycombinator.com',
 					headers: { Authorization: 'Bearer some-access-token' },
 					queryParams: {},
-					body: ['foo'],
+					body: ['foo']
 				})
 			)
 		})
@@ -593,7 +593,7 @@ describe('fetchData', () => {
 			const gen = fetchData({
 				modelName: 'arrayBody',
 				type: NET_ACTION.DATA_REQUESTED,
-				body: ['bar'],
+				body: ['bar']
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
@@ -603,7 +603,7 @@ describe('fetchData', () => {
 					path: 'http://news.ycombinator.com',
 					headers: { Authorization: 'Bearer some-access-token' },
 					queryParams: {},
-					body: ['bar'],
+					body: ['bar']
 				})
 			)
 		})
@@ -618,7 +618,7 @@ describe('fetchData', () => {
 				call(doFetch, {
 					path: 'http://baz',
 					headers: { Authorization: 'Bearer some-access-token' },
-					queryParams: {},
+					queryParams: {}
 				})
 			)
 		})
@@ -632,7 +632,7 @@ describe('fetchData', () => {
 				put(
 					createAction(NET_ACTION.FETCH_FAILED, {
 						modelName: 'test4',
-						errorData: 'Invalid URL',
+						errorData: 'Invalid URL'
 					})
 				)
 			)
@@ -649,7 +649,7 @@ describe('fetchData', () => {
 				put(
 					createAction(NET_ACTION.FETCH_FAILED, {
 						modelName: 'test4',
-						errorData: 'Invalid URL',
+						errorData: 'Invalid URL'
 					})
 				)
 			)
@@ -659,7 +659,7 @@ describe('fetchData', () => {
 			const gen = fetchData({
 				modelName: 'test5',
 				type: NET_ACTION.DATA_REQUESTED,
-				pathParams: [1],
+				pathParams: [1]
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
@@ -668,7 +668,7 @@ describe('fetchData', () => {
 				call(doFetch, {
 					path: 'http://www.google.com/1',
 					headers: { Authorization: 'Bearer some-access-token' },
-					queryParams: {},
+					queryParams: {}
 				})
 			)
 		})
@@ -680,7 +680,7 @@ describe('fetchData', () => {
 				put(
 					createAction(NET_ACTION.FETCH_FAILED, {
 						modelName: 'test5',
-						errorData: 'Invalid URL',
+						errorData: 'Invalid URL'
 					})
 				)
 			)
@@ -690,14 +690,14 @@ describe('fetchData', () => {
 			const gen = fetchData({
 				modelName: 'test5',
 				type: NET_ACTION.DATA_REQUESTED,
-				pathParams: [null],
+				pathParams: [null]
 			})
 			const putFetchRequestEffect = gen.next()
 			expect(putFetchRequestEffect.value).toEqual(
 				put(
 					createAction(NET_ACTION.FETCH_FAILED, {
 						modelName: 'test5',
-						errorData: 'Invalid URL',
+						errorData: 'Invalid URL'
 					})
 				)
 			)
@@ -707,14 +707,14 @@ describe('fetchData', () => {
 			const gen = fetchData({
 				modelName: 'test5',
 				type: NET_ACTION.DATA_REQUESTED,
-				noStore: true,
+				noStore: true
 			})
 			const putFetchRequestEffect = gen.next()
 			expect(putFetchRequestEffect.value).toEqual(
 				put(
 					createAction(NET_ACTION.TRANSIENT_FETCH_FAILED, {
 						modelName: 'test5',
-						errorData: 'Invalid URL',
+						errorData: 'Invalid URL'
 					})
 				)
 			)
@@ -724,7 +724,7 @@ describe('fetchData', () => {
 			const gen = fetchData({
 				modelName: 'test6',
 				type: NET_ACTION.DATA_REQUESTED,
-				pathParams: [1],
+				pathParams: [1]
 			})
 			const selectEffect = gen.next()
 			const putFetchRequestEffect = gen.next({ testServer: 'baz' })
@@ -734,7 +734,7 @@ describe('fetchData', () => {
 				call(doFetch, {
 					path: 'http://baz/1',
 					headers: { Authorization: 'Bearer some-access-token' },
-					queryParams: {},
+					queryParams: {}
 				})
 			)
 		})
@@ -742,7 +742,7 @@ describe('fetchData', () => {
 		test('should construct path from modelName for collections without paths, no pathParams', () => {
 			const gen = fetchData({
 				modelName: 'topLevelEntitiesNoPath',
-				type: NET_ACTION.DATA_REQUESTED,
+				type: NET_ACTION.DATA_REQUESTED
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
@@ -751,7 +751,7 @@ describe('fetchData', () => {
 				call(doFetch, {
 					path: '/api/topLevelEntitiesNoPath',
 					headers: { Authorization: 'Bearer some-access-token' },
-					queryParams: {},
+					queryParams: {}
 				})
 			)
 		})
@@ -760,7 +760,7 @@ describe('fetchData', () => {
 			const gen = fetchData({
 				modelName: 'topLevelEntitiesNoPath',
 				type: NET_ACTION.DATA_REQUESTED,
-				pathParams: [1],
+				pathParams: [1]
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
@@ -769,7 +769,7 @@ describe('fetchData', () => {
 				call(doFetch, {
 					path: '/api/topLevelEntitiesNoPath/1',
 					headers: { Authorization: 'Bearer some-access-token' },
-					queryParams: {},
+					queryParams: {}
 				})
 			)
 		})
@@ -778,7 +778,7 @@ describe('fetchData', () => {
 			const gen = fetchData({
 				modelName: 'topLevelEntitiesNoPath.secondLevelEntities',
 				type: NET_ACTION.DATA_REQUESTED,
-				pathParams: [1],
+				pathParams: [1]
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
@@ -787,7 +787,7 @@ describe('fetchData', () => {
 				call(doFetch, {
 					path: '/api/topLevelEntitiesNoPath/1/secondLevelEntities',
 					headers: { Authorization: 'Bearer some-access-token' },
-					queryParams: {},
+					queryParams: {}
 				})
 			)
 		})
@@ -796,7 +796,7 @@ describe('fetchData', () => {
 			const gen = fetchData({
 				modelName: 'topLevelEntitiesNoPath.entityAction',
 				type: NET_ACTION.DATA_REQUESTED,
-				pathParams: [1],
+				pathParams: [1]
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
@@ -806,7 +806,7 @@ describe('fetchData', () => {
 					path: '/api/topLevelEntitiesNoPath/1/entityAction',
 					method: 'POST',
 					headers: { Authorization: 'Bearer some-access-token' },
-					queryParams: {},
+					queryParams: {}
 				})
 			)
 		})
@@ -815,7 +815,7 @@ describe('fetchData', () => {
 			const gen = fetchData({
 				modelName: 'topLevelEntitiesNoPath.secondLevelEntities.entityAction',
 				type: NET_ACTION.DATA_REQUESTED,
-				pathParams: [1, 999],
+				pathParams: [1, 999]
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
@@ -824,7 +824,7 @@ describe('fetchData', () => {
 				call(doFetch, {
 					path: '/api/topLevelEntitiesNoPath/1/secondLevelEntities/999/entityAction',
 					headers: { Authorization: 'Bearer some-access-token' },
-					queryParams: {},
+					queryParams: {}
 				})
 			)
 		})
@@ -833,14 +833,14 @@ describe('fetchData', () => {
 			const gen = fetchData({
 				modelName: 'topLevelEntitiesNoPath',
 				type: NET_ACTION.DATA_REQUESTED,
-				pathParams: [undefined],
+				pathParams: [undefined]
 			})
 			const putFetchRequestEffect = gen.next()
 			expect(putFetchRequestEffect.value).toEqual(
 				put(
 					createAction(NET_ACTION.FETCH_FAILED, {
 						modelName: 'topLevelEntitiesNoPath',
-						errorData: 'Invalid URL',
+						errorData: 'Invalid URL'
 					})
 				)
 			)
@@ -852,7 +852,7 @@ describe('fetchData', () => {
 			expect(startGenerator.value).toEqual(
 				put(
 					createAction(NET_ACTION.FETCH_REQUESTED, {
-						modelName: 'test',
+						modelName: 'test'
 					})
 				)
 			)
@@ -867,7 +867,7 @@ describe('fetchData', () => {
 				call(doFetch, {
 					path: 'http://www.google.com',
 					headers: { Authorization: 'Bearer some-access-token' },
-					queryParams: {},
+					queryParams: {}
 				})
 			)
 		})
@@ -882,13 +882,13 @@ describe('fetchData', () => {
 			const resultReceivedEffect = gen.next({
 				ok: true,
 				status: 200,
-				data: { foo: 'bar' },
+				data: { foo: 'bar' }
 			})
 			expect(resultReceivedEffect.value).toEqual(
 				put(
 					createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 						data: { foo: 'bar' },
-						modelName: 'test',
+						modelName: 'test'
 					})
 				)
 			)
@@ -899,7 +899,7 @@ describe('fetchData', () => {
 			const gen = fetchData({
 				modelName: 'test',
 				type: NET_ACTION.DATA_REQUESTED,
-				contentType: 'text/html; charset=utf-8',
+				contentType: 'text/html; charset=utf-8'
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
@@ -907,13 +907,13 @@ describe('fetchData', () => {
 			const resultReceivedEffect = gen.next({
 				ok: true,
 				status: 200,
-				data: { foo: 'bar' },
+				data: { foo: 'bar' }
 			})
 			expect(resultReceivedEffect.value).toEqual(
 				put(
 					createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 						data: { foo: 'bar' },
-						modelName: 'test',
+						modelName: 'test'
 					})
 				)
 			)
@@ -924,7 +924,7 @@ describe('fetchData', () => {
 			const gen = fetchData({
 				modelName: 'test',
 				type: NET_ACTION.DATA_REQUESTED,
-				noStore: true,
+				noStore: true
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
@@ -932,13 +932,13 @@ describe('fetchData', () => {
 			const resultReceivedEffect = gen.next({
 				ok: true,
 				status: 200,
-				data: { foo: 'bar' },
+				data: { foo: 'bar' }
 			})
 			expect(resultReceivedEffect.value).toEqual(
 				put(
 					createAction(NET_ACTION.TRANSIENT_FETCH_RESULT_RECEIVED, {
 						data: { foo: 'bar' },
-						modelName: 'test',
+						modelName: 'test'
 					})
 				)
 			)
@@ -951,7 +951,7 @@ describe('fetchData', () => {
 				modelName: 'test',
 				type: NET_ACTION.DATA_REQUESTED,
 				method: 'POST',
-				guid,
+				guid
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
@@ -959,14 +959,14 @@ describe('fetchData', () => {
 			const resultReceivedEffect = gen.next({
 				ok: true,
 				status: 200,
-				data: { foo: 'bar' },
+				data: { foo: 'bar' }
 			})
 			expect(resultReceivedEffect.value).toEqual(
 				put(
 					createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 						data: { foo: 'bar', guid },
 						guid,
-						modelName: 'test',
+						modelName: 'test'
 					})
 				)
 			)
@@ -1010,7 +1010,7 @@ describe('fetchData', () => {
 				const fetchTryFailedEffect = gen.next({
 					ok: false,
 					status: 500,
-					data: { title: 'Error' },
+					data: { title: 'Error' }
 				})
 				const putTryFailedEffect = gen.next()
 				if (i < 3) {
@@ -1025,7 +1025,7 @@ describe('fetchData', () => {
 				put(
 					createAction(NET_ACTION.FETCH_FAILED, {
 						modelName: 'test',
-						errorData: { title: 'Error' },
+						errorData: { title: 'Error' }
 					})
 				)
 			)
@@ -1037,7 +1037,7 @@ describe('fetchData', () => {
 			const gen = fetchData({
 				modelName: 'test',
 				type: NET_ACTION.DATA_REQUESTED,
-				noStore: true,
+				noStore: true
 			})
 			const putFetchRequestEffect = gen.next()
 			for (let i = 0; i <= 3; i++) {
@@ -1046,7 +1046,7 @@ describe('fetchData', () => {
 				const fetchTryFailedEffect = gen.next({
 					ok: false,
 					status: 500,
-					data: { title: 'Error' },
+					data: { title: 'Error' }
 				})
 				const putTryFailedEffect = gen.next()
 				if (i < 3) {
@@ -1054,7 +1054,7 @@ describe('fetchData', () => {
 					expect(delayAndPutAgainEffect.value).toEqual(
 						put(
 							createAction(NET_ACTION.TRANSIENT_FETCH_REQUESTED, {
-								modelName: 'test',
+								modelName: 'test'
 							})
 						)
 					)
@@ -1065,7 +1065,7 @@ describe('fetchData', () => {
 				put(
 					createAction(NET_ACTION.TRANSIENT_FETCH_FAILED, {
 						modelName: 'test',
-						errorData: { title: 'Error' },
+						errorData: { title: 'Error' }
 					})
 				)
 			)
@@ -1082,7 +1082,7 @@ describe('fetchData', () => {
 			const fetchTryFailedEffect = gen.next({
 				ok: false,
 				status: 401,
-				data: { title: 'Error', code: 401 },
+				data: { title: 'Error', code: 401 }
 			})
 			const putTryFailedEffect = gen.next()
 			const delayEffect = gen.next()
@@ -1094,7 +1094,7 @@ describe('fetchData', () => {
 			const gen = fetchData({
 				modelName: 'test',
 				type: NET_ACTION.DATA_REQUESTED,
-				noRetry: true,
+				noRetry: true
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
@@ -1105,7 +1105,7 @@ describe('fetchData', () => {
 			expect(putErrorEffect.value).toEqual(
 				put(
 					createAction(NET_ACTION.FETCH_FAILED, {
-						modelName: 'test',
+						modelName: 'test'
 					})
 				)
 			)
@@ -1127,7 +1127,7 @@ describe('fetchData', () => {
 				const resultReceivedEffect = gen.next({
 					ok: true,
 					status: 200,
-					data: [{ id: 1, name: 'foo' }, { id: 2, name: 'bar' }],
+					data: [{ id: 1, name: 'foo' }, { id: 2, name: 'bar' }]
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1139,8 +1139,8 @@ describe('fetchData', () => {
 									_metadata: {
 										isFetching: false,
 										hasError: false,
-										fetchedAt,
-									},
+										fetchedAt
+									}
 								},
 								2: {
 									id: 2,
@@ -1148,11 +1148,11 @@ describe('fetchData', () => {
 									_metadata: {
 										isFetching: false,
 										hasError: false,
-										fetchedAt,
-									},
-								},
+										fetchedAt
+									}
+								}
 							},
-							modelName: 'entities',
+							modelName: 'entities'
 						})
 					)
 				)
@@ -1170,7 +1170,7 @@ describe('fetchData', () => {
 				const resultReceivedEffect = gen.next({
 					ok: true,
 					status: 200,
-					data: { 1: { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } },
+					data: { 1: { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1182,8 +1182,8 @@ describe('fetchData', () => {
 									_metadata: {
 										isFetching: false,
 										hasError: false,
-										fetchedAt,
-									},
+										fetchedAt
+									}
 								},
 								2: {
 									id: 2,
@@ -1191,11 +1191,11 @@ describe('fetchData', () => {
 									_metadata: {
 										isFetching: false,
 										hasError: false,
-										fetchedAt,
-									},
-								},
+										fetchedAt
+									}
+								}
 							},
-							modelName: 'entities',
+							modelName: 'entities'
 						})
 					)
 				)
@@ -1208,7 +1208,7 @@ describe('fetchData', () => {
 				const gen = fetchData({
 					modelName: 'entities',
 					type: NET_ACTION.DATA_REQUESTED,
-					pathParams: [999],
+					pathParams: [999]
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1217,7 +1217,7 @@ describe('fetchData', () => {
 					call(doFetch, {
 						path: 'http://www.google.com/entities/999',
 						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {},
+						queryParams: {}
 					})
 				)
 			})
@@ -1228,7 +1228,7 @@ describe('fetchData', () => {
 					modelName: 'entities',
 					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [2],
-					guid,
+					guid
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1236,14 +1236,14 @@ describe('fetchData', () => {
 				const resultReceivedEffect = gen.next({
 					ok: true,
 					status: 200,
-					data: { id: 2, name: 'bar' },
+					data: { id: 2, name: 'bar' }
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
 						createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 							data: { id: 2, name: 'bar', guid },
 							guid,
-							modelName: 'entities.2',
+							modelName: 'entities.2'
 						})
 					)
 				)
@@ -1256,7 +1256,7 @@ describe('fetchData', () => {
 				const gen = fetchData({
 					modelName: 'entities',
 					type: NET_ACTION.DATA_REQUESTED,
-					method: 'POST',
+					method: 'POST'
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1266,7 +1266,7 @@ describe('fetchData', () => {
 						path: 'http://www.google.com/entities',
 						headers: { Authorization: 'Bearer some-access-token' },
 						method: 'POST',
-						queryParams: {},
+						queryParams: {}
 					})
 				)
 			})
@@ -1277,14 +1277,14 @@ describe('fetchData', () => {
 					modelName: 'entities',
 					type: NET_ACTION.DATA_REQUESTED,
 					method: 'POST',
-					guid,
+					guid
 				})
 				const putFetchRequestEffect = gen.next()
 				expect(putFetchRequestEffect.value).toEqual(
 					put(
 						createAction(NET_ACTION.FETCH_REQUESTED, {
 							modelName: `entities.${guid}`,
-							guid,
+							guid
 						})
 					)
 				)
@@ -1297,7 +1297,7 @@ describe('fetchData', () => {
 					type: NET_ACTION.DATA_REQUESTED,
 					method: 'POST',
 					guid,
-					body: { name: 'baz' },
+					body: { name: 'baz' }
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1305,14 +1305,14 @@ describe('fetchData', () => {
 				const resultReceivedEffect = gen.next({
 					ok: true,
 					status: 200,
-					data: { id: 3, name: 'baz' },
+					data: { id: 3, name: 'baz' }
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
 						createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 							data: { id: 3, name: 'baz', guid },
 							guid,
-							modelName: 'entities.3',
+							modelName: 'entities.3'
 						})
 					)
 				)
@@ -1325,7 +1325,7 @@ describe('fetchData', () => {
 					type: NET_ACTION.DATA_REQUESTED,
 					method: 'POST',
 					guid,
-					body: { name: 'baz' },
+					body: { name: 'baz' }
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1333,13 +1333,13 @@ describe('fetchData', () => {
 				const resultReceivedEffect = gen.next({
 					ok: true,
 					status: 200,
-					data: { id: 3, name: 'baz' },
+					data: { id: 3, name: 'baz' }
 				})
 				const resultStoredEffect = gen.next()
 				expect(resultStoredEffect.value).toEqual(
 					put(
 						createAction(NET_ACTION.KEY_REMOVAL_REQUESTED, {
-							modelName: `entities.${guid}`,
+							modelName: `entities.${guid}`
 						})
 					)
 				)
@@ -1352,7 +1352,7 @@ describe('fetchData', () => {
 					modelName: 'entities',
 					type: NET_ACTION.DATA_REQUESTED,
 					method: 'DELETE',
-					pathParams: [999],
+					pathParams: [999]
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1362,7 +1362,7 @@ describe('fetchData', () => {
 						path: 'http://www.google.com/entities/999',
 						method: 'DELETE',
 						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {},
+						queryParams: {}
 					})
 				)
 			})
@@ -1374,7 +1374,7 @@ describe('fetchData', () => {
 					type: NET_ACTION.DATA_REQUESTED,
 					method: 'DELETE',
 					pathParams: [2],
-					guid,
+					guid
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1382,14 +1382,14 @@ describe('fetchData', () => {
 				const resultReceivedEffect = gen.next({
 					ok: true,
 					status: 204,
-					data: undefined,
+					data: undefined
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
 						createAction(NET_ACTION.KEY_REMOVAL_REQUESTED, {
 							data: { guid },
 							guid,
-							modelName: 'entities.2',
+							modelName: 'entities.2'
 						})
 					)
 				)
@@ -1402,7 +1402,7 @@ describe('fetchData', () => {
 				const gen = fetchData({
 					modelName: 'topLevelEntities.entityAction',
 					type: NET_ACTION.DATA_REQUESTED,
-					pathParams: [1],
+					pathParams: [1]
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1412,7 +1412,7 @@ describe('fetchData', () => {
 						path: 'http://www.google.com/topLevelEntities/1/entityAction',
 						method: 'POST',
 						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {},
+						queryParams: {}
 					})
 				)
 			})
@@ -1423,7 +1423,7 @@ describe('fetchData', () => {
 					modelName: 'topLevelEntities.entityAction',
 					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [2],
-					guid,
+					guid
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1431,14 +1431,14 @@ describe('fetchData', () => {
 				const resultReceivedEffect = gen.next({
 					ok: true,
 					status: 200,
-					data: { foo: 'bar' },
+					data: { foo: 'bar' }
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
 						createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 							data: { foo: 'bar', guid },
 							guid,
-							modelName: 'topLevelEntities.2.entityAction',
+							modelName: 'topLevelEntities.2.entityAction'
 						})
 					)
 				)
@@ -1456,7 +1456,7 @@ describe('fetchData', () => {
 				const gen = fetchData({
 					modelName: 'topLevelEntities.secondLevelEntities',
 					type: NET_ACTION.DATA_REQUESTED,
-					pathParams: [1],
+					pathParams: [1]
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1464,7 +1464,7 @@ describe('fetchData', () => {
 				const resultReceivedEffect = gen.next({
 					ok: true,
 					status: 200,
-					data: [{ id: 1, name: 'foo' }, { id: 2, name: 'bar' }],
+					data: [{ id: 1, name: 'foo' }, { id: 2, name: 'bar' }]
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1476,8 +1476,8 @@ describe('fetchData', () => {
 									_metadata: {
 										isFetching: false,
 										hasError: false,
-										fetchedAt,
-									},
+										fetchedAt
+									}
 								},
 								2: {
 									id: 2,
@@ -1485,11 +1485,11 @@ describe('fetchData', () => {
 									_metadata: {
 										isFetching: false,
 										hasError: false,
-										fetchedAt,
-									},
-								},
+										fetchedAt
+									}
+								}
 							},
-							modelName: 'topLevelEntities.1.secondLevelEntities',
+							modelName: 'topLevelEntities.1.secondLevelEntities'
 						})
 					)
 				)
@@ -1503,7 +1503,7 @@ describe('fetchData', () => {
 				const gen = fetchData({
 					modelName: 'topLevelEntities.secondLevelEntities',
 					type: NET_ACTION.DATA_REQUESTED,
-					pathParams: [1],
+					pathParams: [1]
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1511,7 +1511,7 @@ describe('fetchData', () => {
 				const resultReceivedEffect = gen.next({
 					ok: true,
 					status: 200,
-					data: { 1: { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } },
+					data: { 1: { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
@@ -1523,8 +1523,8 @@ describe('fetchData', () => {
 									_metadata: {
 										isFetching: false,
 										hasError: false,
-										fetchedAt,
-									},
+										fetchedAt
+									}
 								},
 								2: {
 									id: 2,
@@ -1532,11 +1532,11 @@ describe('fetchData', () => {
 									_metadata: {
 										isFetching: false,
 										hasError: false,
-										fetchedAt,
-									},
-								},
+										fetchedAt
+									}
+								}
 							},
-							modelName: 'topLevelEntities.1.secondLevelEntities',
+							modelName: 'topLevelEntities.1.secondLevelEntities'
 						})
 					)
 				)
@@ -1549,7 +1549,7 @@ describe('fetchData', () => {
 				const gen = fetchData({
 					modelName: 'topLevelEntities.secondLevelEntities',
 					type: NET_ACTION.DATA_REQUESTED,
-					pathParams: [1, 999],
+					pathParams: [1, 999]
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1558,7 +1558,7 @@ describe('fetchData', () => {
 					call(doFetch, {
 						path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999',
 						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {},
+						queryParams: {}
 					})
 				)
 			})
@@ -1569,7 +1569,7 @@ describe('fetchData', () => {
 					modelName: 'topLevelEntities.secondLevelEntities',
 					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [2, 999],
-					guid,
+					guid
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1577,14 +1577,14 @@ describe('fetchData', () => {
 				const resultReceivedEffect = gen.next({
 					ok: true,
 					status: 200,
-					data: { id: 999, name: 'bar' },
+					data: { id: 999, name: 'bar' }
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
 						createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 							data: { id: 999, name: 'bar', guid },
 							guid,
-							modelName: 'topLevelEntities.2.secondLevelEntities.999',
+							modelName: 'topLevelEntities.2.secondLevelEntities.999'
 						})
 					)
 				)
@@ -1598,7 +1598,7 @@ describe('fetchData', () => {
 					modelName: 'topLevelEntities.secondLevelEntities',
 					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [1],
-					method: 'POST',
+					method: 'POST'
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1608,7 +1608,7 @@ describe('fetchData', () => {
 						path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities',
 						headers: { Authorization: 'Bearer some-access-token' },
 						method: 'POST',
-						queryParams: {},
+						queryParams: {}
 					})
 				)
 			})
@@ -1620,14 +1620,14 @@ describe('fetchData', () => {
 					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [1],
 					method: 'POST',
-					guid,
+					guid
 				})
 				const putFetchRequestEffect = gen.next()
 				expect(putFetchRequestEffect.value).toEqual(
 					put(
 						createAction(NET_ACTION.FETCH_REQUESTED, {
 							modelName: `topLevelEntities.1.secondLevelEntities.${guid}`,
-							guid,
+							guid
 						})
 					)
 				)
@@ -1641,7 +1641,7 @@ describe('fetchData', () => {
 					pathParams: [1],
 					method: 'POST',
 					guid,
-					body: { name: 'baz' },
+					body: { name: 'baz' }
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1649,14 +1649,14 @@ describe('fetchData', () => {
 				const resultReceivedEffect = gen.next({
 					ok: true,
 					status: 200,
-					data: { id: 3, name: 'baz' },
+					data: { id: 3, name: 'baz' }
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
 						createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 							data: { id: 3, name: 'baz', guid },
 							guid,
-							modelName: 'topLevelEntities.1.secondLevelEntities.3',
+							modelName: 'topLevelEntities.1.secondLevelEntities.3'
 						})
 					)
 				)
@@ -1670,7 +1670,7 @@ describe('fetchData', () => {
 					pathParams: [1],
 					method: 'POST',
 					guid,
-					body: { name: 'baz' },
+					body: { name: 'baz' }
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1678,13 +1678,13 @@ describe('fetchData', () => {
 				const resultReceivedEffect = gen.next({
 					ok: true,
 					status: 200,
-					data: { id: 3, name: 'baz' },
+					data: { id: 3, name: 'baz' }
 				})
 				const resultStoredEffect = gen.next()
 				expect(resultStoredEffect.value).toEqual(
 					put(
 						createAction(NET_ACTION.KEY_REMOVAL_REQUESTED, {
-							modelName: `topLevelEntities.1.secondLevelEntities.${guid}`,
+							modelName: `topLevelEntities.1.secondLevelEntities.${guid}`
 						})
 					)
 				)
@@ -1697,7 +1697,7 @@ describe('fetchData', () => {
 					modelName: 'topLevelEntities.secondLevelEntities',
 					type: NET_ACTION.DATA_REQUESTED,
 					method: 'DELETE',
-					pathParams: [1, 999],
+					pathParams: [1, 999]
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1707,7 +1707,7 @@ describe('fetchData', () => {
 						path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999',
 						method: 'DELETE',
 						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {},
+						queryParams: {}
 					})
 				)
 			})
@@ -1719,7 +1719,7 @@ describe('fetchData', () => {
 					type: NET_ACTION.DATA_REQUESTED,
 					method: 'DELETE',
 					pathParams: [1, 2],
-					guid,
+					guid
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1727,14 +1727,14 @@ describe('fetchData', () => {
 				const resultReceivedEffect = gen.next({
 					ok: true,
 					status: 204,
-					data: undefined,
+					data: undefined
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
 						createAction(NET_ACTION.KEY_REMOVAL_REQUESTED, {
 							data: { guid },
 							guid,
-							modelName: 'topLevelEntities.1.secondLevelEntities.2',
+							modelName: 'topLevelEntities.1.secondLevelEntities.2'
 						})
 					)
 				)
@@ -1747,7 +1747,7 @@ describe('fetchData', () => {
 				const gen = fetchData({
 					modelName: 'topLevelEntities.secondLevelEntities.entityAction',
 					type: NET_ACTION.DATA_REQUESTED,
-					pathParams: [1, 999],
+					pathParams: [1, 999]
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1757,7 +1757,7 @@ describe('fetchData', () => {
 						path:
 							'http://www.google.com/topLevelEntities/1/secondLevelEntities/999/entityAction',
 						headers: { Authorization: 'Bearer some-access-token' },
-						queryParams: {},
+						queryParams: {}
 					})
 				)
 			})
@@ -1768,7 +1768,7 @@ describe('fetchData', () => {
 					modelName: 'topLevelEntities.secondLevelEntities.entityAction',
 					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [2, 999],
-					guid,
+					guid
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
@@ -1776,14 +1776,14 @@ describe('fetchData', () => {
 				const resultReceivedEffect = gen.next({
 					ok: true,
 					status: 200,
-					data: { foo: 'bar' },
+					data: { foo: 'bar' }
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
 						createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 							data: { foo: 'bar', guid },
 							guid,
-							modelName: 'topLevelEntities.2.secondLevelEntities.999.entityAction',
+							modelName: 'topLevelEntities.2.secondLevelEntities.999.entityAction'
 						})
 					)
 				)
@@ -1809,7 +1809,7 @@ describe('fetchDataLoop', () => {
 	test('should throw without action.period', () => {
 		const gen = fetchDataLoop({
 			modelName: 'test',
-			type: NET_ACTION.PERIODIC_DATA_REQUESTED,
+			type: NET_ACTION.PERIODIC_DATA_REQUESTED
 		})
 		expect(() => {
 			gen.next() // putFetchRequestEffect
@@ -1836,7 +1836,7 @@ describe('fetchDataLoop', () => {
 		expect(putPeriodicTerminationSucceededEffect.value).toEqual(
 			put(
 				createAction(NET_ACTION.PERIODIC_TERMINATION_SUCCEEDED, {
-					modelName: 'foo',
+					modelName: 'foo'
 				})
 			)
 		)
@@ -1872,7 +1872,7 @@ describe('fetchDataRecurring', () => {
 	test('should throw without action.period', () => {
 		const gen = fetchDataRecurring({
 			modelName: 'test',
-			type: NET_ACTION.PERIODIC_DATA_REQUESTED,
+			type: NET_ACTION.PERIODIC_DATA_REQUESTED
 		})
 		expect(() => {
 			const putFetchRequestEffect = gen.next()
@@ -1883,7 +1883,7 @@ describe('fetchDataRecurring', () => {
 		const gen = fetchDataRecurring({
 			modelName: 'test',
 			type: NET_ACTION.PERIODIC_DATA_REQUESTED,
-			period: 1000,
+			period: 1000
 		})
 		expect(() => {
 			const putFetchRequestEffect = gen.next()
@@ -1895,7 +1895,7 @@ describe('fetchDataRecurring', () => {
 			modelName: 'test',
 			type: NET_ACTION.PERIODIC_DATA_REQUESTED,
 			period: 1000,
-			taskId: 'fooTask',
+			taskId: 'fooTask'
 		}
 		const gen = fetchDataRecurring(action)
 		const forkEffect = gen.next()
@@ -1907,7 +1907,7 @@ describe('fetchDataRecurring', () => {
 		expect(
 			takeMatchesTerminationAction(action)({
 				type: NET_ACTION.PERIODIC_TERMINATION_REQUESTED,
-				taskId: 'fooTask',
+				taskId: 'fooTask'
 			})
 		).toEqual(true)
 	})
@@ -1923,7 +1923,7 @@ describe('fetchDataRecurring', () => {
 			matchesTerminationAction(
 				{
 					type: NET_ACTION.PERIODIC_TERMINATION_REQUESTED,
-					taskId: 'someOtherTask',
+					taskId: 'someOtherTask'
 				},
 				{ period: 1000, taskId: 'fooTask' }
 			)
@@ -1935,7 +1935,7 @@ describe('fetchDataRecurring', () => {
 			matchesTerminationAction(
 				{
 					type: NET_ACTION.PERIODIC_TERMINATION_REQUESTED,
-					taskId: 'fooTask',
+					taskId: 'fooTask'
 				},
 				{ period: 1000, taskId: 'fooTask' }
 			)
@@ -1947,7 +1947,7 @@ describe('fetchDataRecurring', () => {
 			modelName: 'test',
 			type: NET_ACTION.DATA_REQUESTED,
 			period: 1000,
-			taskId: 'fooTask',
+			taskId: 'fooTask'
 		}
 		const gen = fetchDataRecurring(action)
 		const forkEffect = gen.next()

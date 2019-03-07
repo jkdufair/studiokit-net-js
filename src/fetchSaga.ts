@@ -8,7 +8,7 @@ import {
 	take,
 	takeEvery,
 	takeLatest,
-	delay,
+	delay
 } from 'redux-saga/effects'
 import _ from 'lodash'
 import uuid from 'uuid'
@@ -21,7 +21,7 @@ import {
 	EndpointMappings,
 	EndpointMapping,
 	Dictionary,
-	EndpointConfig,
+	EndpointConfig
 } from './types'
 import { SagaIterator } from '@redux-saga/core'
 
@@ -93,7 +93,7 @@ export function prepareFetch(
 	const endpointConfig = _.merge({}, endpointMapping._config)
 	const fetchConfig = _.merge({}, endpointConfig.fetch, {
 		headers: _.merge({}, action.headers),
-		queryParams: _.merge({}, action.queryParams),
+		queryParams: _.merge({}, action.queryParams)
 	})
 
 	// set "method" if defined
@@ -244,7 +244,7 @@ export function prepareFetch(
 		modelName,
 		isCollectionItemFetch,
 		isCollectionItemCreate,
-		isUrlValid,
+		isUrlValid
 	}
 }
 
@@ -295,7 +295,7 @@ export function* fetchData(action: FetchAction) {
 				{
 					modelName: action.modelName,
 					guid: action.guid,
-					errorData: 'Invalid URL',
+					errorData: 'Invalid URL'
 				}
 			)
 		)
@@ -318,7 +318,7 @@ export function* fetchData(action: FetchAction) {
 				action.noStore ? NET_ACTION.TRANSIENT_FETCH_REQUESTED : NET_ACTION.FETCH_REQUESTED,
 				{
 					modelName,
-					guid: action.guid,
+					guid: action.guid
 				}
 			)
 		)
@@ -350,8 +350,8 @@ export function* fetchData(action: FetchAction) {
 								_metadata: {
 									isFetching: false,
 									hasError: false,
-									fetchedAt,
-								},
+									fetchedAt
+								}
 							})
 							return out
 						}, {})
@@ -372,7 +372,7 @@ export function* fetchData(action: FetchAction) {
 					const resultAction = createAction(storeAction, {
 						modelName: `${modelNameLevels.join('.')}.${data.id}`,
 						guid: action.guid,
-						data,
+						data
 					})
 					yield put(resultAction)
 					// remove temp item under guid key
@@ -381,7 +381,7 @@ export function* fetchData(action: FetchAction) {
 					const resultReceivedAction = createAction(storeAction, {
 						modelName,
 						guid: action.guid,
-						data,
+						data
 					})
 					yield put(resultReceivedAction)
 				}
@@ -391,7 +391,7 @@ export function* fetchData(action: FetchAction) {
 					errorData: _.merge(
 						{},
 						!!fetchResult && !!fetchResult.data ? fetchResult.data : {}
-					),
+					)
 				}
 				throw new Error(JSON.stringify(lastFetchError))
 			}
@@ -427,7 +427,7 @@ export function* fetchData(action: FetchAction) {
 				_.merge(
 					{
 						modelName,
-						guid: action.guid,
+						guid: action.guid
 					},
 					lastFetchError
 				)
@@ -470,7 +470,7 @@ export function* fetchDataLoop(action: FetchAction) {
 		if (yield cancelled()) {
 			yield put(
 				createAction(NET_ACTION.PERIODIC_TERMINATION_SUCCEEDED, {
-					modelName: action.modelName,
+					modelName: action.modelName
 				})
 			)
 		}

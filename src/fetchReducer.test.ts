@@ -26,11 +26,11 @@ describe('supporting functions', () => {
 		test('should return true for a collection obj', () => {
 			const obj = {
 				1: {
-					id: 1,
+					id: 1
 				},
 				2: {
-					id: 2,
-				},
+					id: 2
+				}
 			}
 			expect(isCollection(obj)).toEqual(true)
 		})
@@ -38,16 +38,16 @@ describe('supporting functions', () => {
 		test('should return true for a collection obj with _metadata', () => {
 			const obj = {
 				1: {
-					id: 1,
+					id: 1
 				},
 				2: {
-					id: 2,
+					id: 2
 				},
 				_metadata: {
 					isFetching: false,
 					hasError: false,
-					lastFetchError: undefined,
-				},
+					lastFetchError: undefined
+				}
 			}
 			expect(isCollection(obj)).toEqual(true)
 		})
@@ -55,11 +55,11 @@ describe('supporting functions', () => {
 		test('should return false for a collection array', () => {
 			const obj = [
 				{
-					id: 1,
+					id: 1
 				},
 				{
-					id: 2,
-				},
+					id: 2
+				}
 			]
 			expect(isCollection(obj)).toEqual(false)
 		})
@@ -73,8 +73,8 @@ describe('supporting functions', () => {
 				_metadata: {
 					isFetching: false,
 					hasError: false,
-					lastFetchError: undefined,
-				},
+					lastFetchError: undefined
+				}
 			}
 			expect(isCollection(obj)).toEqual(false)
 		})
@@ -89,8 +89,8 @@ describe('supporting functions', () => {
 				isCollection({
 					child: {
 						id: 1,
-						foo: false,
-					},
+						foo: false
+					}
 				})
 			).toEqual(false)
 		})
@@ -122,11 +122,11 @@ describe('supporting functions', () => {
 
 		test('should remove nested collection items not included in incoming array', () => {
 			const current = {
-				1: { id: 1, children: { 1: { id: 1, foo: 'bar' }, 2: { id: 2, boo: 'bah' } } },
+				1: { id: 1, children: { 1: { id: 1, foo: 'bar' }, 2: { id: 2, boo: 'bah' } } }
 			}
 			const incoming = { 1: { id: 1, children: { 2: { id: 2 } } } }
 			expect(mergeRelations(current, incoming)).toEqual({
-				1: { children: { 2: {} } },
+				1: { children: { 2: {} } }
 			})
 		})
 
@@ -140,15 +140,15 @@ describe('supporting functions', () => {
 			const current = {
 				child: {
 					id: 1,
-					foo: false,
-				},
+					foo: false
+				}
 			}
 			const incoming = { id: 1, name: 'Bob' }
 			expect(mergeRelations(current, incoming)).toEqual({
 				child: {
 					id: 1,
-					foo: false,
-				},
+					foo: false
+				}
 			})
 		})
 	})
@@ -160,7 +160,7 @@ describe('fetchReducer', () => {
 			{ foo: 'bar' },
 			{
 				modelName: '',
-				type: NET_ACTION.FETCH_RESULT_RECEIVED,
+				type: NET_ACTION.FETCH_RESULT_RECEIVED
 			}
 		)
 		expect(state).toEqual({ foo: 'bar' })
@@ -174,9 +174,9 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: true,
 						hasError: false,
-						lastFetchError: undefined,
-					},
-				},
+						lastFetchError: undefined
+					}
+				}
 			})
 		})
 
@@ -191,10 +191,10 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: true,
 							hasError: false,
-							lastFetchError: undefined,
-						},
-					},
-				},
+							lastFetchError: undefined
+						}
+					}
+				}
 			})
 		})
 
@@ -206,10 +206,10 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: true,
 							hasError: false,
-							lastFetchError: undefined,
-						},
-					},
-				},
+							lastFetchError: undefined
+						}
+					}
+				}
 			})
 		})
 
@@ -226,12 +226,12 @@ describe('fetchReducer', () => {
 								_metadata: {
 									isFetching: true,
 									hasError: false,
-									lastFetchError: undefined,
-								},
-							},
-						},
-					},
-				},
+									lastFetchError: undefined
+								}
+							}
+						}
+					}
+				}
 			})
 		})
 
@@ -247,10 +247,10 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: true,
 							hasError: false,
-							lastFetchError: undefined,
-						},
-					},
-				},
+							lastFetchError: undefined
+						}
+					}
+				}
 			})
 		})
 
@@ -266,10 +266,10 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: true,
 							hasError: false,
-							lastFetchError: undefined,
-						},
-					},
-				},
+							lastFetchError: undefined
+						}
+					}
+				}
 			})
 		})
 
@@ -283,9 +283,9 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							fetchedAt: fetchedDate,
-						},
-					},
+							fetchedAt: fetchedDate
+						}
+					}
 				},
 				{ type: actions.FETCH_REQUESTED, modelName: 'test' }
 			)
@@ -295,9 +295,9 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: true,
 						hasError: false,
-						fetchedAt: fetchedDate,
-					},
-				},
+						fetchedAt: fetchedDate
+					}
+				}
 			})
 		})
 
@@ -308,22 +308,22 @@ describe('fetchReducer', () => {
 				{
 					test: {
 						foo: {
-							bar: 'baz',
+							bar: 'baz'
 						},
 						_metadata: {
 							isFetching: false,
 							hasError: false,
 
-							fetchedAt: fetchedDate,
-						},
-					},
+							fetchedAt: fetchedDate
+						}
+					}
 				},
 				{ type: actions.FETCH_REQUESTED, modelName: 'test.qux.1.corge' }
 			)
 			expect(state).toEqual({
 				test: {
 					foo: {
-						bar: 'baz',
+						bar: 'baz'
 					},
 					qux: {
 						'1': {
@@ -331,17 +331,17 @@ describe('fetchReducer', () => {
 								_metadata: {
 									isFetching: true,
 									hasError: false,
-									lastFetchError: undefined,
-								},
-							},
-						},
+									lastFetchError: undefined
+								}
+							}
+						}
 					},
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						fetchedAt: fetchedDate,
-					},
-				},
+						fetchedAt: fetchedDate
+					}
+				}
 			})
 		})
 	})
@@ -359,7 +359,7 @@ describe('fetchReducer', () => {
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'test',
-					data: { key: 'value' },
+					data: { key: 'value' }
 				}
 			)
 			expect(state).toEqual({
@@ -367,10 +367,10 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						fetchedAt: fetchedAtDate,
+						fetchedAt: fetchedAtDate
 					},
-					key: 'value',
-				},
+					key: 'value'
+				}
 			})
 		})
 
@@ -380,7 +380,7 @@ describe('fetchReducer', () => {
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
-					data: { key: 'value' },
+					data: { key: 'value' }
 				}
 			)
 			expect(state).toEqual({
@@ -389,11 +389,11 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							fetchedAt: fetchedAtDate,
+							fetchedAt: fetchedAtDate
 						},
-						key: 'value',
-					},
-				},
+						key: 'value'
+					}
+				}
 			})
 		})
 
@@ -403,7 +403,7 @@ describe('fetchReducer', () => {
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
-					data: { key: 'value' },
+					data: { key: 'value' }
 				}
 			)
 			expect(state).toEqual({
@@ -413,11 +413,11 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							fetchedAt: fetchedAtDate,
+							fetchedAt: fetchedAtDate
 						},
-						key: 'value',
-					},
-				},
+						key: 'value'
+					}
+				}
 			})
 		})
 
@@ -425,13 +425,13 @@ describe('fetchReducer', () => {
 			const state = fetchReducer(
 				{
 					user: {
-						test: { key: 'oldValue' },
-					},
+						test: { key: 'oldValue' }
+					}
 				},
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
-					data: { key: 'value' },
+					data: { key: 'value' }
 				}
 			)
 			expect(state).toEqual({
@@ -440,11 +440,11 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							fetchedAt: fetchedAtDate,
+							fetchedAt: fetchedAtDate
 						},
-						key: 'value',
-					},
-				},
+						key: 'value'
+					}
+				}
 			})
 		})
 
@@ -452,13 +452,13 @@ describe('fetchReducer', () => {
 			const state = fetchReducer(
 				{
 					user: {
-						existingKey: { foo: 'bar' },
-					},
+						existingKey: { foo: 'bar' }
+					}
 				},
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
-					data: { key: 'value' },
+					data: { key: 'value' }
 				}
 			)
 			expect(state).toEqual({
@@ -468,11 +468,11 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							fetchedAt: fetchedAtDate,
+							fetchedAt: fetchedAtDate
 						},
-						key: 'value',
-					},
-				},
+						key: 'value'
+					}
+				}
 			})
 		})
 
@@ -485,17 +485,17 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedAtDate,
+								fetchedAt: fetchedAtDate
 							},
 							key: 'value',
-							key2: 'value2',
-						},
-					},
+							key2: 'value2'
+						}
+					}
 				},
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
-					data: { key: 'value' },
+					data: { key: 'value' }
 				}
 			)
 			expect(state).toEqual({
@@ -504,11 +504,11 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							fetchedAt: fetchedAtDate,
+							fetchedAt: fetchedAtDate
 						},
-						key: 'value',
-					},
-				},
+						key: 'value'
+					}
+				}
 			})
 		})
 
@@ -521,17 +521,17 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedAtDate,
+								fetchedAt: fetchedAtDate
 							},
 							key: 'value',
-							key2: 'value2',
-						},
-					},
+							key2: 'value2'
+						}
+					}
 				},
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'groups.1',
-					data: { key: 'value' },
+					data: { key: 'value' }
 				}
 			)
 			expect(state).toEqual({
@@ -540,11 +540,11 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							fetchedAt: fetchedAtDate,
+							fetchedAt: fetchedAtDate
 						},
-						key: 'value',
-					},
-				},
+						key: 'value'
+					}
+				}
 			})
 		})
 
@@ -553,7 +553,7 @@ describe('fetchReducer', () => {
 				{
 					test: {
 						foo: {
-							bar: 'baz',
+							bar: 'baz'
 						},
 						qux: {
 							'1': {
@@ -561,28 +561,28 @@ describe('fetchReducer', () => {
 									_metadata: {
 										isFetching: true,
 										hasError: false,
-										lastFetchError: undefined,
-									},
-								},
-							},
+										lastFetchError: undefined
+									}
+								}
+							}
 						},
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							fetchedAt: fetchedAtDate,
-						},
-					},
+							fetchedAt: fetchedAtDate
+						}
+					}
 				},
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'test.qux.1.corge',
-					data: { key: 'value' },
+					data: { key: 'value' }
 				}
 			)
 			expect(state).toEqual({
 				test: {
 					foo: {
-						bar: 'baz',
+						bar: 'baz'
 					},
 					qux: {
 						'1': {
@@ -591,17 +591,17 @@ describe('fetchReducer', () => {
 								_metadata: {
 									isFetching: false,
 									hasError: false,
-									fetchedAt: fetchedAtDate,
-								},
-							},
-						},
+									fetchedAt: fetchedAtDate
+								}
+							}
+						}
 					},
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						fetchedAt: fetchedAtDate,
-					},
-				},
+						fetchedAt: fetchedAtDate
+					}
+				}
 			})
 		})
 
@@ -610,7 +610,7 @@ describe('fetchReducer', () => {
 			state = fetchReducer(state, {
 				type: actions.FETCH_RESULT_RECEIVED,
 				modelName: 'groups.1.child',
-				data: { id: 1, foo: false },
+				data: { id: 1, foo: false }
 			})
 			expect(state).toEqual({
 				groups: {
@@ -621,16 +621,16 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedAtDate,
-							},
-						},
-					},
-				},
+								fetchedAt: fetchedAtDate
+							}
+						}
+					}
+				}
 			})
 			state = fetchReducer(state, {
 				type: actions.FETCH_RESULT_RECEIVED,
 				modelName: 'groups.1',
-				data: { id: 1, name: 'Group 1' },
+				data: { id: 1, name: 'Group 1' }
 			})
 			expect(state).toEqual({
 				groups: {
@@ -643,17 +643,17 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedAtDate,
-							},
+								fetchedAt: fetchedAtDate
+							}
 						},
 						_metadata: {
 							isFetching: false,
 							hasError: false,
 
-							fetchedAt: fetchedAtDate,
-						},
-					},
-				},
+							fetchedAt: fetchedAtDate
+						}
+					}
+				}
 			})
 		})
 
@@ -667,16 +667,16 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedAtDate,
-							},
-						},
-					},
-				},
+								fetchedAt: fetchedAtDate
+							}
+						}
+					}
+				}
 			}
 			state = fetchReducer(state, {
 				type: actions.FETCH_RESULT_RECEIVED,
 				modelName: 'groups.1.child',
-				data: { id: 1, foo: false },
+				data: { id: 1, foo: false }
 			})
 			expect(state).toEqual({
 				groups: {
@@ -687,9 +687,9 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedAtDate,
-							},
-						},
+								fetchedAt: fetchedAtDate
+							}
+						}
 					},
 					2: {
 						child: {
@@ -698,16 +698,16 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedAtDate,
-							},
-						},
-					},
-				},
+								fetchedAt: fetchedAtDate
+							}
+						}
+					}
+				}
 			})
 			state = fetchReducer(state, {
 				type: actions.FETCH_RESULT_RECEIVED,
 				modelName: 'groups',
-				data: { 2: { id: 2, name: 'Group 2' } },
+				data: { 2: { id: 2, name: 'Group 2' } }
 			})
 			expect(state).toEqual({
 				groups: {
@@ -720,16 +720,16 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedAtDate,
-							},
-						},
+								fetchedAt: fetchedAtDate
+							}
+						}
 					},
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						fetchedAt: fetchedAtDate,
-					},
-				},
+						fetchedAt: fetchedAtDate
+					}
+				}
 			})
 		})
 
@@ -739,7 +739,7 @@ describe('fetchReducer', () => {
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'class',
-					data: 'value',
+					data: 'value'
 				}
 			)
 			expect(state).toEqual({
@@ -747,10 +747,10 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						fetchedAt: fetchedAtDate,
+						fetchedAt: fetchedAtDate
 					},
-					response: 'value',
-				},
+					response: 'value'
+				}
 			})
 		})
 
@@ -763,23 +763,23 @@ describe('fetchReducer', () => {
 								isFetching: false,
 								lastFetchError: undefined,
 								hasError: false,
-								fetchedAt: fetchedAtDate,
+								fetchedAt: fetchedAtDate
 							},
 							key: 'value',
 							child1: [1, 2, 3],
 							child2: {
 								eeny: 'meeny',
-								miney: 'mo',
-							},
-						},
-					},
+								miney: 'mo'
+							}
+						}
+					}
 				},
 				{
 					type: actions.FETCH_RESULT_RECEIVED,
 					modelName: 'user.testChildren',
 					data: {
-						key: 'new value',
-					},
+						key: 'new value'
+					}
 				}
 			)
 			expect(state).toEqual({
@@ -789,16 +789,16 @@ describe('fetchReducer', () => {
 							isFetching: false,
 							lastFetchError: undefined,
 							hasError: false,
-							fetchedAt: fetchedAtDate,
+							fetchedAt: fetchedAtDate
 						},
 						key: 'new value',
 						child1: [1, 2, 3],
 						child2: {
 							eeny: 'meeny',
-							miney: 'mo',
-						},
-					},
-				},
+							miney: 'mo'
+						}
+					}
+				}
 			})
 		})
 	})
@@ -814,9 +814,9 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: true,
-						lastFetchError: 'server fire',
-					},
-				},
+						lastFetchError: 'server fire'
+					}
+				}
 			})
 		})
 
@@ -827,9 +827,9 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: true,
-						lastFetchError: undefined,
-					},
-				},
+						lastFetchError: undefined
+					}
+				}
 			})
 		})
 
@@ -844,10 +844,10 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: true,
-							lastFetchError: 'server fire',
-						},
-					},
-				},
+							lastFetchError: 'server fire'
+						}
+					}
+				}
 			})
 		})
 
@@ -863,10 +863,10 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: true,
-							lastFetchError: 'server fire',
-						},
-					},
-				},
+							lastFetchError: 'server fire'
+						}
+					}
+				}
 			})
 		})
 
@@ -882,10 +882,10 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: true,
-							lastFetchError: 'server fire',
-						},
-					},
-				},
+							lastFetchError: 'server fire'
+						}
+					}
+				}
 			})
 		})
 
@@ -902,10 +902,10 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: true,
 								hasError: false,
-								fetchedAt: fetchedAtDate,
-							},
-						},
-					},
+								fetchedAt: fetchedAtDate
+							}
+						}
+					}
 				},
 				{ type: actions.FETCH_FAILED, modelName: 'groups.1', errorData: 'server fire' }
 			)
@@ -918,10 +918,10 @@ describe('fetchReducer', () => {
 							isFetching: false,
 							hasError: true,
 							lastFetchError: 'server fire',
-							fetchedAt: fetchedAtDate,
-						},
-					},
-				},
+							fetchedAt: fetchedAtDate
+						}
+					}
+				}
 			})
 		})
 	})
@@ -962,15 +962,15 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: true,
 						hasError: false,
-						lastFetchError: undefined,
-					},
-				},
+						lastFetchError: undefined
+					}
+				}
 			})
 
 			const state3 = fetchReducer(state2, {
 				type: actions.FETCH_RESULT_RECEIVED,
 				modelName: 'test',
-				data: { foo: 'bar' },
+				data: { foo: 'bar' }
 			})
 			let fetchedAtDate = new Date()
 			MockDate.set(fetchedAtDate)
@@ -979,28 +979,28 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						fetchedAt: fetchedAtDate,
+						fetchedAt: fetchedAtDate
 					},
-					foo: 'bar',
-				},
+					foo: 'bar'
+				}
 			})
 
 			fetchedAtDate = new Date()
 			const state4 = fetchReducer(state3, {
 				type: actions.FETCH_RESULT_RECEIVED,
 				modelName: 'test',
-				data: { baz: 'quux', bleb: 'fleb' },
+				data: { baz: 'quux', bleb: 'fleb' }
 			})
 			expect(state4).toEqual({
 				test: {
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						fetchedAt: fetchedAtDate,
+						fetchedAt: fetchedAtDate
 					},
 					baz: 'quux',
-					bleb: 'fleb',
-				},
+					bleb: 'fleb'
+				}
 			})
 		})
 	})
@@ -1017,16 +1017,16 @@ describe('fetchReducer', () => {
 		test('no state parameter passed', () => {
 			const state = fetchReducer(undefined, {
 				type: actions.FETCH_REQUESTED,
-				modelName: 'test',
+				modelName: 'test'
 			})
 			expect(state).toEqual({
 				test: {
 					_metadata: {
 						isFetching: true,
 						hasError: false,
-						lastFetchError: undefined,
-					},
-				},
+						lastFetchError: undefined
+					}
+				}
 			})
 		})
 	})

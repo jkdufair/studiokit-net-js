@@ -77,7 +77,7 @@ export function* doFetch(config: FetchConfig): SagaIterator {
 					{
 						'Content-Type': !!config.contentType
 							? config.contentType
-							: 'application/json; charset=utf-8',
+							: 'application/json; charset=utf-8'
 					},
 					config.headers
 			  )
@@ -89,7 +89,7 @@ export function* doFetch(config: FetchConfig): SagaIterator {
 	const response = yield call(fetch, constructPath(config), {
 		method,
 		headers,
-		body,
+		body
 	})
 	if (!response) {
 		return undefined
@@ -99,7 +99,7 @@ export function* doFetch(config: FetchConfig): SagaIterator {
 	const result = {
 		ok: response.ok,
 		status: response.status,
-		data: undefined,
+		data: undefined
 	}
 
 	// If the request was a 204, use the body (if any) that was PUT in the request as the "response"
@@ -127,7 +127,7 @@ export function* doFetch(config: FetchConfig): SagaIterator {
 			{
 				title: 'Error',
 				message: response.statusText,
-				code: response.status,
+				code: response.status
 			},
 			result.data
 		)
