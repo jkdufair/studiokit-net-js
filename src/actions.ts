@@ -1,5 +1,5 @@
 import { merge } from 'lodash'
-import { FetchAction } from './types'
+import { Action } from 'redux'
 
 enum NET_ACTION {
 	// App-level request
@@ -24,7 +24,7 @@ enum NET_ACTION {
 	TRY_FETCH_FAILED = 'net/TRY_FETCH_FAILED',
 }
 
-export function createAction(type: NET_ACTION, payload: any): FetchAction {
+export function createAction(type: string, payload: any): Action {
 	return merge({}, { type }, payload)
 }
 
