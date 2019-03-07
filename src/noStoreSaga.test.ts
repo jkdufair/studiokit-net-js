@@ -159,14 +159,6 @@ describe('helpers', () => {
 	})
 })
 
-// describe('noStoreSaga', () => {
-// 	test('should set up takeEvery', () => {
-// 		const gen = noStoreSaga()
-// 		const takeEveryEffect = gen.next()
-// 		expect(takeEveryEffect.value).toEqual(takeEvery(takeMatchesNoStoreAction(), handleAction))
-// 	})
-// })
-
 describe('handleAction', () => {
 	const firstKey = uuid.v4()
 	const secondKey = uuid.v4()
