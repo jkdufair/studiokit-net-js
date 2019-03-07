@@ -189,12 +189,14 @@ export function prepareFetch(
 					}
 				}
 			})
-		} else if (!fetchConfig.path) {
+		}
+
+		if (!fetchConfig.path) {
 			fetchConfig.path = `/api/${modelName}`
 		}
 
 		// determine if we need to append an "{:id}" hook
-		const pathLevels = !!fetchConfig.path ? (fetchConfig.path.match(/{:id}/g) || []).length : 0
+		const pathLevels = (fetchConfig.path.match(/{:id}/g) || []).length
 		// GET, PUT, PATCH, DELETE => append '/{:id}'
 		isCollectionItemFetch = !!endpointConfig.isCollection && pathParams.length > pathLevels
 		// POST
@@ -446,7 +448,7 @@ export function* fetchOnce(action: FetchAction) {
 }
 
 /**
- * The loop saga that makes the request every {config.period} milliseconds until
+ * The loop saga that makes the request every {action.period} milliseconds until
  * cancelled
  *
  * @param {FetchAction} action An action with the request configuration
@@ -456,10 +458,10 @@ export function* fetchDataLoop(action: FetchAction) {
 		throw new Error('`action.period` is required')
 	}
 	try {
-		while (true) {
+		do {
 			yield call(fetchData, action)
 			yield delay(action.period)
-		}
+		} while (true)
 	} catch (error) {
 		errorFunction(error.message)
 		logger('fetchDataLoop fail')
@@ -476,7 +478,7 @@ export function* fetchDataLoop(action: FetchAction) {
 }
 
 /**
- * Call the fetchData saga every {config.period} milliseconds. This saga requires the 'period' and 'taskId' properties
+ * Call the fetchData saga every {action.period} milliseconds. This saga requires the 'period' and 'taskId' properties
  * on the action parameter.
  *
  * @param {FetchAction} action An action with the request configuration
@@ -499,6 +501,7 @@ export function* fetchDataRecurring(action: FetchAction) {
  * as well.
  *
  * EndpointMappings object require a form as follows (with optional nested models):
+ * ```
  * {
  * 	fryModel: {
  * 		path: '/api/Foo'
@@ -512,11 +515,11 @@ export function* fetchDataRecurring(action: FetchAction) {
  * 		}
  * 	}
  * }
- *
+ * ```
  * Models are referenced in the actions.DATA_REQUESTED action by path, i.e.
- * { type: actions.DATA_REQUESTED, { modelName: 'fryModel' } }
+ * `{ type: actions.DATA_REQUESTED, { modelName: 'fryModel' } }`
  * -- or --
- * { type: actions.DATA_REQUESTED, { modelName: 'groupOfModels.leelaModel' } }
+ * `{ type: actions.DATA_REQUESTED, { modelName: 'groupOfModels.leelaModel' } }`
  *
  * @export
  * @param {EndpointMappings} endpointMappingsParam An mapping of API endpoints available in the application

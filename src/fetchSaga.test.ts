@@ -70,24 +70,25 @@ describe('fetchSaga', () => {
 
 	test('should use default logger', () => {
 		const gen = fetchSaga({ test: { _config: { fetch: { path: '/foo' } } } }, '')
+		gen.next()
 		expect(consoleOutput).toEqual('logger set to defaultLogger')
 	})
 
-	// test('should use default tokenAccessFunction if null', () => {
-	// 	const gen = fetchSaga({ test: { _config: { fetch: { path: '/foo' } } } }, '')
-	// 	const tokenAccessFunction = FetchSagaRewireAPI.__get__('tokenAccessFunction')
-	// 	const defaultTokenAccessFunction = FetchSagaRewireAPI.__get__('defaultTokenAccessFunction')
-	// 	expect(tokenAccessFunction).toEqual(defaultTokenAccessFunction)
-	// 	expect(tokenAccessFunction()).toEqual(undefined)
-	// })
-
-	// test('should use default errorFunction if null', () => {
-	// 	const gen = fetchSaga({ test: { _config: { fetch: { path: '/foo' } } } })
-	// 	const errorFunction = FetchSagaRewireAPI.__get__('errorFunction')
-	// 	const defaultErrorFunction = FetchSagaRewireAPI.__get__('defaultErrorFunction')
-	// 	expect(errorFunction).toEqual(defaultErrorFunction)
-	// 	expect(errorFunction()).toEqual(undefined)
-	// })
+	test('should use custom logger', () => {
+		let customOutput: string = ''
+		const customLogger = (message: string) => {
+			customOutput = message
+		}
+		const gen = fetchSaga(
+			{ test: { _config: { fetch: { path: '/foo' } } } },
+			'',
+			undefined,
+			undefined,
+			customLogger
+		)
+		gen.next()
+		expect(customOutput).toEqual('logger set to customLogger')
+	})
 })
 
 describe('prepareFetch', () => {
@@ -336,7 +337,7 @@ describe('prepareFetch', () => {
 })
 
 describe('fetchData', () => {
-	let errorOutput
+	let errorOutput: string | null
 	beforeAll(() => {
 		const fetchSagaGen = fetchSaga(
 			{
@@ -1811,7 +1812,7 @@ describe('fetchDataLoop', () => {
 			type: NET_ACTION.PERIODIC_DATA_REQUESTED,
 		})
 		expect(() => {
-			const putFetchRequestEffect = gen.next()
+			gen.next() // putFetchRequestEffect
 		}).toThrow(/`action.period` is required/)
 	})
 
