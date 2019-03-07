@@ -6,11 +6,6 @@
 		"**/lib": true
 	},
 	"javascript.validate.enable": false,
-	"css.validate": false,
-	"scss.validate": false,
 	"prettier.tslintIntegration": true,
-	"prettier.eslintIntegration": true,
-	"prettier.stylelintIntegration": true,
-	"editor.formatOnSave": true,
-	// "jest.pathToJest": "yarn test --coverage"
+	"editor.formatOnSave": true
 }
