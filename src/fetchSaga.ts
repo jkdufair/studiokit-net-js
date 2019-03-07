@@ -494,9 +494,9 @@ export function* fetchDataRecurring(action: FetchAction) {
  * @export
  * @param {EndpointMappings} endpointMappingsParam An mapping of API endpoints available in the application
  * @param {string | undefined} apiRootParam A url to which partial URLs are appended (i.e.) 'https://myapp.com'
- * @param {TokenAccessFunction} [tokenAccessParam=defaultTokenAccessFunction] function that returns
+ * @param {TokenAccessFunction} [tokenAccessFunctionParam=defaultTokenAccessFunction] function that returns
  * an optional OAuth token
- * @param {ErrorFunction} [errorParam=defaultErrorFunction] A function to perform on errors
+ * @param {ErrorFunction} [errorFunctionParam=defaultErrorFunction] A function to perform on errors
  * @param {LoggerFunction} [loggerParam=defaultLogger] A function that accepts a string and logs it real good
  */
 export default function* fetchSaga(

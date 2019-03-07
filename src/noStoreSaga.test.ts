@@ -1,7 +1,6 @@
 import actions from './actions'
-import { takeEvery } from 'redux-saga/effects'
-import * as uuid from 'uuid'
-import noStoreSaga, {
+import uuid from 'uuid'
+import {
 	registerNoStoreActionHook,
 	unregisterNoStoreActionHook,
 	handleAction,

@@ -1,8 +1,6 @@
 import fetchReducer, { getMetadata, isCollection, mergeRelations } from './fetchReducer'
-import actions from './actions'
-import _ from 'lodash'
-import MockDate from 'mockdate'
 import NET_ACTION from './actions'
+import MockDate from 'mockdate'
 
 describe('supporting functions', () => {
 	describe('getMetadata', () => {
@@ -168,7 +166,7 @@ describe('fetchReducer', () => {
 
 	describe('FETCH_REQUESTED', () => {
 		test('single level', () => {
-			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'test' })
+			const state = fetchReducer({}, { type: NET_ACTION.FETCH_REQUESTED, modelName: 'test' })
 			expect(state).toEqual({
 				test: {
 					_metadata: {
@@ -181,7 +179,7 @@ describe('fetchReducer', () => {
 		})
 
 		test('nested level', () => {
-			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'user.test' })
+			const state = fetchReducer({}, { type: NET_ACTION.FETCH_REQUESTED, modelName: 'user.test' })
 			expect(state).toEqual({
 				user: {
 					test: {
@@ -196,7 +194,7 @@ describe('fetchReducer', () => {
 		})
 
 		test('nested level with numbers', () => {
-			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'user.1' })
+			const state = fetchReducer({}, { type: NET_ACTION.FETCH_REQUESTED, modelName: 'user.1' })
 			expect(state).toEqual({
 				user: {
 					'1': {
@@ -211,7 +209,7 @@ describe('fetchReducer', () => {
 		})
 
 		test('nested level with multiple level numbers', () => {
-			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'user.1.info.2' })
+			const state = fetchReducer({}, { type: NET_ACTION.FETCH_REQUESTED, modelName: 'user.1.info.2' })
 			expect(state).toEqual({
 				user: {
 					'1': {
@@ -230,7 +228,7 @@ describe('fetchReducer', () => {
 		})
 
 		test('nested level merge state', () => {
-			const state = fetchReducer({ foo: 'bar' }, { type: actions.FETCH_REQUESTED, modelName: 'user.test' })
+			const state = fetchReducer({ foo: 'bar' }, { type: NET_ACTION.FETCH_REQUESTED, modelName: 'user.test' })
 			expect(state).toEqual({
 				foo: 'bar',
 				user: {
@@ -248,7 +246,7 @@ describe('fetchReducer', () => {
 		test('nested level replace state', () => {
 			const state = fetchReducer(
 				{ user: { foo: 'bar' } },
-				{ type: actions.FETCH_REQUESTED, modelName: 'user.test' }
+				{ type: NET_ACTION.FETCH_REQUESTED, modelName: 'user.test' }
 			)
 			expect(state).toEqual({
 				user: {
@@ -278,7 +276,7 @@ describe('fetchReducer', () => {
 						}
 					}
 				},
-				{ type: actions.FETCH_REQUESTED, modelName: 'test' }
+				{ type: NET_ACTION.FETCH_REQUESTED, modelName: 'test' }
 			)
 			expect(state).toEqual({
 				test: {
@@ -309,7 +307,7 @@ describe('fetchReducer', () => {
 						}
 					}
 				},
-				{ type: actions.FETCH_REQUESTED, modelName: 'test.qux.1.corge' }
+				{ type: NET_ACTION.FETCH_REQUESTED, modelName: 'test.qux.1.corge' }
 			)
 			expect(state).toEqual({
 				test: {
@@ -348,7 +346,7 @@ describe('fetchReducer', () => {
 			const state = fetchReducer(
 				{},
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'test',
 					data: { key: 'value' }
 				}
@@ -369,7 +367,7 @@ describe('fetchReducer', () => {
 			const state = fetchReducer(
 				{},
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
 					data: { key: 'value' }
 				}
@@ -392,7 +390,7 @@ describe('fetchReducer', () => {
 			const state = fetchReducer(
 				{ foo: 'bar' },
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
 					data: { key: 'value' }
 				}
@@ -420,7 +418,7 @@ describe('fetchReducer', () => {
 					}
 				},
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
 					data: { key: 'value' }
 				}
@@ -447,7 +445,7 @@ describe('fetchReducer', () => {
 					}
 				},
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
 					data: { key: 'value' }
 				}
@@ -484,7 +482,7 @@ describe('fetchReducer', () => {
 					}
 				},
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
 					data: { key: 'value' }
 				}
@@ -520,7 +518,7 @@ describe('fetchReducer', () => {
 					}
 				},
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'groups.1',
 					data: { key: 'value' }
 				}
@@ -565,7 +563,7 @@ describe('fetchReducer', () => {
 					}
 				},
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'test.qux.1.corge',
 					data: { key: 'value' }
 				}
@@ -599,7 +597,7 @@ describe('fetchReducer', () => {
 		test('should preserve nested collection relation that contains an id, but is not its key', () => {
 			let state = {}
 			state = fetchReducer(state, {
-				type: actions.FETCH_RESULT_RECEIVED,
+				type: NET_ACTION.FETCH_RESULT_RECEIVED,
 				modelName: 'groups.1.child',
 				data: { id: 1, foo: false }
 			})
@@ -619,7 +617,7 @@ describe('fetchReducer', () => {
 				}
 			})
 			state = fetchReducer(state, {
-				type: actions.FETCH_RESULT_RECEIVED,
+				type: NET_ACTION.FETCH_RESULT_RECEIVED,
 				modelName: 'groups.1',
 				data: { id: 1, name: 'Group 1' }
 			})
@@ -665,7 +663,7 @@ describe('fetchReducer', () => {
 				}
 			}
 			state = fetchReducer(state, {
-				type: actions.FETCH_RESULT_RECEIVED,
+				type: NET_ACTION.FETCH_RESULT_RECEIVED,
 				modelName: 'groups.1.child',
 				data: { id: 1, foo: false }
 			})
@@ -696,7 +694,7 @@ describe('fetchReducer', () => {
 				}
 			})
 			state = fetchReducer(state, {
-				type: actions.FETCH_RESULT_RECEIVED,
+				type: NET_ACTION.FETCH_RESULT_RECEIVED,
 				modelName: 'groups',
 				data: { 2: { id: 2, name: 'Group 2' } }
 			})
@@ -728,7 +726,7 @@ describe('fetchReducer', () => {
 			const state = fetchReducer(
 				{},
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'class',
 					data: 'value'
 				}
@@ -766,7 +764,7 @@ describe('fetchReducer', () => {
 					}
 				},
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'user.testChildren',
 					data: {
 						key: 'new value'
@@ -796,7 +794,10 @@ describe('fetchReducer', () => {
 
 	describe('FETCH_FAILED', () => {
 		test('single level with fetch error data', () => {
-			const state = fetchReducer({}, { type: actions.FETCH_FAILED, modelName: 'test', errorData: 'server fire' })
+			const state = fetchReducer(
+				{},
+				{ type: NET_ACTION.FETCH_FAILED, modelName: 'test', errorData: 'server fire' }
+			)
 			expect(state).toEqual({
 				test: {
 					_metadata: {
@@ -809,7 +810,7 @@ describe('fetchReducer', () => {
 		})
 
 		test('single level no fetch error data', () => {
-			const state = fetchReducer({}, { type: actions.FETCH_FAILED, modelName: 'test' })
+			const state = fetchReducer({}, { type: NET_ACTION.FETCH_FAILED, modelName: 'test' })
 			expect(state).toEqual({
 				test: {
 					_metadata: {
@@ -824,7 +825,7 @@ describe('fetchReducer', () => {
 		test('nested level', () => {
 			const state = fetchReducer(
 				{},
-				{ type: actions.FETCH_FAILED, modelName: 'user.test', errorData: 'server fire' }
+				{ type: NET_ACTION.FETCH_FAILED, modelName: 'user.test', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				user: {
@@ -842,7 +843,7 @@ describe('fetchReducer', () => {
 		test('nested level merge state', () => {
 			const state = fetchReducer(
 				{ foo: 'bar' },
-				{ type: actions.FETCH_FAILED, modelName: 'user.test', errorData: 'server fire' }
+				{ type: NET_ACTION.FETCH_FAILED, modelName: 'user.test', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				foo: 'bar',
@@ -861,7 +862,7 @@ describe('fetchReducer', () => {
 		test('nested level replace state', () => {
 			const state = fetchReducer(
 				{ user: { foo: 'bar' } },
-				{ type: actions.FETCH_FAILED, modelName: 'user.test', errorData: 'server fire' }
+				{ type: NET_ACTION.FETCH_FAILED, modelName: 'user.test', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				user: {
@@ -895,7 +896,7 @@ describe('fetchReducer', () => {
 						}
 					}
 				},
-				{ type: actions.FETCH_FAILED, modelName: 'groups.1', errorData: 'server fire' }
+				{ type: NET_ACTION.FETCH_FAILED, modelName: 'groups.1', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				groups: {
@@ -918,7 +919,7 @@ describe('fetchReducer', () => {
 		test('remove key', () => {
 			const state = fetchReducer(
 				{ test: { foo: 'bar' } },
-				{ type: actions.KEY_REMOVAL_REQUESTED, modelName: 'test' }
+				{ type: NET_ACTION.KEY_REMOVAL_REQUESTED, modelName: 'test' }
 			)
 			expect(state).toEqual({})
 		})
@@ -926,7 +927,7 @@ describe('fetchReducer', () => {
 		test('remove key nested', () => {
 			const state = fetchReducer(
 				{ test: { foo: 'bar' }, test2: { baz: 'bat' } },
-				{ type: actions.KEY_REMOVAL_REQUESTED, modelName: 'test' }
+				{ type: NET_ACTION.KEY_REMOVAL_REQUESTED, modelName: 'test' }
 			)
 			expect(state).toEqual({ test2: { baz: 'bat' } })
 		})
@@ -934,7 +935,7 @@ describe('fetchReducer', () => {
 		test('remove key collection nested', () => {
 			const state = fetchReducer(
 				{ groups: { 1: { id: 1, name: 'group name' } } },
-				{ type: actions.KEY_REMOVAL_REQUESTED, modelName: 'groups.1' }
+				{ type: NET_ACTION.KEY_REMOVAL_REQUESTED, modelName: 'groups.1' }
 			)
 			expect(state).toEqual({ groups: {} })
 		})
@@ -944,7 +945,7 @@ describe('fetchReducer', () => {
 		test('default flow', () => {
 			const state = {}
 
-			const state2 = fetchReducer(state, { type: actions.FETCH_REQUESTED, modelName: 'test' })
+			const state2 = fetchReducer(state, { type: NET_ACTION.FETCH_REQUESTED, modelName: 'test' })
 			expect(state2).toEqual({
 				test: {
 					_metadata: {
@@ -956,7 +957,7 @@ describe('fetchReducer', () => {
 			})
 
 			const state3 = fetchReducer(state2, {
-				type: actions.FETCH_RESULT_RECEIVED,
+				type: NET_ACTION.FETCH_RESULT_RECEIVED,
 				modelName: 'test',
 				data: { foo: 'bar' }
 			})
@@ -975,7 +976,7 @@ describe('fetchReducer', () => {
 
 			fetchedAtDate = new Date()
 			const state4 = fetchReducer(state3, {
-				type: actions.FETCH_RESULT_RECEIVED,
+				type: NET_ACTION.FETCH_RESULT_RECEIVED,
 				modelName: 'test',
 				data: { baz: 'quux', bleb: 'fleb' }
 			})
@@ -1001,7 +1002,7 @@ describe('fetchReducer', () => {
 
 		test('no state parameter passed', () => {
 			const state = fetchReducer(undefined, {
-				type: actions.FETCH_REQUESTED,
+				type: NET_ACTION.FETCH_REQUESTED,
 				modelName: 'test'
 			})
 			expect(state).toEqual({
