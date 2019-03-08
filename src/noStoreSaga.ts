@@ -1,7 +1,7 @@
-import _ from 'lodash'
-import { take, takeEvery, race } from 'redux-saga/effects'
-import NET_ACTION from './actions'
 import { SagaIterator } from '@redux-saga/core'
+import { take, takeEvery, race } from 'redux-saga/effects'
+import _ from 'lodash'
+import NET_ACTION from './actions'
 
 type HookFunction = (input: any) => void
 

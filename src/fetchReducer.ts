@@ -1,7 +1,6 @@
-import actions from './actions'
 import _ from 'lodash'
 import _fp from 'lodash/fp'
-
+import NET_ACTION from './actions'
 import { Metadata, FetchAction, Dictionary } from './types'
 
 /**
@@ -90,7 +89,7 @@ export default function fetchReducer(state: object = {}, action: FetchAction) {
 	const metadata = getMetadata(state, path)
 
 	switch (action.type) {
-		case actions.FETCH_REQUESTED:
+		case NET_ACTION.FETCH_REQUESTED:
 			// Retain the entity data, update the metadata to reflect
 			// fetch in request state.
 			valueAtPath._metadata = _.merge(metadata, {
@@ -100,7 +99,7 @@ export default function fetchReducer(state: object = {}, action: FetchAction) {
 			})
 			return _fp.setWith(Object, path, valueAtPath, state)
 
-		case actions.FETCH_RESULT_RECEIVED:
+		case NET_ACTION.FETCH_RESULT_RECEIVED:
 			const incoming =
 				!_.isPlainObject(action.data) && !_.isArray(action.data) ? { response: action.data } : action.data
 			valueAtPath = _.merge({}, mergeRelations(valueAtPath, incoming), incoming)
@@ -113,7 +112,7 @@ export default function fetchReducer(state: object = {}, action: FetchAction) {
 			})
 			return _fp.setWith(Object, path, valueAtPath, state)
 
-		case actions.FETCH_FAILED:
+		case NET_ACTION.FETCH_FAILED:
 			// Retain the object, update the metadata to reflect the fact
 			// that the request failed.
 			valueAtPath._metadata = _.merge(metadata, {
@@ -123,7 +122,7 @@ export default function fetchReducer(state: object = {}, action: FetchAction) {
 			})
 			return _fp.setWith(Object, path, valueAtPath, state)
 
-		case actions.KEY_REMOVAL_REQUESTED:
+		case NET_ACTION.KEY_REMOVAL_REQUESTED:
 			// Completely remove the object at the path from
 			// the state.
 			return _fp.unset(path, state)

@@ -1,8 +1,9 @@
-import NET_ACTION, { createAction } from './actions'
 import { call, cancel, cancelled, takeEvery, takeLatest, fork, put, delay } from 'redux-saga/effects'
 import { createMockTask } from '@redux-saga/testing-utils'
 import uuid from 'uuid'
 import MockDate from 'mockdate'
+import NET_ACTION, { createAction } from './actions'
+import { OAuthToken } from './types'
 import { doFetch } from './fetchService'
 import fetchSaga, {
 	fetchData,
@@ -14,7 +15,6 @@ import fetchSaga, {
 	takeMatchesTerminationAction,
 	prepareFetch
 } from './fetchSaga'
-import { OAuthToken } from './types'
 
 let consoleOutput: any
 const consoleDebug = console.debug

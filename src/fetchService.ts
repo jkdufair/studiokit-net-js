@@ -1,7 +1,7 @@
+import { SagaIterator } from '@redux-saga/core'
 import { call } from 'redux-saga/effects'
 import _ from 'lodash'
 import { FetchConfig } from './types'
-import { SagaIterator } from '@redux-saga/core'
 
 let apiRoot: string | undefined
 

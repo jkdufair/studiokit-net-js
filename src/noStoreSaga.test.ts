@@ -1,5 +1,5 @@
-import actions from './actions'
 import uuid from 'uuid'
+import NET_ACTION from './actions'
 import {
 	registerNoStoreActionHook,
 	unregisterNoStoreActionHook,
@@ -18,7 +18,7 @@ describe('helpers', () => {
 			expect(
 				matchesNoStoreAction({
 					modelName: 'someModel',
-					type: actions.DATA_REQUESTED,
+					type: NET_ACTION.DATA_REQUESTED,
 					noStore: true
 				})
 			).toEqual(true)
@@ -27,7 +27,7 @@ describe('helpers', () => {
 			expect(
 				matchesNoStoreAction({
 					modelName: 'someModel',
-					type: actions.DATA_REQUESTED
+					type: NET_ACTION.DATA_REQUESTED
 				})
 			).toEqual(false)
 		})
@@ -35,7 +35,7 @@ describe('helpers', () => {
 			expect(
 				matchesNoStoreAction({
 					modelName: 'someModel',
-					type: actions.KEY_REMOVAL_REQUESTED,
+					type: NET_ACTION.KEY_REMOVAL_REQUESTED,
 					noStore: true
 				})
 			).toEqual(false)
@@ -44,7 +44,7 @@ describe('helpers', () => {
 			expect(
 				takeMatchesNoStoreAction()({
 					modelName: 'someModel',
-					type: actions.DATA_REQUESTED,
+					type: NET_ACTION.DATA_REQUESTED,
 					noStore: true
 				})
 			).toEqual(true)
@@ -58,7 +58,7 @@ describe('helpers', () => {
 				matchesFailedNoStoreHookAction(
 					{
 						modelName: 'someModel',
-						type: actions.TRANSIENT_FETCH_FAILED,
+						type: NET_ACTION.TRANSIENT_FETCH_FAILED,
 						guid
 					},
 					{ modelName: 'someModel', noStore: true, guid }
@@ -71,7 +71,7 @@ describe('helpers', () => {
 				matchesFailedNoStoreHookAction(
 					{
 						modelName: 'someModel',
-						type: actions.KEY_REMOVAL_REQUESTED,
+						type: NET_ACTION.KEY_REMOVAL_REQUESTED,
 						guid
 					},
 					{ modelName: 'someModel', noStore: true, guid }
@@ -83,7 +83,7 @@ describe('helpers', () => {
 				matchesFailedNoStoreHookAction(
 					{
 						modelName: 'someModel',
-						type: actions.TRANSIENT_FETCH_FAILED,
+						type: NET_ACTION.TRANSIENT_FETCH_FAILED,
 						guid: uuid.v4()
 					},
 					{ modelName: 'someModel', noStore: true, guid: uuid.v4() }
@@ -95,7 +95,7 @@ describe('helpers', () => {
 			expect(
 				takeMatchesFailedNoStoreHookAction({ modelName: 'someModel', noStore: true, guid })({
 					modelName: 'someModel',
-					type: actions.TRANSIENT_FETCH_FAILED,
+					type: NET_ACTION.TRANSIENT_FETCH_FAILED,
 					guid
 				})
 			).toEqual(true)
@@ -109,7 +109,7 @@ describe('helpers', () => {
 				matchesReceivedNoStoreHookAction(
 					{
 						modelName: 'someModel',
-						type: actions.TRANSIENT_FETCH_RESULT_RECEIVED,
+						type: NET_ACTION.TRANSIENT_FETCH_RESULT_RECEIVED,
 						guid
 					},
 					{ modelName: 'someModel', noStore: true, guid }
@@ -122,7 +122,7 @@ describe('helpers', () => {
 				matchesReceivedNoStoreHookAction(
 					{
 						modelName: 'someModel',
-						type: actions.KEY_REMOVAL_REQUESTED,
+						type: NET_ACTION.KEY_REMOVAL_REQUESTED,
 						guid
 					},
 					{ modelName: 'someModel', noStore: true, guid }
@@ -134,7 +134,7 @@ describe('helpers', () => {
 				matchesReceivedNoStoreHookAction(
 					{
 						modelName: 'someModel',
-						type: actions.TRANSIENT_FETCH_FAILED,
+						type: NET_ACTION.TRANSIENT_FETCH_FAILED,
 						guid: uuid.v4()
 					},
 					{ modelName: 'someModel', noStore: true, guid: uuid.v4() }
@@ -150,7 +150,7 @@ describe('helpers', () => {
 					guid
 				})({
 					modelName: 'someModel',
-					type: actions.TRANSIENT_FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.TRANSIENT_FETCH_RESULT_RECEIVED,
 					guid
 				})
 			).toEqual(true)
@@ -187,7 +187,7 @@ describe('handleAction', () => {
 	test('should call correct hook with `data` on success', () => {
 		const action = {
 			modelName: 'someModel',
-			type: actions.DATA_REQUESTED,
+			type: NET_ACTION.DATA_REQUESTED,
 			noStore: true,
 			guid: firstKey
 		}
@@ -204,7 +204,7 @@ describe('handleAction', () => {
 	test('should call two different hooks with `data` on success', () => {
 		const firstAction = {
 			modelName: 'someModel',
-			type: actions.DATA_REQUESTED,
+			type: NET_ACTION.DATA_REQUESTED,
 			noStore: true,
 			guid: firstKey
 		}
@@ -219,7 +219,7 @@ describe('handleAction', () => {
 
 		const secondAction = {
 			modelName: 'someModel',
-			type: actions.DATA_REQUESTED,
+			type: NET_ACTION.DATA_REQUESTED,
 			noStore: true,
 			guid: secondKey
 		}
@@ -236,7 +236,7 @@ describe('handleAction', () => {
 	test('should call correct hook with `null` on failure', () => {
 		const action = {
 			modelName: 'someModel',
-			type: actions.DATA_REQUESTED,
+			type: NET_ACTION.DATA_REQUESTED,
 			noStore: true,
 			guid: firstKey
 		}
@@ -253,7 +253,7 @@ describe('handleAction', () => {
 	test('should finish if no `guid` on action', () => {
 		const action = {
 			modelName: 'someModel',
-			type: actions.DATA_REQUESTED,
+			type: NET_ACTION.DATA_REQUESTED,
 			noStore: true
 		}
 		const gen = handleAction(action)
@@ -266,7 +266,7 @@ describe('handleAction', () => {
 	test('should finish if no hook found for action', () => {
 		const action = {
 			modelName: 'someModel',
-			type: actions.DATA_REQUESTED,
+			type: NET_ACTION.DATA_REQUESTED,
 			noStore: true,
 			guid: uuid.v4()
 		}
@@ -280,7 +280,7 @@ describe('handleAction', () => {
 	test('should not call if hook is unregistered while requesting', () => {
 		const action = {
 			modelName: 'someModel',
-			type: actions.DATA_REQUESTED,
+			type: NET_ACTION.DATA_REQUESTED,
 			noStore: true,
 			guid: firstKey
 		}
