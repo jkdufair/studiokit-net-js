@@ -6,6 +6,9 @@
 		"**/lib": true
 	},
 	"javascript.validate.enable": false,
-	"prettier.tslintIntegration": true,
-	"editor.formatOnSave": true
+	"editor.formatOnSave": true,
+	"editor.codeActionsOnSave": {
+		"source.fixAll": true,
+		"source.organizeImports": true
+	}
 }
