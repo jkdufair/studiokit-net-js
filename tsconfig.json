@@ -1,9 +1,19 @@
 {
-	"extends": "./tsconfig.base.json",
-	"include": [
-		"src/**/*"
-	],
-	"exclude": [
-		"node_modules", "lib", "**/*.test.ts"
-	]
+	"compilerOptions": {
+		/* Basic Options */
+		"target": "es5",
+		"module": "commonjs",
+		"lib": ["es5", "dom", "es2015.iterable"],
+		"declaration": true,
+		"outDir": "./lib",
+
+		/* Strict Type-Checking Options */
+		"strict": true,
+		"skipLibCheck": false,
+		"forceConsistentCasingInFileNames": true,
+
+		/* Module Resolution Options */
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true
+	}
 }
