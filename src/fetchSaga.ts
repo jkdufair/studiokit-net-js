@@ -1,18 +1,18 @@
 import { SagaIterator } from '@redux-saga/core'
-import { call, cancel, cancelled, fork, put, select, take, takeEvery, takeLatest, delay } from 'redux-saga/effects'
 import _ from 'lodash'
+import { call, cancel, cancelled, delay, fork, put, select, take, takeEvery, takeLatest } from 'redux-saga/effects'
 import uuid from 'uuid'
 import NET_ACTION, { createAction } from './actions'
+import { doFetch, setApiRoot } from './fetchService'
 import {
-	OAuthToken,
+	Dictionary,
+	EndpointConfig,
+	EndpointMapping,
+	EndpointMappings,
 	FetchAction,
 	FetchError,
-	EndpointMappings,
-	EndpointMapping,
-	Dictionary,
-	EndpointConfig
+	OAuthToken
 } from './types'
-import { doFetch, setApiRoot } from './fetchService'
 
 //#region Types
 
