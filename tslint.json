@@ -1,26 +1,17 @@
 {
 	"extends": [
-		"tslint:recommended"
+		"tslint:recommended",
+		"tslint-config-prettier"
 	],
+	"rulesDirectory": ["tslint-plugin-prettier"],
 	"rules": {
-		"semicolon": {
-			"options": ["never"]
-		},
-		"quotemark": {
-			"options": ["single", "avoid-escape", "jsx-double"]
-		},
-		"indent": {
-			"options": ["tabs", 4]
-		},
-		"arrow-parens": {
-			"options": ["ban-single-arg-parens"]
-		},
+		"interface-name": false,
 		"no-console": false,
+		"no-bitwise": false,
 		"ordered-imports": true,
-		"trailing-comma": false,
 		"object-literal-sort-keys": false,
 		"object-literal-key-quotes": false,
-		"interface-name": false,
-		"no-bitwise": false
+		"prettier": true,
+		"trailing-comma": false
 	}
 }
