@@ -66,7 +66,7 @@
 	},
 	"lint-staged": {
 		"*.ts": [
-			"yarn prettier:write && yarn fix",
+			"yarn fix",
 			"git add"
 		]
 	},
