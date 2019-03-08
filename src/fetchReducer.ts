@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import _fp from 'lodash/fp'
-import NET_ACTION from './actions'
+import { NET_ACTION } from './actions'
 import { Dictionary, FetchAction, Metadata } from './types'
 
 /**

@@ -1,4 +1,4 @@
-import NET_ACTION, { createAction } from './actions'
+import { createAction, NET_ACTION } from './actions'
 
 describe('createAction', () => {
 	it('creates a basic action', () => {

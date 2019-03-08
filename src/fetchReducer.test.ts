@@ -1,5 +1,5 @@
 import MockDate from 'mockdate'
-import NET_ACTION from './actions'
+import { NET_ACTION } from './actions'
 import fetchReducer, { getMetadata, isCollection, mergeRelations } from './fetchReducer'
 
 describe('supporting functions', () => {

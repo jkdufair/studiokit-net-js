@@ -1,7 +1,7 @@
 import { merge } from 'lodash'
 import { Action } from 'redux'
 
-enum NET_ACTION {
+export enum NET_ACTION {
 	// App-level request
 	DATA_REQUESTED = 'application/DATA_REQUESTED',
 	PERIODIC_DATA_REQUESTED = 'application/PERIODIC_DATA_REQUESTED',
@@ -27,5 +27,3 @@ enum NET_ACTION {
 export function createAction(type: string, payload: any): Action {
 	return merge({}, { type }, payload)
 }
-
-export default NET_ACTION

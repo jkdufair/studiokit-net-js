@@ -2,10 +2,11 @@
 	"name": "studiokit-net-js",
 	"version": "2.0.0",
 	"scripts": {
-		"lint": "tslint -c tslint.json -p tsconfig.json 'src/**/*.{ts,tsx}'",
-		"prettier:check": "prettier --list-different \"src/**/*.{ts,tsx}\"",
-		"prettier:write": "prettier --write \"src/**/*.{ts,tsx}\"",
-		"fix": "yarn prettier:write && yarn lint --fix",
+		"lint:core": "tslint -c tslint.json -p tsconfig.base.json",
+		"lint": "yarn lint:core 'src/**/*.{ts,tsx}'",
+		"prettier:core": "prettier --write",
+		"prettier": "yarn prettier:core 'src/**/*.{ts,tsx}'",
+		"fix": "yarn prettier && yarn lint --fix",
 		"test": "jest",
 		"coverage": "jest --coverage",
 		"coveralls": "npm run coverage && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
@@ -66,7 +67,8 @@
 	},
 	"lint-staged": {
 		"*.ts": [
-			"yarn fix",
+			"yarn prettier:core",
+			"yarn lint:core --fix",
 			"git add"
 		]
 	},

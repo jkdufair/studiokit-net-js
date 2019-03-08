@@ -1,5 +1,5 @@
 import { Action } from 'redux'
-import NET_ACTION from './actions'
+import { NET_ACTION } from './actions'
 
 /**
  * Key-value pairs.

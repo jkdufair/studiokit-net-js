@@ -1,4 +1,4 @@
-import { setApiRoot, getApiRoot, doFetch, constructPath } from './fetchService'
+import { constructPath, doFetch, getApiRoot, setApiRoot } from './fetchService'
 
 describe('constructPath', () => {
 	test('should require config.path', () => {

@@ -1,15 +1,15 @@
 import uuid from 'uuid'
-import NET_ACTION from './actions'
+import { NET_ACTION } from './actions'
 import {
-	registerNoStoreActionHook,
-	unregisterNoStoreActionHook,
 	handleAction,
-	matchesNoStoreAction,
-	takeMatchesNoStoreAction,
 	matchesFailedNoStoreHookAction,
-	takeMatchesFailedNoStoreHookAction,
+	matchesNoStoreAction,
 	matchesReceivedNoStoreHookAction,
-	takeMatchesReceivedNoStoreHookAction
+	registerNoStoreActionHook,
+	takeMatchesFailedNoStoreHookAction,
+	takeMatchesNoStoreAction,
+	takeMatchesReceivedNoStoreHookAction,
+	unregisterNoStoreActionHook
 } from './noStoreSaga'
 
 describe('helpers', () => {
