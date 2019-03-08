@@ -43,9 +43,11 @@ export interface Metadata {
 
 /**
  * Represents an API response that will be stored in redux.
+ *
+ * @template T enforce a type on all properties that are defined and not `Metadata`. Default is `any`.
  */
-export interface Model extends Dictionary<any> {
-	_metadata: Metadata
+export interface Model<T = any> extends Dictionary<T | Metadata | undefined | null> {
+	_metadata?: Metadata
 }
 
 type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS'
