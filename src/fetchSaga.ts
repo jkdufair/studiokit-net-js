@@ -62,7 +62,7 @@ let errorFunction: ErrorFunction
  * Prepare fetchConfig to pass to fetchService. Also set up state
  * to handle response correctly.
  *
- * @param {EndpointMapping} endpointMapping The model selected from the models object
+ * @param {EndpointMapping} endpointMapping The EndpointMapping selected from the EndpointMappings object
  * @param {FetchAction} action The action dispatched by the client
  * @param {EndpointMappings} endpointMappingsParam The EndpointMappings object, passed in for testability
  */
@@ -459,7 +459,7 @@ export function* fetchDataRecurring(action: FetchAction) {
 
 /**
  * The main saga for fetching data. Must be initialized with an EndpointMappings object that can be fetched
- * and an API root to prepend to any partial URLs specified in the models object. A logger should normally be provided
+ * and an API root to prepend to any partial URLs specified in the EndpointMappings object. A logger should normally be provided
  * as well.
  *
  * EndpointMappings object require a form as follows (with optional nested models):
@@ -478,13 +478,13 @@ export function* fetchDataRecurring(action: FetchAction) {
  * 	}
  * }
  * ```
- * Models are referenced in the actions.DATA_REQUESTED action by path, i.e.
+ * EndpointMapping models are referenced in the actions.DATA_REQUESTED action by path, i.e.
  * `{ type: actions.DATA_REQUESTED, { modelName: 'fryModel' } }`
  * -- or --
  * `{ type: actions.DATA_REQUESTED, { modelName: 'groupOfModels.leelaModel' } }`
  *
  * @export
- * @param {EndpointMappings} endpointMappingsParam An mapping of API endpoints available in the application
+ * @param {EndpointMappings} endpointMappingsParam A mapping of API endpoints available in the application
  * @param {string | undefined} apiRootParam A url to which partial URLs are appended (i.e.) 'https://myapp.com'
  * @param {TokenAccessFunction} [tokenAccessFunctionParam=defaultTokenAccessFunction] function that returns
  * an optional OAuth token
