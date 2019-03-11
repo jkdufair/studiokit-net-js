@@ -1,7 +1,7 @@
-import _ from 'lodash'
+import _, { Dictionary } from 'lodash'
 import _fp from 'lodash/fp'
 import { NET_ACTION } from './actions'
-import { Dictionary, FetchAction, Metadata } from './types'
+import { FetchAction, Metadata } from './types'
 
 /**
  * Given the state and a path into that state object, return the prop that
