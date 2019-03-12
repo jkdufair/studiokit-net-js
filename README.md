@@ -25,9 +25,9 @@ For *in-vivo* examples of how to use this library, see the [example react app](h
 		models: netReducers.fetchReducer
 	})
 	```
-1. Create an `apis.js` module specifying any apis you will call in your application. All configuration properties are set under `_config`. Fetch request specific default properties are set on `_config.fetch`, i.e.
+1. Create an `endpointMappings.js` module specifying a mapping of any APIs you will call in your application. All configuration properties are set under `_config`. Fetch request specific default properties are set on `_config.fetch`, i.e.
 	```js
-	const apis = {
+	const endpointMappings = {
 		publicData: {
 			_config: {
 				fetch: {
@@ -40,18 +40,18 @@ For *in-vivo* examples of how to use this library, see the [example react app](h
 		}
 	}
 
-	export default apis
+	export default endpointMappings
 	```
 1. Create a `rootSaga.js` module that includes the fetchSaga from this library, i.e.
 	```js
 	import { all } from 'redux-saga/effects'
 	import { sagas as netSagas } from 'studiokit-net-js'
-	import apis from '../../apis'
+	import endpointMappings from '../../endpointMappings'
 
 	export default function* rootSaga() {
 		yield all({
 			fetchSaga: netSagas.fetchSaga(
-				apis,
+				endpointMappings,
 				'https://yourapp.com'
 			)
 		})
@@ -101,6 +101,7 @@ Actions are dispatched using the following keys in the action object for configu
 ```ts
 type FetchAction = {
 	modelName: string,
+	guid?: string
 	method?: string,
 	headers?: Object,
 	queryParams?: Object,
@@ -108,13 +109,14 @@ type FetchAction = {
 	noStore?: boolean,
 	period?: number,
 	taskId?: string,
-	noRetry?: boolean,
-	guid?: string
+	noRetry?: boolean
+	contentType?: string
 }
 ```
 
-- `modelName` refers to the path to the fetch configuration key found in `apis.js`
-- `method` is an optional string used as the HTTP Method for the fetch. Otherwise will use the method set in `apis.js`, or `'GET'`
+- `modelName` refers to the path to the fetch configuration key found in `endpointMappings.js`
+- `guid` is an optional pre-generated (by your application) GUID that will be attached to a fetch result's data, to be stored in redux and used to match request results in components
+- `method` is an optional string used as the HTTP Method for the fetch. Otherwise will use the method set in `endpointMappings.js`, or `'GET'`
 - `headers` is an optional object used as key/value pairs to populate the request headers
 - `queryParams` is an optional object used as key/value pairs to populate the query parameters
 - `pathParams` is an optional array of values to be replaced in the fetch path using pattern matching, in order, e.g. `[1, 2]` and `/collection/{:id}/subcollection/{:id}` => `/collection/1/subcollection/2`
@@ -122,7 +124,6 @@ type FetchAction = {
 - `period` is an optional number of milliseconds after which a request should repeat when dispatching a recurring fetch
 - `taskId` is a string that must be passed to a recurring fetch for future cancellation
 - `noRetry` will prevent the use of the default logarithmic backoff retry strategy
-- `guid` is an optional pre-generated (by your application) GUID that will be attached to a fetch result's data, to be stored in redux and used to match request results in components
 
 The following actions can be dispatched
 - `DATA_REQUESTED`: This will fetch the data specified at the `modelName` key of the action
@@ -132,7 +133,7 @@ The following actions can be dispatched
 
 ## Examples
 
-Given the following `apis.js`
+Given the following `endpointMappings.js`
 ```js
 {
 	basicData: {
@@ -324,7 +325,7 @@ GET https://httpbin.org/get
 
 Same as basic fetch above, with possibly different data, depending on response relative to additional header
 
-**Note**: Headers specified in the action will be merged with headers specified in `apis.js` with the headers in the action taking precedence
+**Note**: Headers specified in the action will be merged with headers specified in `endpointMappings.js` with the headers in the action taking precedence
 
 #
 
@@ -346,7 +347,7 @@ GET https://httpbin.org/get?robot=bender
 
 Same as basic fetch above, with possibly different data, depending on response relative to new query params
 
-**Note**: Query parameters specified in the action will be merged with query parameters specified in `apis.js` with the query params in the action taking precedence
+**Note**: Query parameters specified in the action will be merged with query parameters specified in `endpointMappings.js` with the query params in the action taking precedence
 
 #
 
@@ -368,7 +369,7 @@ GET https://thewalkingdead/api/walker/1
 
 Same as basic fetch above, with possibly different data, depending on response relative to new route params
 
-**Note**: Route parameters specified in the action will be merged with route parameters specified in `apis.js` with the route params in the action taking precedence
+**Note**: Route parameters specified in the action will be merged with route parameters specified in `endpointMappings.js` with the route params in the action taking precedence
 
 #
 

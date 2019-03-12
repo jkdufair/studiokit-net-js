@@ -1,34 +1,23 @@
-import actions, { createAction } from '../src/actions'
-import {
-	call,
-	cancel,
-	cancelled,
-	take,
-	takeEvery,
-	takeLatest,
-	fork,
-	put,
-	select,
-	delay
-} from 'redux-saga/effects'
 import { createMockTask } from '@redux-saga/testing-utils'
+import MockDate from 'mockdate'
+import { call, cancel, cancelled, delay, fork, put, takeEvery, takeLatest } from 'redux-saga/effects'
 import uuid from 'uuid'
-import { doFetch } from '../src/services/fetchService'
-import fetchSaga, { __RewireAPI__ as FetchSagaRewireAPI } from '../src/fetchSaga'
-import { returnEntireStore } from '../src/fetchReducer'
+import { createAction, NET_ACTION } from './actions'
+import fetchSaga, {
+	fetchData,
+	fetchDataLoop,
+	fetchDataRecurring,
+	fetchOnce,
+	getState,
+	matchesTerminationAction,
+	prepareFetch,
+	takeMatchesTerminationAction
+} from './fetchSaga'
+import { doFetch } from './fetchService'
+import { OAuthToken, TokenAccessFunction } from './types'
 
-// TODO: retry
-const fetchData = FetchSagaRewireAPI.__get__('fetchData')
-const fetchOnce = FetchSagaRewireAPI.__get__('fetchOnce')
-const fetchDataRecurring = FetchSagaRewireAPI.__get__('fetchDataRecurring')
-const fetchDataLoop = FetchSagaRewireAPI.__get__('fetchDataLoop')
-const getState = FetchSagaRewireAPI.__get__('getState')
-const matchesTerminationAction = FetchSagaRewireAPI.__get__('matchesTerminationAction')
-const takeMatchesTerminationAction = FetchSagaRewireAPI.__get__('takeMatchesTerminationAction')
-const prepareFetch = FetchSagaRewireAPI.__get__('prepareFetch')
-
-let consoleOutput
-const _consoleLog = console.debug
+let consoleOutput: any
+const consoleDebug = console.debug
 
 beforeAll(() => {
 	console.debug = jest.fn(message => {
@@ -37,61 +26,63 @@ beforeAll(() => {
 })
 
 afterAll(() => {
-	console.debug = _consoleLog
+	console.debug = consoleDebug
 })
 
-const getOauthToken = () => {
-	return { access_token: 'some-access-token' }
+const oauthToken: OAuthToken = {
+	access_token: 'some-access-token',
+	refresh_token: 'some-refresh-token',
+	client_id: 'web',
+	token_type: 'Bearer',
+	expires_in: 3600,
+	'.expires': '2019-01-02',
+	'.issued': '2019-01-01'
+}
+
+const getOAuthToken: TokenAccessFunction = function*() {
+	return oauthToken
 }
 
 describe('fetchSaga', () => {
-	test('should throw without modelsParam', () => {
-		const gen = fetchSaga()
-		expect(() => {
-			const takeEveryDataRequestEffect = gen.next()
-		}).toThrow(/'modelsParam' is required for fetchSaga/)
-	})
-
 	test('should set up all takes', () => {
 		const gen = fetchSaga({})
 
 		const takeEveryDataRequestEffect = gen.next()
-		expect(takeEveryDataRequestEffect.value).toEqual(takeEvery(actions.DATA_REQUESTED, fetchOnce))
+		expect(takeEveryDataRequestEffect.value).toEqual(takeEvery(NET_ACTION.DATA_REQUESTED, fetchOnce))
 		const takeEveryPeriodicDataRequestEffect = gen.next()
 		expect(takeEveryPeriodicDataRequestEffect.value).toEqual(
-			takeEvery(actions.PERIODIC_DATA_REQUESTED, fetchDataRecurring)
+			takeEvery(NET_ACTION.PERIODIC_DATA_REQUESTED, fetchDataRecurring)
 		)
 		const takeLatestDataRequestedEffect = gen.next()
-		expect(takeLatestDataRequestedEffect.value).toEqual(
-			takeLatest(actions.DATA_REQUESTED_USE_LATEST, fetchOnce)
-		)
+		expect(takeLatestDataRequestedEffect.value).toEqual(takeLatest(NET_ACTION.DATA_REQUESTED_USE_LATEST, fetchOnce))
 	})
 
 	test('should use default logger', () => {
-		const gen = fetchSaga({ test: { path: '/foo' } }, '')
+		const gen = fetchSaga({ test: { _config: { fetch: { path: '/foo' } } } }, '')
+		gen.next()
 		expect(consoleOutput).toEqual('logger set to defaultLogger')
 	})
 
-	test('should use default tokenAccessFunction if null', () => {
-		const gen = fetchSaga({ test: { path: '/foo' } }, '')
-		const tokenAccessFunction = FetchSagaRewireAPI.__get__('tokenAccessFunction')
-		const defaultTokenAccessFunction = FetchSagaRewireAPI.__get__('defaultTokenAccessFunction')
-		expect(tokenAccessFunction).toEqual(defaultTokenAccessFunction)
-		expect(tokenAccessFunction()).toEqual(undefined)
-	})
-
-	test('should use default errorFunction if null', () => {
-		const gen = fetchSaga({ test: { path: '/foo' } }, '')
-		const errorFunction = FetchSagaRewireAPI.__get__('errorFunction')
-		const defaultErrorFunction = FetchSagaRewireAPI.__get__('defaultErrorFunction')
-		expect(errorFunction).toEqual(defaultErrorFunction)
-		expect(errorFunction()).toEqual(undefined)
+	test('should use custom logger', () => {
+		let customOutput: string = ''
+		const customLogger = (message: string) => {
+			customOutput = message
+		}
+		const gen = fetchSaga(
+			{ test: { _config: { fetch: { path: '/foo' } } } },
+			'',
+			undefined,
+			undefined,
+			customLogger
+		)
+		gen.next()
+		expect(customOutput).toEqual('logger set to customLogger')
 	})
 })
 
 describe('prepareFetch', () => {
 	test('should populate id params for multi-level collection paths', () => {
-		var result = prepareFetch(
+		const result = prepareFetch(
 			{
 				_config: {
 					fetch: {
@@ -100,7 +91,7 @@ describe('prepareFetch', () => {
 					isCollection: true
 				}
 			},
-			{ type: 'SOME_ACTION', modelName: 'foo.bar.baz', pathParams: [1, 2] },
+			{ type: NET_ACTION.DATA_REQUESTED, modelName: 'foo.bar.baz', pathParams: [1, 2] },
 			{
 				foo: {
 					_config: {
@@ -122,13 +113,13 @@ describe('prepareFetch', () => {
 		expect(result.fetchConfig.path).toEqual('/api/foo/1/bar/2/baz')
 	})
 	test('should populate id params for collection nested under non-collections', () => {
-		var result = prepareFetch(
+		const result = prepareFetch(
 			{
 				_config: {
 					isCollection: true
 				}
 			},
-			{ type: 'SOME_ACTION', modelName: 'foo.bar.baz', pathParams: [1] },
+			{ type: NET_ACTION.DATA_REQUESTED, modelName: 'foo.bar.baz', pathParams: [1] },
 			{
 				foo: {
 					bar: {
@@ -144,13 +135,13 @@ describe('prepareFetch', () => {
 		expect(result.fetchConfig.path).toEqual('/api/foo/bar/baz/1')
 	})
 	test('should populate id params for collection nested under non-collections and honor empty fetch paths', () => {
-		var result = prepareFetch(
+		const result = prepareFetch(
 			{
 				_config: {
 					isCollection: true
 				}
 			},
-			{ type: 'SOME_ACTION', modelName: 'foo.bar.baz', pathParams: [1] },
+			{ type: NET_ACTION.DATA_REQUESTED, modelName: 'foo.bar.baz', pathParams: [1] },
 			{
 				foo: {
 					_config: {
@@ -183,14 +174,15 @@ describe('prepareFetch', () => {
 			isCollectionItemCreate: false,
 			isCollectionItemFetch: false,
 			isUrlValid: true,
-			modelConfig: {
+			endpointConfig: {
 				isCollection: true
 			},
 			modelName: 'foo.bar.1.baz'
 		})
 	})
+	// tslint:disable-next-line
 	test('should use absolute path for non-collection under collection with absolute path, and not append pathParams to path', () => {
-		var result = prepareFetch(
+		const result = prepareFetch(
 			{
 				_config: {
 					fetch: {
@@ -198,7 +190,7 @@ describe('prepareFetch', () => {
 					}
 				}
 			},
-			{ type: 'SOME_ACTION', modelName: 'foo.bar', pathParams: [1] },
+			{ type: NET_ACTION.DATA_REQUESTED, modelName: 'foo.bar', pathParams: [1] },
 			{
 				foo: {
 					_config: {
@@ -226,7 +218,7 @@ describe('prepareFetch', () => {
 			isCollectionItemCreate: false,
 			isCollectionItemFetch: false,
 			isUrlValid: true,
-			modelConfig: {
+			endpointConfig: {
 				fetch: {
 					path: '/api/bar'
 				}
@@ -234,8 +226,9 @@ describe('prepareFetch', () => {
 			modelName: 'foo.1.bar'
 		})
 	})
+	// tslint:disable-next-line
 	test('should use absolute path for collection under collection with absolute path, and exclude first pathParam from path', () => {
-		var result = prepareFetch(
+		const result = prepareFetch(
 			{
 				_config: {
 					isCollection: true,
@@ -244,7 +237,7 @@ describe('prepareFetch', () => {
 					}
 				}
 			},
-			{ type: 'SOME_ACTION', modelName: 'foo.bar', pathParams: [1, 2] },
+			{ type: NET_ACTION.DATA_REQUESTED, modelName: 'foo.bar', pathParams: [1, 2] },
 			{
 				foo: {
 					_config: {
@@ -273,7 +266,7 @@ describe('prepareFetch', () => {
 			isCollectionItemCreate: false,
 			isCollectionItemFetch: true,
 			isUrlValid: true,
-			modelConfig: {
+			endpointConfig: {
 				isCollection: true,
 				fetch: {
 					path: '/api/bar'
@@ -282,14 +275,15 @@ describe('prepareFetch', () => {
 			modelName: 'foo.1.bar.2'
 		})
 	})
+	// tslint:disable-next-line
 	test('should use absolute path for two nested collections under collection with absolute path, and exclude correct pathParams from path', () => {
-		var result = prepareFetch(
+		const result = prepareFetch(
 			{
 				_config: {
 					isCollection: true
 				}
 			},
-			{ type: 'SOME_ACTION', modelName: 'foo.bar.baz', pathParams: [1, 2, 3] },
+			{ type: NET_ACTION.DATA_REQUESTED, modelName: 'foo.bar.baz', pathParams: [1, 2, 3] },
 			{
 				foo: {
 					_config: {
@@ -323,7 +317,7 @@ describe('prepareFetch', () => {
 			isCollectionItemCreate: false,
 			isCollectionItemFetch: true,
 			isUrlValid: true,
-			modelConfig: {
+			endpointConfig: {
 				isCollection: true
 			},
 			modelName: 'foo.1.bar.2.baz.3'
@@ -332,7 +326,7 @@ describe('prepareFetch', () => {
 })
 
 describe('fetchData', () => {
-	let errorOutput
+	let errorOutput: string | null
 	beforeAll(() => {
 		const fetchSagaGen = fetchSaga(
 			{
@@ -461,7 +455,7 @@ describe('fetchData', () => {
 				}
 			},
 			'http://google.com',
-			getOauthToken, // this won't get called directly
+			getOAuthToken, // this won't get called directly
 			errorMessage => {
 				errorOutput = errorMessage
 			}
@@ -474,24 +468,28 @@ describe('fetchData', () => {
 
 	describe('before fetch', () => {
 		test('should throw when action.modelName is undefined', () => {
-			const gen = fetchData({})
+			const gen = fetchData({ modelName: '', type: NET_ACTION.DATA_REQUESTED })
 			expect(() => {
 				const startGenerator = gen.next()
 			}).toThrow(/modelName' config parameter is required for fetchData/)
 		})
 
 		test('should throw when action.modelName is not found in models', () => {
-			const gen = fetchData({ modelName: 'foo' })
+			const gen = fetchData({ modelName: 'foo', type: NET_ACTION.DATA_REQUESTED })
 			expect(() => {
 				const startGenerator = gen.next()
-			}).toThrow(/Cannot find 'foo' model in model dictionary/)
+			}).toThrow(/Cannot find 'foo' in EndpointMappings/)
 		})
 
 		test('should use "action.method" if it is defined', () => {
-			const gen = fetchData({ modelName: 'test', method: 'POST' })
+			const gen = fetchData({
+				modelName: 'test',
+				method: 'POST',
+				type: NET_ACTION.DATA_REQUESTED
+			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://www.google.com',
@@ -502,10 +500,14 @@ describe('fetchData', () => {
 			)
 		})
 		test('should replace baseConfig body as string if body is string', () => {
-			const gen = fetchData({ modelName: 'test2', body: 'body' })
+			const gen = fetchData({
+				modelName: 'test2',
+				type: NET_ACTION.DATA_REQUESTED,
+				body: 'body'
+			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://news.ycombinator.com',
@@ -518,10 +520,14 @@ describe('fetchData', () => {
 		})
 
 		test('should merge body as JSON if body is JSON', () => {
-			const gen = fetchData({ modelName: 'test3', body: { baz: 'quux' } })
+			const gen = fetchData({
+				modelName: 'test3',
+				type: NET_ACTION.DATA_REQUESTED,
+				body: { baz: 'quux' }
+			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://news.ycombinator.com',
@@ -536,10 +542,14 @@ describe('fetchData', () => {
 		})
 
 		test('should merge body as JSON Array if body is JSON, with default body', () => {
-			const gen = fetchData({ modelName: 'arrayBodyDefault', body: ['bar'] })
+			const gen = fetchData({
+				modelName: 'arrayBodyDefault',
+				type: NET_ACTION.DATA_REQUESTED,
+				body: ['bar']
+			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://news.ycombinator.com',
@@ -551,10 +561,13 @@ describe('fetchData', () => {
 		})
 
 		test('should send with default body', () => {
-			const gen = fetchData({ modelName: 'arrayBodyDefault' })
+			const gen = fetchData({
+				modelName: 'arrayBodyDefault',
+				type: NET_ACTION.DATA_REQUESTED
+			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://news.ycombinator.com',
@@ -566,10 +579,14 @@ describe('fetchData', () => {
 		})
 
 		test('should keep body as JSON Array if body is JSON', () => {
-			const gen = fetchData({ modelName: 'arrayBody', body: ['bar'] })
+			const gen = fetchData({
+				modelName: 'arrayBody',
+				type: NET_ACTION.DATA_REQUESTED,
+				body: ['bar']
+			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://news.ycombinator.com',
@@ -581,11 +598,11 @@ describe('fetchData', () => {
 		})
 
 		test('should populate store parameter in path', () => {
-			const gen = fetchData({ modelName: 'test4' })
+			const gen = fetchData({ modelName: 'test4', type: NET_ACTION.DATA_REQUESTED })
 			const selectEffect = gen.next()
 			const putFetchRequestEffect = gen.next({ testServer: 'baz' })
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://baz',
@@ -596,13 +613,13 @@ describe('fetchData', () => {
 		})
 
 		test('should fail to populate store parameter in path if it is undefined', () => {
-			const gen = fetchData({ modelName: 'test4' })
+			const gen = fetchData({ modelName: 'test4', type: NET_ACTION.DATA_REQUESTED })
 			const selectEffect = gen.next()
 			// send empty store
 			const putFetchRequestEffect = gen.next(getState())
 			expect(putFetchRequestEffect.value).toEqual(
 				put(
-					createAction(actions.FETCH_FAILED, {
+					createAction(NET_ACTION.FETCH_FAILED, {
 						modelName: 'test4',
 						errorData: 'Invalid URL'
 					})
@@ -613,13 +630,13 @@ describe('fetchData', () => {
 		})
 
 		test('should fail to populate store parameter in path if it is null', () => {
-			const gen = fetchData({ modelName: 'test4' })
+			const gen = fetchData({ modelName: 'test4', type: NET_ACTION.DATA_REQUESTED })
 			const selectEffect = gen.next()
 			// send store with null value
 			const putFetchRequestEffect = gen.next({ testServer: null })
 			expect(putFetchRequestEffect.value).toEqual(
 				put(
-					createAction(actions.FETCH_FAILED, {
+					createAction(NET_ACTION.FETCH_FAILED, {
 						modelName: 'test4',
 						errorData: 'Invalid URL'
 					})
@@ -628,10 +645,14 @@ describe('fetchData', () => {
 		})
 
 		test('should populate basic parmater in path', () => {
-			const gen = fetchData({ modelName: 'test5', pathParams: [1] })
+			const gen = fetchData({
+				modelName: 'test5',
+				type: NET_ACTION.DATA_REQUESTED,
+				pathParams: [1]
+			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://www.google.com/1',
@@ -642,11 +663,11 @@ describe('fetchData', () => {
 		})
 
 		test('should fail to populate basic parameter in path if it is undefined', () => {
-			const gen = fetchData({ modelName: 'test5' })
+			const gen = fetchData({ modelName: 'test5', type: NET_ACTION.DATA_REQUESTED })
 			const putFetchRequestEffect = gen.next()
 			expect(putFetchRequestEffect.value).toEqual(
 				put(
-					createAction(actions.FETCH_FAILED, {
+					createAction(NET_ACTION.FETCH_FAILED, {
 						modelName: 'test5',
 						errorData: 'Invalid URL'
 					})
@@ -655,11 +676,15 @@ describe('fetchData', () => {
 		})
 
 		test('should fail to populate basic parameter in path if it is null', () => {
-			const gen = fetchData({ modelName: 'test5', pathParams: [null] })
+			const gen = fetchData({
+				modelName: 'test5',
+				type: NET_ACTION.DATA_REQUESTED,
+				pathParams: [null]
+			})
 			const putFetchRequestEffect = gen.next()
 			expect(putFetchRequestEffect.value).toEqual(
 				put(
-					createAction(actions.FETCH_FAILED, {
+					createAction(NET_ACTION.FETCH_FAILED, {
 						modelName: 'test5',
 						errorData: 'Invalid URL'
 					})
@@ -668,11 +693,15 @@ describe('fetchData', () => {
 		})
 
 		test('should fail to populate basic parameter in path when "noStore" = true', () => {
-			const gen = fetchData({ modelName: 'test5', noStore: true })
+			const gen = fetchData({
+				modelName: 'test5',
+				type: NET_ACTION.DATA_REQUESTED,
+				noStore: true
+			})
 			const putFetchRequestEffect = gen.next()
 			expect(putFetchRequestEffect.value).toEqual(
 				put(
-					createAction(actions.TRANSIENT_FETCH_FAILED, {
+					createAction(NET_ACTION.TRANSIENT_FETCH_FAILED, {
 						modelName: 'test5',
 						errorData: 'Invalid URL'
 					})
@@ -681,11 +710,15 @@ describe('fetchData', () => {
 		})
 
 		test('should populate basic and store parameters in path', () => {
-			const gen = fetchData({ modelName: 'test6', pathParams: [1] })
+			const gen = fetchData({
+				modelName: 'test6',
+				type: NET_ACTION.DATA_REQUESTED,
+				pathParams: [1]
+			})
 			const selectEffect = gen.next()
 			const putFetchRequestEffect = gen.next({ testServer: 'baz' })
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://baz/1',
@@ -696,10 +729,13 @@ describe('fetchData', () => {
 		})
 
 		test('should construct path from modelName for collections without paths, no pathParams', () => {
-			const gen = fetchData({ modelName: 'topLevelEntitiesNoPath' })
+			const gen = fetchData({
+				modelName: 'topLevelEntitiesNoPath',
+				type: NET_ACTION.DATA_REQUESTED
+			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: '/api/topLevelEntitiesNoPath',
@@ -710,10 +746,14 @@ describe('fetchData', () => {
 		})
 
 		test('should construct path from modelName for collections without paths, single level, with pathParams', () => {
-			const gen = fetchData({ modelName: 'topLevelEntitiesNoPath', pathParams: [1] })
+			const gen = fetchData({
+				modelName: 'topLevelEntitiesNoPath',
+				type: NET_ACTION.DATA_REQUESTED,
+				pathParams: [1]
+			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: '/api/topLevelEntitiesNoPath/1',
@@ -726,11 +766,12 @@ describe('fetchData', () => {
 		test('should construct path from modelName for collections without paths, nested level, with pathParams', () => {
 			const gen = fetchData({
 				modelName: 'topLevelEntitiesNoPath.secondLevelEntities',
+				type: NET_ACTION.DATA_REQUESTED,
 				pathParams: [1]
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: '/api/topLevelEntitiesNoPath/1/secondLevelEntities',
@@ -741,10 +782,14 @@ describe('fetchData', () => {
 		})
 
 		test('should construct path from modelName for collection item action, single level, with pathParams', () => {
-			const gen = fetchData({ modelName: 'topLevelEntitiesNoPath.entityAction', pathParams: [1] })
+			const gen = fetchData({
+				modelName: 'topLevelEntitiesNoPath.entityAction',
+				type: NET_ACTION.DATA_REQUESTED,
+				pathParams: [1]
+			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: '/api/topLevelEntitiesNoPath/1/entityAction',
@@ -758,11 +803,12 @@ describe('fetchData', () => {
 		test('should construct path from modelName for collection item action, nested level, with pathParams', () => {
 			const gen = fetchData({
 				modelName: 'topLevelEntitiesNoPath.secondLevelEntities.entityAction',
+				type: NET_ACTION.DATA_REQUESTED,
 				pathParams: [1, 999]
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: '/api/topLevelEntitiesNoPath/1/secondLevelEntities/999/entityAction',
@@ -773,11 +819,15 @@ describe('fetchData', () => {
 		})
 
 		test('should fail to populate basic parameter in path if it is undefined, for collection', () => {
-			const gen = fetchData({ modelName: 'topLevelEntitiesNoPath', pathParams: [undefined] })
+			const gen = fetchData({
+				modelName: 'topLevelEntitiesNoPath',
+				type: NET_ACTION.DATA_REQUESTED,
+				pathParams: [undefined]
+			})
 			const putFetchRequestEffect = gen.next()
 			expect(putFetchRequestEffect.value).toEqual(
 				put(
-					createAction(actions.FETCH_FAILED, {
+					createAction(NET_ACTION.FETCH_FAILED, {
 						modelName: 'topLevelEntitiesNoPath',
 						errorData: 'Invalid URL'
 					})
@@ -786,11 +836,11 @@ describe('fetchData', () => {
 		})
 
 		test('should emit FETCH_REQUESTED', () => {
-			const gen = fetchData({ modelName: 'test' })
+			const gen = fetchData({ modelName: 'test', type: NET_ACTION.DATA_REQUESTED })
 			const startGenerator = gen.next()
 			expect(startGenerator.value).toEqual(
 				put(
-					createAction(actions.FETCH_REQUESTED, {
+					createAction(NET_ACTION.FETCH_REQUESTED, {
 						modelName: 'test'
 					})
 				)
@@ -798,10 +848,10 @@ describe('fetchData', () => {
 		})
 
 		test('should add oauth token to header if it exists', () => {
-			const gen = fetchData({ modelName: 'test' })
+			const gen = fetchData({ modelName: 'test', type: NET_ACTION.DATA_REQUESTED })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://www.google.com',
@@ -814,7 +864,7 @@ describe('fetchData', () => {
 
 	describe('successful fetch', () => {
 		test('should execute basic fetch', () => {
-			const gen = fetchData({ modelName: 'test' })
+			const gen = fetchData({ modelName: 'test', type: NET_ACTION.DATA_REQUESTED })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const fetchEffect = gen.next()
@@ -825,14 +875,21 @@ describe('fetchData', () => {
 			})
 			expect(resultReceivedEffect.value).toEqual(
 				put(
-					createAction(actions.FETCH_RESULT_RECEIVED, { data: { foo: 'bar' }, modelName: 'test' })
+					createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
+						data: { foo: 'bar' },
+						modelName: 'test'
+					})
 				)
 			)
 			expect(gen.next().done).toEqual(true)
 		})
 
 		test('should execute basic fetch with content-type', () => {
-			const gen = fetchData({ modelName: 'test', contentType: 'text/html; charset=utf-8' })
+			const gen = fetchData({
+				modelName: 'test',
+				type: NET_ACTION.DATA_REQUESTED,
+				contentType: 'text/html; charset=utf-8'
+			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const fetchEffect = gen.next()
@@ -843,17 +900,24 @@ describe('fetchData', () => {
 			})
 			expect(resultReceivedEffect.value).toEqual(
 				put(
-					createAction(actions.FETCH_RESULT_RECEIVED, { data: { foo: 'bar' }, modelName: 'test' })
+					createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
+						data: { foo: 'bar' },
+						modelName: 'test'
+					})
 				)
 			)
 			expect(gen.next().done).toEqual(true)
 		})
 
 		test('should execute basic transient fetch', () => {
-			const gen = fetchData({ modelName: 'test', noStore: true })
+			const gen = fetchData({
+				modelName: 'test',
+				type: NET_ACTION.DATA_REQUESTED,
+				noStore: true
+			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			const resultReceivedEffect = gen.next({
 				ok: true,
 				status: 200,
@@ -861,7 +925,7 @@ describe('fetchData', () => {
 			})
 			expect(resultReceivedEffect.value).toEqual(
 				put(
-					createAction(actions.TRANSIENT_FETCH_RESULT_RECEIVED, {
+					createAction(NET_ACTION.TRANSIENT_FETCH_RESULT_RECEIVED, {
 						data: { foo: 'bar' },
 						modelName: 'test'
 					})
@@ -872,7 +936,12 @@ describe('fetchData', () => {
 
 		test('should return "guid" on fetchResult if passed in "action.guid"', () => {
 			const guid = uuid.v4()
-			const gen = fetchData({ modelName: 'test', method: 'POST', guid })
+			const gen = fetchData({
+				modelName: 'test',
+				type: NET_ACTION.DATA_REQUESTED,
+				method: 'POST',
+				guid
+			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
 			const fetchEffect = gen.next()
@@ -883,7 +952,7 @@ describe('fetchData', () => {
 			})
 			expect(resultReceivedEffect.value).toEqual(
 				put(
-					createAction(actions.FETCH_RESULT_RECEIVED, {
+					createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 						data: { foo: 'bar', guid },
 						guid,
 						modelName: 'test'
@@ -896,37 +965,37 @@ describe('fetchData', () => {
 
 	describe('failed fetch', () => {
 		test('should retry on fetch error title', () => {
-			const gen = fetchData({ modelName: 'test' })
+			const gen = fetchData({ modelName: 'test', type: NET_ACTION.DATA_REQUESTED })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			const fetchTryFailedEffect = gen.next({ title: 'Error' })
 			const putTryFailedEffect = gen.next()
 			const delayAndPutAgainEffect = gen.next()
 			expect(delayAndPutAgainEffect.value).toEqual(
-				put(createAction(actions.FETCH_REQUESTED, { modelName: 'test' }))
+				put(createAction(NET_ACTION.FETCH_REQUESTED, { modelName: 'test' }))
 			)
 		})
 
 		test('should retry on fetch error code', () => {
-			const gen = fetchData({ modelName: 'test' })
+			const gen = fetchData({ modelName: 'test', type: NET_ACTION.DATA_REQUESTED })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			const fetchTryFailedEffect = gen.next({ code: 500 })
 			const putTryFailedEffect = gen.next()
 			const delayAndPutAgainEffect = gen.next()
 			expect(delayAndPutAgainEffect.value).toEqual(
-				put(createAction(actions.FETCH_REQUESTED, { modelName: 'test' }))
+				put(createAction(NET_ACTION.FETCH_REQUESTED, { modelName: 'test' }))
 			)
 		})
 
 		test('should dispatch FETCH_FAILED when all retries have failed', () => {
-			const gen = fetchData({ modelName: 'test' })
+			const gen = fetchData({ modelName: 'test', type: NET_ACTION.DATA_REQUESTED })
 			const putFetchRequestEffect = gen.next()
 			for (let i = 0; i <= 3; i++) {
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				const fetchTryFailedEffect = gen.next({
 					ok: false,
 					status: 500,
@@ -936,14 +1005,14 @@ describe('fetchData', () => {
 				if (i < 3) {
 					const delayAndPutAgainEffect = gen.next()
 					expect(delayAndPutAgainEffect.value).toEqual(
-						put(createAction(actions.FETCH_REQUESTED, { modelName: 'test' }))
+						put(createAction(NET_ACTION.FETCH_REQUESTED, { modelName: 'test' }))
 					)
 				}
 			}
 			const delayAndPutFetchFailedEffect = gen.next()
 			expect(delayAndPutFetchFailedEffect.value).toEqual(
 				put(
-					createAction(actions.FETCH_FAILED, {
+					createAction(NET_ACTION.FETCH_FAILED, {
 						modelName: 'test',
 						errorData: { title: 'Error' }
 					})
@@ -954,11 +1023,15 @@ describe('fetchData', () => {
 		})
 
 		test('should dispatch TRANSIENT_FETCH_FAILED when all retries have failed for TRANSIENT_FETCH request', () => {
-			const gen = fetchData({ modelName: 'test', noStore: true })
+			const gen = fetchData({
+				modelName: 'test',
+				type: NET_ACTION.DATA_REQUESTED,
+				noStore: true
+			})
 			const putFetchRequestEffect = gen.next()
 			for (let i = 0; i <= 3; i++) {
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				const fetchTryFailedEffect = gen.next({
 					ok: false,
 					status: 500,
@@ -968,14 +1041,18 @@ describe('fetchData', () => {
 				if (i < 3) {
 					const delayAndPutAgainEffect = gen.next()
 					expect(delayAndPutAgainEffect.value).toEqual(
-						put(createAction(actions.TRANSIENT_FETCH_REQUESTED, { modelName: 'test' }))
+						put(
+							createAction(NET_ACTION.TRANSIENT_FETCH_REQUESTED, {
+								modelName: 'test'
+							})
+						)
 					)
 				}
 			}
 			const delayAndPutFetchFailedEffect = gen.next()
 			expect(delayAndPutFetchFailedEffect.value).toEqual(
 				put(
-					createAction(actions.TRANSIENT_FETCH_FAILED, {
+					createAction(NET_ACTION.TRANSIENT_FETCH_FAILED, {
 						modelName: 'test',
 						errorData: { title: 'Error' }
 					})
@@ -987,10 +1064,10 @@ describe('fetchData', () => {
 
 		test('should not call errorFunction if fetchResult.code is 401', () => {
 			errorOutput = null
-			const gen = fetchData({ modelName: 'test' })
+			const gen = fetchData({ modelName: 'test', type: NET_ACTION.DATA_REQUESTED })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			const fetchTryFailedEffect = gen.next({
 				ok: false,
 				status: 401,
@@ -1003,16 +1080,20 @@ describe('fetchData', () => {
 
 		test('should not return errorData if some unrelated error occurred', () => {
 			errorOutput = null
-			const gen = fetchData({ modelName: 'test', noRetry: true })
+			const gen = fetchData({
+				modelName: 'test',
+				type: NET_ACTION.DATA_REQUESTED,
+				noRetry: true
+			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
-			const throwFetchErrorEffect = gen.throw('some other error')
+			const fetchEffect = gen.next(oauthToken)
+			const throwFetchErrorEffect = !!gen.throw && gen.throw('some other error')
 			const putTryFailedEffect = gen.next()
 			const putErrorEffect = gen.next()
 			expect(putErrorEffect.value).toEqual(
 				put(
-					createAction(actions.FETCH_FAILED, {
+					createAction(NET_ACTION.FETCH_FAILED, {
 						modelName: 'test'
 					})
 				)
@@ -1026,10 +1107,9 @@ describe('fetchData', () => {
 		describe('GET collection', () => {
 			test('should return a key-value object by id of nested items, from an api array', () => {
 				const fetchedAt = new Date()
-				const _Date = Date
-				global.Date = jest.fn(() => fetchedAt)
+				MockDate.set(fetchedAt)
 
-				const gen = fetchData({ modelName: 'entities' })
+				const gen = fetchData({ modelName: 'entities', type: NET_ACTION.DATA_REQUESTED })
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
 				const fetchEffect = gen.next()
@@ -1040,7 +1120,7 @@ describe('fetchData', () => {
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
-						createAction(actions.FETCH_RESULT_RECEIVED, {
+						createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 							data: {
 								1: {
 									id: 1,
@@ -1070,21 +1150,20 @@ describe('fetchData', () => {
 
 			test('should return a key-value object by id of nested items, from a key-value api object', () => {
 				const fetchedAt = new Date()
-				const _Date = Date
-				global.Date = jest.fn(() => fetchedAt)
+				MockDate.set(fetchedAt)
 
-				const gen = fetchData({ modelName: 'entities' })
+				const gen = fetchData({ modelName: 'entities', type: NET_ACTION.DATA_REQUESTED })
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
 				const fetchEffect = gen.next()
 				const resultReceivedEffect = gen.next({
 					ok: true,
 					status: 200,
-					data: { '1': { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
+					data: { 1: { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
-						createAction(actions.FETCH_RESULT_RECEIVED, {
+						createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 							data: {
 								1: {
 									id: 1,
@@ -1117,11 +1196,12 @@ describe('fetchData', () => {
 			test('should append pathParam "/{:id}" onto path if "pathParams" array includes a single value', () => {
 				const gen = fetchData({
 					modelName: 'entities',
+					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [999]
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				expect(fetchEffect.value).toEqual(
 					call(doFetch, {
 						path: 'http://www.google.com/entities/999',
@@ -1135,6 +1215,7 @@ describe('fetchData', () => {
 				const guid = uuid.v4()
 				const gen = fetchData({
 					modelName: 'entities',
+					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [2],
 					guid
 				})
@@ -1148,7 +1229,7 @@ describe('fetchData', () => {
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
-						createAction(actions.FETCH_RESULT_RECEIVED, {
+						createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 							data: { id: 2, name: 'bar', guid },
 							guid,
 							modelName: 'entities.2'
@@ -1161,10 +1242,14 @@ describe('fetchData', () => {
 
 		describe('POST item', () => {
 			test('should not append pathParam "/{:id}" onto path if action.method is "POST"', () => {
-				const gen = fetchData({ modelName: 'entities', method: 'POST' })
+				const gen = fetchData({
+					modelName: 'entities',
+					type: NET_ACTION.DATA_REQUESTED,
+					method: 'POST'
+				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				expect(fetchEffect.value).toEqual(
 					call(doFetch, {
 						path: 'http://www.google.com/entities',
@@ -1177,11 +1262,16 @@ describe('fetchData', () => {
 
 			test('should store a temp item under "guid" key during request', () => {
 				const guid = uuid.v4()
-				const gen = fetchData({ modelName: 'entities', method: 'POST', guid })
+				const gen = fetchData({
+					modelName: 'entities',
+					type: NET_ACTION.DATA_REQUESTED,
+					method: 'POST',
+					guid
+				})
 				const putFetchRequestEffect = gen.next()
 				expect(putFetchRequestEffect.value).toEqual(
 					put(
-						createAction(actions.FETCH_REQUESTED, {
+						createAction(NET_ACTION.FETCH_REQUESTED, {
 							modelName: `entities.${guid}`,
 							guid
 						})
@@ -1193,6 +1283,7 @@ describe('fetchData', () => {
 				const guid = uuid.v4()
 				const gen = fetchData({
 					modelName: 'entities',
+					type: NET_ACTION.DATA_REQUESTED,
 					method: 'POST',
 					guid,
 					body: { name: 'baz' }
@@ -1207,7 +1298,7 @@ describe('fetchData', () => {
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
-						createAction(actions.FETCH_RESULT_RECEIVED, {
+						createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 							data: { id: 3, name: 'baz', guid },
 							guid,
 							modelName: 'entities.3'
@@ -1220,6 +1311,7 @@ describe('fetchData', () => {
 				const guid = uuid.v4()
 				const gen = fetchData({
 					modelName: 'entities',
+					type: NET_ACTION.DATA_REQUESTED,
 					method: 'POST',
 					guid,
 					body: { name: 'baz' }
@@ -1235,7 +1327,7 @@ describe('fetchData', () => {
 				const resultStoredEffect = gen.next()
 				expect(resultStoredEffect.value).toEqual(
 					put(
-						createAction(actions.KEY_REMOVAL_REQUESTED, {
+						createAction(NET_ACTION.KEY_REMOVAL_REQUESTED, {
 							modelName: `entities.${guid}`
 						})
 					)
@@ -1247,12 +1339,13 @@ describe('fetchData', () => {
 			test('should append pathParam "/{:id}" onto path if "pathParams.id" exists', () => {
 				const gen = fetchData({
 					modelName: 'entities',
+					type: NET_ACTION.DATA_REQUESTED,
 					method: 'DELETE',
 					pathParams: [999]
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				expect(fetchEffect.value).toEqual(
 					call(doFetch, {
 						path: 'http://www.google.com/entities/999',
@@ -1267,6 +1360,7 @@ describe('fetchData', () => {
 				const guid = uuid.v4()
 				const gen = fetchData({
 					modelName: 'entities',
+					type: NET_ACTION.DATA_REQUESTED,
 					method: 'DELETE',
 					pathParams: [2],
 					guid
@@ -1281,7 +1375,7 @@ describe('fetchData', () => {
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
-						createAction(actions.KEY_REMOVAL_REQUESTED, {
+						createAction(NET_ACTION.KEY_REMOVAL_REQUESTED, {
 							data: { guid },
 							guid,
 							modelName: 'entities.2'
@@ -1296,11 +1390,12 @@ describe('fetchData', () => {
 			test('should replace pathParams of "/{:id}" in path if "pathParams" array includes any values', () => {
 				const gen = fetchData({
 					modelName: 'topLevelEntities.entityAction',
+					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [1]
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				expect(fetchEffect.value).toEqual(
 					call(doFetch, {
 						path: 'http://www.google.com/topLevelEntities/1/entityAction',
@@ -1315,6 +1410,7 @@ describe('fetchData', () => {
 				const guid = uuid.v4()
 				const gen = fetchData({
 					modelName: 'topLevelEntities.entityAction',
+					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [2],
 					guid
 				})
@@ -1328,7 +1424,7 @@ describe('fetchData', () => {
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
-						createAction(actions.FETCH_RESULT_RECEIVED, {
+						createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 							data: { foo: 'bar', guid },
 							guid,
 							modelName: 'topLevelEntities.2.entityAction'
@@ -1344,11 +1440,11 @@ describe('fetchData', () => {
 		describe('GET nested collection', () => {
 			test('should return a key-value object by id of nested items, from an api array', () => {
 				const fetchedAt = new Date()
-				const _Date = Date
-				global.Date = jest.fn(() => fetchedAt)
+				MockDate.set(fetchedAt)
 
 				const gen = fetchData({
 					modelName: 'topLevelEntities.secondLevelEntities',
+					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [1]
 				})
 				const putFetchRequestEffect = gen.next()
@@ -1361,7 +1457,7 @@ describe('fetchData', () => {
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
-						createAction(actions.FETCH_RESULT_RECEIVED, {
+						createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 							data: {
 								1: {
 									id: 1,
@@ -1391,11 +1487,11 @@ describe('fetchData', () => {
 
 			test('should return a key-value object by id of nested items, from a key-value api object', () => {
 				const fetchedAt = new Date()
-				const _Date = Date
-				global.Date = jest.fn(() => fetchedAt)
+				MockDate.set(fetchedAt)
 
 				const gen = fetchData({
 					modelName: 'topLevelEntities.secondLevelEntities',
+					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [1]
 				})
 				const putFetchRequestEffect = gen.next()
@@ -1404,11 +1500,11 @@ describe('fetchData', () => {
 				const resultReceivedEffect = gen.next({
 					ok: true,
 					status: 200,
-					data: { '1': { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
+					data: { 1: { id: 1, name: 'foo' }, 2: { id: 2, name: 'bar' } }
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
-						createAction(actions.FETCH_RESULT_RECEIVED, {
+						createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 							data: {
 								1: {
 									id: 1,
@@ -1441,11 +1537,12 @@ describe('fetchData', () => {
 			test('should replace pathParams of "/{:id}" in path if "pathParams" array includes any values', () => {
 				const gen = fetchData({
 					modelName: 'topLevelEntities.secondLevelEntities',
+					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [1, 999]
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				expect(fetchEffect.value).toEqual(
 					call(doFetch, {
 						path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999',
@@ -1459,6 +1556,7 @@ describe('fetchData', () => {
 				const guid = uuid.v4()
 				const gen = fetchData({
 					modelName: 'topLevelEntities.secondLevelEntities',
+					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [2, 999],
 					guid
 				})
@@ -1472,7 +1570,7 @@ describe('fetchData', () => {
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
-						createAction(actions.FETCH_RESULT_RECEIVED, {
+						createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 							data: { id: 999, name: 'bar', guid },
 							guid,
 							modelName: 'topLevelEntities.2.secondLevelEntities.999'
@@ -1487,12 +1585,13 @@ describe('fetchData', () => {
 			test('should not append pathParam "/{:id}" onto path if action.method is "POST"', () => {
 				const gen = fetchData({
 					modelName: 'topLevelEntities.secondLevelEntities',
+					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [1],
 					method: 'POST'
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				expect(fetchEffect.value).toEqual(
 					call(doFetch, {
 						path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities',
@@ -1507,6 +1606,7 @@ describe('fetchData', () => {
 				const guid = uuid.v4()
 				const gen = fetchData({
 					modelName: 'topLevelEntities.secondLevelEntities',
+					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [1],
 					method: 'POST',
 					guid
@@ -1514,7 +1614,7 @@ describe('fetchData', () => {
 				const putFetchRequestEffect = gen.next()
 				expect(putFetchRequestEffect.value).toEqual(
 					put(
-						createAction(actions.FETCH_REQUESTED, {
+						createAction(NET_ACTION.FETCH_REQUESTED, {
 							modelName: `topLevelEntities.1.secondLevelEntities.${guid}`,
 							guid
 						})
@@ -1526,6 +1626,7 @@ describe('fetchData', () => {
 				const guid = uuid.v4()
 				const gen = fetchData({
 					modelName: 'topLevelEntities.secondLevelEntities',
+					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [1],
 					method: 'POST',
 					guid,
@@ -1541,7 +1642,7 @@ describe('fetchData', () => {
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
-						createAction(actions.FETCH_RESULT_RECEIVED, {
+						createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 							data: { id: 3, name: 'baz', guid },
 							guid,
 							modelName: 'topLevelEntities.1.secondLevelEntities.3'
@@ -1554,6 +1655,7 @@ describe('fetchData', () => {
 				const guid = uuid.v4()
 				const gen = fetchData({
 					modelName: 'topLevelEntities.secondLevelEntities',
+					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [1],
 					method: 'POST',
 					guid,
@@ -1570,7 +1672,7 @@ describe('fetchData', () => {
 				const resultStoredEffect = gen.next()
 				expect(resultStoredEffect.value).toEqual(
 					put(
-						createAction(actions.KEY_REMOVAL_REQUESTED, {
+						createAction(NET_ACTION.KEY_REMOVAL_REQUESTED, {
 							modelName: `topLevelEntities.1.secondLevelEntities.${guid}`
 						})
 					)
@@ -1582,12 +1684,13 @@ describe('fetchData', () => {
 			test('should append pathParam "/{:id}" onto path if "pathParams.id" exists', () => {
 				const gen = fetchData({
 					modelName: 'topLevelEntities.secondLevelEntities',
+					type: NET_ACTION.DATA_REQUESTED,
 					method: 'DELETE',
 					pathParams: [1, 999]
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				expect(fetchEffect.value).toEqual(
 					call(doFetch, {
 						path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999',
@@ -1602,6 +1705,7 @@ describe('fetchData', () => {
 				const guid = uuid.v4()
 				const gen = fetchData({
 					modelName: 'topLevelEntities.secondLevelEntities',
+					type: NET_ACTION.DATA_REQUESTED,
 					method: 'DELETE',
 					pathParams: [1, 2],
 					guid
@@ -1616,7 +1720,7 @@ describe('fetchData', () => {
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
-						createAction(actions.KEY_REMOVAL_REQUESTED, {
+						createAction(NET_ACTION.KEY_REMOVAL_REQUESTED, {
 							data: { guid },
 							guid,
 							modelName: 'topLevelEntities.1.secondLevelEntities.2'
@@ -1631,11 +1735,12 @@ describe('fetchData', () => {
 			test('should replace pathParams of "/{:id}" in path if "pathParams" array includes any values', () => {
 				const gen = fetchData({
 					modelName: 'topLevelEntities.secondLevelEntities.entityAction',
+					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [1, 999]
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				expect(fetchEffect.value).toEqual(
 					call(doFetch, {
 						path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999/entityAction',
@@ -1649,6 +1754,7 @@ describe('fetchData', () => {
 				const guid = uuid.v4()
 				const gen = fetchData({
 					modelName: 'topLevelEntities.secondLevelEntities.entityAction',
+					type: NET_ACTION.DATA_REQUESTED,
 					pathParams: [2, 999],
 					guid
 				})
@@ -1662,7 +1768,7 @@ describe('fetchData', () => {
 				})
 				expect(resultReceivedEffect.value).toEqual(
 					put(
-						createAction(actions.FETCH_RESULT_RECEIVED, {
+						createAction(NET_ACTION.FETCH_RESULT_RECEIVED, {
 							data: { foo: 'bar', guid },
 							guid,
 							modelName: 'topLevelEntities.2.secondLevelEntities.999.entityAction'
@@ -1677,17 +1783,29 @@ describe('fetchData', () => {
 
 describe('fetchOnce', () => {
 	test('should call fetchData exactly once', () => {
-		const gen = fetchOnce({ modelName: 'foo' })
+		const gen = fetchOnce({ modelName: 'foo', type: NET_ACTION.DATA_REQUESTED })
 		const callFetchDataEffect = gen.next()
-		expect(callFetchDataEffect.value).toEqual(call(fetchData, { modelName: 'foo' }))
+		expect(callFetchDataEffect.value).toEqual(
+			call(fetchData, { modelName: 'foo', type: NET_ACTION.DATA_REQUESTED })
+		)
 		const sagaDone = gen.next()
 		expect(sagaDone.done).toEqual(true)
 	})
 })
 
 describe('fetchDataLoop', () => {
+	test('should throw without action.period', () => {
+		const gen = fetchDataLoop({
+			modelName: 'test',
+			type: NET_ACTION.PERIODIC_DATA_REQUESTED
+		})
+		expect(() => {
+			gen.next() // putFetchRequestEffect
+		}).toThrow(/`action.period` is required/)
+	})
+
 	test('should fetch repeatedly until cancelled', () => {
-		const action = { modelName: 'foo', period: 1000 }
+		const action = { modelName: 'foo', type: NET_ACTION.PERIODIC_DATA_REQUESTED, period: 1000 }
 		const gen = fetchDataLoop(action)
 		let callFetchDataEffect = gen.next()
 		expect(callFetchDataEffect.value).toEqual(call(fetchData, action))
@@ -1699,13 +1817,13 @@ describe('fetchDataLoop', () => {
 		delayEffect = gen.next()
 		expect(delayEffect.value).toEqual(delay(1000))
 
-		const cancelledSaga = gen.return()
+		const cancelledSaga = !!gen.return ? gen.return() : { value: false }
 		expect(cancelledSaga.value).toEqual(cancelled())
 
 		const putPeriodicTerminationSucceededEffect = gen.next(true)
 		expect(putPeriodicTerminationSucceededEffect.value).toEqual(
 			put(
-				createAction(actions.PERIODIC_TERMINATION_SUCCEEDED, {
+				createAction(NET_ACTION.PERIODIC_TERMINATION_SUCCEEDED, {
 					modelName: 'foo'
 				})
 			)
@@ -1716,7 +1834,7 @@ describe('fetchDataLoop', () => {
 	})
 
 	test('should fetch repeatedly until error is thrown', () => {
-		const action = { modelName: 'foo', period: 1000 }
+		const action = { modelName: 'foo', type: NET_ACTION.PERIODIC_DATA_REQUESTED, period: 1000 }
 		const gen = fetchDataLoop(action)
 		let callFetchDataEffect = gen.next()
 		expect(callFetchDataEffect.value).toEqual(call(fetchData, action))
@@ -1728,9 +1846,8 @@ describe('fetchDataLoop', () => {
 		delayEffect = gen.next()
 		expect(delayEffect.value).toEqual(delay(1000))
 
-		const error = {}
-		callFetchDataEffect = gen.throw('error')
-		expect(callFetchDataEffect.value).toEqual(cancelled())
+		const throwEffect = !!gen.throw ? gen.throw('error') : { value: false }
+		expect(throwEffect.value).toEqual(cancelled())
 
 		// send "false" because this was an error not a cancellation
 		const putPeriodicTerminationSucceededEffect = gen.next(false)
@@ -1740,29 +1857,34 @@ describe('fetchDataLoop', () => {
 })
 
 describe('fetchDataRecurring', () => {
-	test('should throw without action', () => {
-		const gen = fetchDataRecurring()
-		expect(() => {
-			const putFetchRequestEffect = gen.next()
-		}).toThrow(/'period' config parameter is required for fetchDataRecurring/)
-	})
-
 	test('should throw without action.period', () => {
-		const gen = fetchDataRecurring({})
+		const gen = fetchDataRecurring({
+			modelName: 'test',
+			type: NET_ACTION.PERIODIC_DATA_REQUESTED
+		})
 		expect(() => {
 			const putFetchRequestEffect = gen.next()
 		}).toThrow(/'period' config parameter is required for fetchDataRecurring/)
 	})
 
 	test('should throw without action.taskId', () => {
-		const gen = fetchDataRecurring({ period: 1000 })
+		const gen = fetchDataRecurring({
+			modelName: 'test',
+			type: NET_ACTION.PERIODIC_DATA_REQUESTED,
+			period: 1000
+		})
 		expect(() => {
 			const putFetchRequestEffect = gen.next()
 		}).toThrow(/'taskId' config parameter is required for fetchDataRecurring/)
 	})
 
 	test('should fork off fetchData loop if all params are given', () => {
-		const action = { period: 1000, taskId: 'fooTask' }
+		const action = {
+			modelName: 'test',
+			type: NET_ACTION.PERIODIC_DATA_REQUESTED,
+			period: 1000,
+			taskId: 'fooTask'
+		}
 		const gen = fetchDataRecurring(action)
 		const forkEffect = gen.next()
 		expect(forkEffect.value).toEqual(fork(fetchDataLoop, action))
@@ -1772,23 +1894,21 @@ describe('fetchDataRecurring', () => {
 		const action = { period: 1000, taskId: 'fooTask' }
 		expect(
 			takeMatchesTerminationAction(action)({
-				type: actions.PERIODIC_TERMINATION_REQUESTED,
+				type: NET_ACTION.PERIODIC_TERMINATION_REQUESTED,
 				taskId: 'fooTask'
 			})
 		).toEqual(true)
 	})
 
 	test('should not cancel if action is not a cancel for that task', () => {
-		expect(matchesTerminationAction({ type: 'foo' }, { period: 1000, taskId: 'fooTask' })).toEqual(
-			false
-		)
+		expect(matchesTerminationAction({ type: 'foo' }, { period: 1000, taskId: 'fooTask' })).toEqual(false)
 	})
 
 	test('should not cancel if action is a cancel for another task', () => {
 		expect(
 			matchesTerminationAction(
 				{
-					type: actions.PERIODIC_TERMINATION_REQUESTED,
+					type: NET_ACTION.PERIODIC_TERMINATION_REQUESTED,
 					taskId: 'someOtherTask'
 				},
 				{ period: 1000, taskId: 'fooTask' }
@@ -1800,7 +1920,7 @@ describe('fetchDataRecurring', () => {
 		expect(
 			matchesTerminationAction(
 				{
-					type: actions.PERIODIC_TERMINATION_REQUESTED,
+					type: NET_ACTION.PERIODIC_TERMINATION_REQUESTED,
 					taskId: 'fooTask'
 				},
 				{ period: 1000, taskId: 'fooTask' }
@@ -1809,7 +1929,12 @@ describe('fetchDataRecurring', () => {
 	})
 
 	test('should cancel once take matches action', () => {
-		const action = { period: 1000, taskId: 'fooTask' }
+		const action = {
+			modelName: 'test',
+			type: NET_ACTION.DATA_REQUESTED,
+			period: 1000,
+			taskId: 'fooTask'
+		}
 		const gen = fetchDataRecurring(action)
 		const forkEffect = gen.next()
 		const mockTask = createMockTask()

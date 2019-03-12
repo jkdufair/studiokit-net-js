@@ -1,46 +1,25 @@
-// @flow
-
-import actions from './actions'
-import _ from 'lodash'
+import _, { Dictionary } from 'lodash'
 import _fp from 'lodash/fp'
-
-import type { Action } from 'redux'
-
-type FetchState = {}
-
-type FetchError = {
-	modelName: string,
-	errorData: any
-}
-
-type MetadataState = {
-	isFetching: boolean,
-	hasError: boolean,
-	lastFetchError: FetchError,
-	fetchedAt?: Date
-}
-
-type ModelState = {
-	_metadata: MetadataState
-}
+import { NET_ACTION } from './actions'
+import { FetchAction, Metadata } from './types'
 
 /**
  * Given the state and a path into that state object, return the prop that
  * is named "_metadata"
  *
- * @param {FetchState} state - The redux state object
- * @param {Array<string>} path - An array of keys that represent the path to the entity in question
+ * @param state The redux state object
+ * @param path An array of keys that represent the path to the entity in question
  */
-function getMetadata(state: FetchState, path: Array<string>): MetadataState {
+export function getMetadata(state: object, path: string[]): Metadata {
 	return _.merge({}, _.get(state, path.concat('_metadata')))
 }
 
 /**
  * Get whether or not an object is a "collection" (id key-value dictionary).
- * @param {*} obj
+ * @param obj
  * @returns A boolean
  */
-function isCollection(obj) {
+export function isCollection(obj: any) {
 	return (
 		_.isPlainObject(obj) &&
 		Object.keys(obj).length > 0 &&
@@ -62,11 +41,11 @@ function isCollection(obj) {
  * a) remove if `current` is a "collection" and item key is not in `incoming`
  * b) recurse if `incoming` has a value
  * c) or preserve existing value
- * @param {*} current
- * @param {*} incoming
+ * @param current
+ * @param incoming
  */
-function mergeRelations(current, incoming) {
-	return Object.keys(current).reduce((prev, k) => {
+export function mergeRelations(current: Dictionary<any>, incoming?: Dictionary<any>) {
+	return Object.keys(current).reduce((prev: Dictionary<any>, k) => {
 		const c = current[k]
 		const i = incoming && incoming[k]
 		// skip all non-relations
@@ -96,21 +75,21 @@ function mergeRelations(current, incoming) {
  * as the key and the entire object used as the value
  *
  * @export
- * @param {FetchState} [state={}] - The state of the models. Initially empty
- * @param {Action} action - The action upon which we dispatch
- * @returns
+ * @param state The state of the models. Initially empty
+ * @param action The action upon which we dispatch
+ * @returns The updated state
  */
-export default function fetchReducer(state: FetchState = {}, action: Action) {
+export default function fetchReducer(state: object = {}, action: FetchAction) {
 	if (!action.modelName) {
 		return state
 	}
-	let path: Array<string> = action.modelName.split('.')
+	const path: string[] = action.modelName.split('.')
 	// the object value at the specified path
 	let valueAtPath = _.merge({}, _.get(state, path))
 	const metadata = getMetadata(state, path)
 
 	switch (action.type) {
-		case actions.FETCH_REQUESTED:
+		case NET_ACTION.FETCH_REQUESTED:
 			// Retain the entity data, update the metadata to reflect
 			// fetch in request state.
 			valueAtPath._metadata = _.merge(metadata, {
@@ -120,11 +99,9 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			})
 			return _fp.setWith(Object, path, valueAtPath, state)
 
-		case actions.FETCH_RESULT_RECEIVED:
+		case NET_ACTION.FETCH_RESULT_RECEIVED:
 			const incoming =
-				!_.isPlainObject(action.data) && !_.isArray(action.data)
-					? { response: action.data }
-					: action.data
+				!_.isPlainObject(action.data) && !_.isArray(action.data) ? { response: action.data } : action.data
 			valueAtPath = _.merge({}, mergeRelations(valueAtPath, incoming), incoming)
 			// Update the metadata to reflect fetch is complete.
 			valueAtPath._metadata = _.merge(metadata, {
@@ -135,7 +112,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			})
 			return _fp.setWith(Object, path, valueAtPath, state)
 
-		case actions.FETCH_FAILED:
+		case NET_ACTION.FETCH_FAILED:
 			// Retain the object, update the metadata to reflect the fact
 			// that the request failed.
 			valueAtPath._metadata = _.merge(metadata, {
@@ -145,7 +122,7 @@ export default function fetchReducer(state: FetchState = {}, action: Action) {
 			})
 			return _fp.setWith(Object, path, valueAtPath, state)
 
-		case actions.KEY_REMOVAL_REQUESTED:
+		case NET_ACTION.KEY_REMOVAL_REQUESTED:
 			// Completely remove the object at the path from
 			// the state.
 			return _fp.unset(path, state)

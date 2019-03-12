@@ -1,39 +1,16 @@
-import actions, { createAction } from '../src/actions'
-import {
-	call,
-	cancel,
-	cancelled,
-	take,
-	takeEvery,
-	takeLatest,
-	fork,
-	put,
-	race,
-	select
-} from 'redux-saga/effects'
 import uuid from 'uuid'
-import noStoreSaga, {
+import { NET_ACTION } from './actions'
+import {
+	handleAction,
+	matchesFailedNoStoreHookAction,
+	matchesNoStoreAction,
+	matchesReceivedNoStoreHookAction,
 	registerNoStoreActionHook,
-	unregisterNoStoreActionHook,
-	__RewireAPI__ as NoStoreSagaRewireAPI
-} from '../src/noStoreSaga'
-
-const matchesNoStoreAction = NoStoreSagaRewireAPI.__get__('matchesNoStoreAction')
-const takeMatchesNoStoreAction = NoStoreSagaRewireAPI.__get__('takeMatchesNoStoreAction')
-const matchesFailedNoStoreHookAction = NoStoreSagaRewireAPI.__get__(
-	'matchesFailedNoStoreHookAction'
-)
-const takeMatchesFailedNoStoreHookAction = NoStoreSagaRewireAPI.__get__(
-	'takeMatchesFailedNoStoreHookAction'
-)
-const matchesReceivedNoStoreHookAction = NoStoreSagaRewireAPI.__get__(
-	'matchesReceivedNoStoreHookAction'
-)
-const takeMatchesReceivedNoStoreHookAction = NoStoreSagaRewireAPI.__get__(
-	'takeMatchesReceivedNoStoreHookAction'
-)
-const hooks = NoStoreSagaRewireAPI.__get__('hooks')
-const handleAction = NoStoreSagaRewireAPI.__get__('handleAction')
+	takeMatchesFailedNoStoreHookAction,
+	takeMatchesNoStoreAction,
+	takeMatchesReceivedNoStoreHookAction,
+	unregisterNoStoreActionHook
+} from './noStoreSaga'
 
 describe('helpers', () => {
 	describe('matchesNoStoreAction', () => {
@@ -41,7 +18,7 @@ describe('helpers', () => {
 			expect(
 				matchesNoStoreAction({
 					modelName: 'someModel',
-					type: actions.DATA_REQUESTED,
+					type: NET_ACTION.DATA_REQUESTED,
 					noStore: true
 				})
 			).toEqual(true)
@@ -50,7 +27,7 @@ describe('helpers', () => {
 			expect(
 				matchesNoStoreAction({
 					modelName: 'someModel',
-					type: actions.DATA_REQUESTED
+					type: NET_ACTION.DATA_REQUESTED
 				})
 			).toEqual(false)
 		})
@@ -58,7 +35,7 @@ describe('helpers', () => {
 			expect(
 				matchesNoStoreAction({
 					modelName: 'someModel',
-					type: actions.KEY_REMOVAL_REQUESTED,
+					type: NET_ACTION.KEY_REMOVAL_REQUESTED,
 					noStore: true
 				})
 			).toEqual(false)
@@ -67,7 +44,7 @@ describe('helpers', () => {
 			expect(
 				takeMatchesNoStoreAction()({
 					modelName: 'someModel',
-					type: actions.DATA_REQUESTED,
+					type: NET_ACTION.DATA_REQUESTED,
 					noStore: true
 				})
 			).toEqual(true)
@@ -81,7 +58,7 @@ describe('helpers', () => {
 				matchesFailedNoStoreHookAction(
 					{
 						modelName: 'someModel',
-						type: actions.TRANSIENT_FETCH_FAILED,
+						type: NET_ACTION.TRANSIENT_FETCH_FAILED,
 						guid
 					},
 					{ modelName: 'someModel', noStore: true, guid }
@@ -94,7 +71,7 @@ describe('helpers', () => {
 				matchesFailedNoStoreHookAction(
 					{
 						modelName: 'someModel',
-						type: actions.KEY_REMOVAL_REQUESTED,
+						type: NET_ACTION.KEY_REMOVAL_REQUESTED,
 						guid
 					},
 					{ modelName: 'someModel', noStore: true, guid }
@@ -106,7 +83,7 @@ describe('helpers', () => {
 				matchesFailedNoStoreHookAction(
 					{
 						modelName: 'someModel',
-						type: actions.TRANSIENT_FETCH_FAILED,
+						type: NET_ACTION.TRANSIENT_FETCH_FAILED,
 						guid: uuid.v4()
 					},
 					{ modelName: 'someModel', noStore: true, guid: uuid.v4() }
@@ -118,7 +95,7 @@ describe('helpers', () => {
 			expect(
 				takeMatchesFailedNoStoreHookAction({ modelName: 'someModel', noStore: true, guid })({
 					modelName: 'someModel',
-					type: actions.TRANSIENT_FETCH_FAILED,
+					type: NET_ACTION.TRANSIENT_FETCH_FAILED,
 					guid
 				})
 			).toEqual(true)
@@ -132,7 +109,7 @@ describe('helpers', () => {
 				matchesReceivedNoStoreHookAction(
 					{
 						modelName: 'someModel',
-						type: actions.TRANSIENT_FETCH_RESULT_RECEIVED,
+						type: NET_ACTION.TRANSIENT_FETCH_RESULT_RECEIVED,
 						guid
 					},
 					{ modelName: 'someModel', noStore: true, guid }
@@ -145,7 +122,7 @@ describe('helpers', () => {
 				matchesReceivedNoStoreHookAction(
 					{
 						modelName: 'someModel',
-						type: actions.KEY_REMOVAL_REQUESTED,
+						type: NET_ACTION.KEY_REMOVAL_REQUESTED,
 						guid
 					},
 					{ modelName: 'someModel', noStore: true, guid }
@@ -157,7 +134,7 @@ describe('helpers', () => {
 				matchesReceivedNoStoreHookAction(
 					{
 						modelName: 'someModel',
-						type: actions.TRANSIENT_FETCH_FAILED,
+						type: NET_ACTION.TRANSIENT_FETCH_FAILED,
 						guid: uuid.v4()
 					},
 					{ modelName: 'someModel', noStore: true, guid: uuid.v4() }
@@ -167,9 +144,13 @@ describe('helpers', () => {
 		test('should call matchesReceivedNoStoreHookAction from takeMatchesReceivedNoStoreHookAction', () => {
 			const guid = uuid.v4()
 			expect(
-				takeMatchesReceivedNoStoreHookAction({ modelName: 'someModel', noStore: true, guid })({
+				takeMatchesReceivedNoStoreHookAction({
 					modelName: 'someModel',
-					type: actions.TRANSIENT_FETCH_RESULT_RECEIVED,
+					noStore: true,
+					guid
+				})({
+					modelName: 'someModel',
+					type: NET_ACTION.TRANSIENT_FETCH_RESULT_RECEIVED,
 					guid
 				})
 			).toEqual(true)
@@ -177,46 +158,16 @@ describe('helpers', () => {
 	})
 })
 
-describe('noStoreSaga', () => {
-	test('should set up takeEvery', () => {
-		const gen = noStoreSaga({})
-		const takeEveryEffect = gen.next()
-		expect(takeEveryEffect.value).toEqual(takeEvery(takeMatchesNoStoreAction, handleAction))
-	})
-})
-
-describe('registerNoStoreActionHook', () => {
-	test('should succeed', () => {
-		const hook = data => {
-			let foo = 1
-		}
-		registerNoStoreActionHook('key', hook)
-		expect(hooks['key']).toEqual(hook)
-	})
-})
-
-describe('unregisterNoStoreActionHook', () => {
-	test('should succeed', () => {
-		const hook = data => {
-			let foo = 1
-		}
-		registerNoStoreActionHook('key', hook)
-		expect(hooks['key']).toEqual(hook)
-		unregisterNoStoreActionHook('key')
-		expect(hooks['key']).toEqual(undefined)
-	})
-})
-
 describe('handleAction', () => {
 	const firstKey = uuid.v4()
 	const secondKey = uuid.v4()
-	let hookCalled
-	let hookData
-	const firstHook = data => {
+	let hookCalled: string | undefined
+	let hookData: any
+	const firstHook = (data: any) => {
 		hookCalled = 'first'
 		hookData = data
 	}
-	const secondHook = data => {
+	const secondHook = (data: any) => {
 		hookCalled = 'second'
 		hookData = data
 	}
@@ -236,12 +187,12 @@ describe('handleAction', () => {
 	test('should call correct hook with `data` on success', () => {
 		const action = {
 			modelName: 'someModel',
-			type: actions.DATA_REQUESTED,
+			type: NET_ACTION.DATA_REQUESTED,
 			noStore: true,
 			guid: firstKey
 		}
 		const gen = handleAction(action)
-		const raceEffect = gen.next()
+		gen.next() // raceEffect
 		const sagaDone = gen.next({
 			receivedResult: { data: 'blah' }
 		})
@@ -253,12 +204,12 @@ describe('handleAction', () => {
 	test('should call two different hooks with `data` on success', () => {
 		const firstAction = {
 			modelName: 'someModel',
-			type: actions.DATA_REQUESTED,
+			type: NET_ACTION.DATA_REQUESTED,
 			noStore: true,
 			guid: firstKey
 		}
 		const gen = handleAction(firstAction)
-		const raceEffect = gen.next()
+		gen.next() // raceEffect
 		const sagaDone = gen.next({
 			receivedResult: { data: 'blah' }
 		})
@@ -268,12 +219,12 @@ describe('handleAction', () => {
 
 		const secondAction = {
 			modelName: 'someModel',
-			type: actions.DATA_REQUESTED,
+			type: NET_ACTION.DATA_REQUESTED,
 			noStore: true,
 			guid: secondKey
 		}
 		const gen2 = handleAction(secondAction)
-		const raceEffect2 = gen2.next()
+		gen2.next() // raceEffect2
 		const sagaDone2 = gen2.next({
 			receivedResult: { data: 'bloo' }
 		})
@@ -285,12 +236,12 @@ describe('handleAction', () => {
 	test('should call correct hook with `null` on failure', () => {
 		const action = {
 			modelName: 'someModel',
-			type: actions.DATA_REQUESTED,
+			type: NET_ACTION.DATA_REQUESTED,
 			noStore: true,
 			guid: firstKey
 		}
 		const gen = handleAction(action)
-		const raceEffect = gen.next()
+		gen.next() // raceEffect
 		const sagaDone = gen.next({
 			failedResult: { error: 'boo' }
 		})
@@ -302,7 +253,7 @@ describe('handleAction', () => {
 	test('should finish if no `guid` on action', () => {
 		const action = {
 			modelName: 'someModel',
-			type: actions.DATA_REQUESTED,
+			type: NET_ACTION.DATA_REQUESTED,
 			noStore: true
 		}
 		const gen = handleAction(action)
@@ -315,7 +266,7 @@ describe('handleAction', () => {
 	test('should finish if no hook found for action', () => {
 		const action = {
 			modelName: 'someModel',
-			type: actions.DATA_REQUESTED,
+			type: NET_ACTION.DATA_REQUESTED,
 			noStore: true,
 			guid: uuid.v4()
 		}
@@ -329,12 +280,12 @@ describe('handleAction', () => {
 	test('should not call if hook is unregistered while requesting', () => {
 		const action = {
 			modelName: 'someModel',
-			type: actions.DATA_REQUESTED,
+			type: NET_ACTION.DATA_REQUESTED,
 			noStore: true,
 			guid: firstKey
 		}
 		const gen = handleAction(action)
-		const raceEffect = gen.next()
+		gen.next() // raceEffect
 		unregisterNoStoreActionHook(firstKey)
 		const sagaDone = gen.next({
 			receivedResult: { data: 'blah' }
