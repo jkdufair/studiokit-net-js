@@ -121,8 +121,6 @@ export type LoggerFunction = (message?: any) => void
 
 export type OAuthTokenResponse = OAuthToken | null | undefined
 
-export type TokenAccessFunction = (
-	action: any
-) => OAuthTokenResponse | IterableIterator<OAuthTokenResponse | CallEffect>
+export type TokenAccessFunction = (action: any) => IterableIterator<OAuthTokenResponse | CallEffect>
 
 export type ErrorFunction = (error: string) => void

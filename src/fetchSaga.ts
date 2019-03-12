@@ -30,7 +30,7 @@ export const takeMatchesTerminationAction = (action: any) => (incomingAction: an
 	matchesTerminationAction(incomingAction, action)
 
 /* istanbul ignore next */
-export const defaultTokenAccessFunction: TokenAccessFunction = () => {
+export const defaultTokenAccessFunction: TokenAccessFunction = function*() {
 	return null
 }
 
