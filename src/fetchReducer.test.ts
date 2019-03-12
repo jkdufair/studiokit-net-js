@@ -1,10 +1,6 @@
-import fetchReducer, { __RewireAPI__ as FetchReducerRewireAPI } from '../src/fetchReducer'
-import actions from '../src/actions'
-import _ from 'lodash'
-
-const getMetadata = FetchReducerRewireAPI.__get__('getMetadata')
-const isCollection = FetchReducerRewireAPI.__get__('isCollection')
-const mergeRelations = FetchReducerRewireAPI.__get__('mergeRelations')
+import MockDate from 'mockdate'
+import { NET_ACTION } from './actions'
+import fetchReducer, { getMetadata, isCollection, mergeRelations } from './fetchReducer'
 
 describe('supporting functions', () => {
 	describe('getMetadata', () => {
@@ -105,9 +101,9 @@ describe('supporting functions', () => {
 			expect(mergeRelations(current, incoming)).toEqual({})
 		})
 
-		test('should succeed if incoming is `null`', () => {
+		test('should succeed if incoming is `undefined`', () => {
 			const current = {}
-			expect(mergeRelations(current, null)).toEqual({})
+			expect(mergeRelations(current, undefined)).toEqual({})
 		})
 
 		test('should return objects without non-relations', () => {
@@ -158,13 +154,19 @@ describe('supporting functions', () => {
 
 describe('fetchReducer', () => {
 	test('Do nothing without action.modelName', () => {
-		const state = fetchReducer({ foo: 'bar' }, {})
+		const state = fetchReducer(
+			{ foo: 'bar' },
+			{
+				modelName: '',
+				type: NET_ACTION.FETCH_RESULT_RECEIVED
+			}
+		)
 		expect(state).toEqual({ foo: 'bar' })
 	})
 
 	describe('FETCH_REQUESTED', () => {
 		test('single level', () => {
-			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'test' })
+			const state = fetchReducer({}, { type: NET_ACTION.FETCH_REQUESTED, modelName: 'test' })
 			expect(state).toEqual({
 				test: {
 					_metadata: {
@@ -177,7 +179,7 @@ describe('fetchReducer', () => {
 		})
 
 		test('nested level', () => {
-			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'user.test' })
+			const state = fetchReducer({}, { type: NET_ACTION.FETCH_REQUESTED, modelName: 'user.test' })
 			expect(state).toEqual({
 				user: {
 					test: {
@@ -192,7 +194,7 @@ describe('fetchReducer', () => {
 		})
 
 		test('nested level with numbers', () => {
-			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'user.1' })
+			const state = fetchReducer({}, { type: NET_ACTION.FETCH_REQUESTED, modelName: 'user.1' })
 			expect(state).toEqual({
 				user: {
 					'1': {
@@ -207,7 +209,7 @@ describe('fetchReducer', () => {
 		})
 
 		test('nested level with multiple level numbers', () => {
-			const state = fetchReducer({}, { type: actions.FETCH_REQUESTED, modelName: 'user.1.info.2' })
+			const state = fetchReducer({}, { type: NET_ACTION.FETCH_REQUESTED, modelName: 'user.1.info.2' })
 			expect(state).toEqual({
 				user: {
 					'1': {
@@ -226,10 +228,7 @@ describe('fetchReducer', () => {
 		})
 
 		test('nested level merge state', () => {
-			const state = fetchReducer(
-				{ foo: 'bar' },
-				{ type: actions.FETCH_REQUESTED, modelName: 'user.test' }
-			)
+			const state = fetchReducer({ foo: 'bar' }, { type: NET_ACTION.FETCH_REQUESTED, modelName: 'user.test' })
 			expect(state).toEqual({
 				foo: 'bar',
 				user: {
@@ -247,7 +246,7 @@ describe('fetchReducer', () => {
 		test('nested level replace state', () => {
 			const state = fetchReducer(
 				{ user: { foo: 'bar' } },
-				{ type: actions.FETCH_REQUESTED, modelName: 'user.test' }
+				{ type: NET_ACTION.FETCH_REQUESTED, modelName: 'user.test' }
 			)
 			expect(state).toEqual({
 				user: {
@@ -277,7 +276,7 @@ describe('fetchReducer', () => {
 						}
 					}
 				},
-				{ type: actions.FETCH_REQUESTED, modelName: 'test' }
+				{ type: NET_ACTION.FETCH_REQUESTED, modelName: 'test' }
 			)
 			expect(state).toEqual({
 				test: {
@@ -308,7 +307,7 @@ describe('fetchReducer', () => {
 						}
 					}
 				},
-				{ type: actions.FETCH_REQUESTED, modelName: 'test.qux.1.corge' }
+				{ type: NET_ACTION.FETCH_REQUESTED, modelName: 'test.qux.1.corge' }
 			)
 			expect(state).toEqual({
 				test: {
@@ -337,14 +336,17 @@ describe('fetchReducer', () => {
 	})
 
 	describe('FETCH_RESULT_RECEIVED', () => {
+		let fetchedAtDate: Date
+		beforeEach(() => {
+			fetchedAtDate = new Date()
+			MockDate.set(fetchedAtDate)
+		})
+
 		test('single level', () => {
-			const fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
 			const state = fetchReducer(
 				{},
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'test',
 					data: { key: 'value' }
 				}
@@ -359,17 +361,13 @@ describe('fetchReducer', () => {
 					key: 'value'
 				}
 			})
-			global.Date = _Date
 		})
 
 		test('nested level', () => {
-			const fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
 			const state = fetchReducer(
 				{},
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
 					data: { key: 'value' }
 				}
@@ -389,13 +387,10 @@ describe('fetchReducer', () => {
 		})
 
 		test('nested add sibling key', () => {
-			const fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
 			const state = fetchReducer(
 				{ foo: 'bar' },
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
 					data: { key: 'value' }
 				}
@@ -416,9 +411,6 @@ describe('fetchReducer', () => {
 		})
 
 		test('nested level replace existing key', () => {
-			const fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
 			const state = fetchReducer(
 				{
 					user: {
@@ -426,7 +418,7 @@ describe('fetchReducer', () => {
 					}
 				},
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
 					data: { key: 'value' }
 				}
@@ -446,9 +438,6 @@ describe('fetchReducer', () => {
 		})
 
 		test('nested level merge existing key', () => {
-			const fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
 			const state = fetchReducer(
 				{
 					user: {
@@ -456,7 +445,7 @@ describe('fetchReducer', () => {
 					}
 				},
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
 					data: { key: 'value' }
 				}
@@ -478,9 +467,6 @@ describe('fetchReducer', () => {
 
 		test('nested level replace existing data on same key', () => {
 			// makes sure "data" key gets completely replaced and not merged
-			const fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
 			const state = fetchReducer(
 				{
 					user: {
@@ -496,7 +482,7 @@ describe('fetchReducer', () => {
 					}
 				},
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'user.test',
 					data: { key: 'value' }
 				}
@@ -517,9 +503,6 @@ describe('fetchReducer', () => {
 
 		test('collection nested level replace existing data on same key', () => {
 			// makes sure "data" key gets completely replaced and not merged
-			const fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
 			const state = fetchReducer(
 				{
 					groups: {
@@ -535,7 +518,7 @@ describe('fetchReducer', () => {
 					}
 				},
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'groups.1',
 					data: { key: 'value' }
 				}
@@ -555,8 +538,6 @@ describe('fetchReducer', () => {
 		})
 
 		test('should preserve data in nested level', () => {
-			const fetchedDate = new Date()
-
 			const state = fetchReducer(
 				{
 					test: {
@@ -577,12 +558,12 @@ describe('fetchReducer', () => {
 						_metadata: {
 							isFetching: false,
 							hasError: false,
-							fetchedAt: fetchedDate
+							fetchedAt: fetchedAtDate
 						}
 					}
 				},
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'test.qux.1.corge',
 					data: { key: 'value' }
 				}
@@ -599,7 +580,7 @@ describe('fetchReducer', () => {
 								_metadata: {
 									isFetching: false,
 									hasError: false,
-									fetchedAt: fetchedDate
+									fetchedAt: fetchedAtDate
 								}
 							}
 						}
@@ -607,18 +588,16 @@ describe('fetchReducer', () => {
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						fetchedAt: fetchedDate
+						fetchedAt: fetchedAtDate
 					}
 				}
 			})
 		})
 
 		test('should preserve nested collection relation that contains an id, but is not its key', () => {
-			const fetchedDate = new Date()
-
 			let state = {}
 			state = fetchReducer(state, {
-				type: actions.FETCH_RESULT_RECEIVED,
+				type: NET_ACTION.FETCH_RESULT_RECEIVED,
 				modelName: 'groups.1.child',
 				data: { id: 1, foo: false }
 			})
@@ -631,14 +610,14 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedDate
+								fetchedAt: fetchedAtDate
 							}
 						}
 					}
 				}
 			})
 			state = fetchReducer(state, {
-				type: actions.FETCH_RESULT_RECEIVED,
+				type: NET_ACTION.FETCH_RESULT_RECEIVED,
 				modelName: 'groups.1',
 				data: { id: 1, name: 'Group 1' }
 			})
@@ -653,14 +632,14 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedDate
+								fetchedAt: fetchedAtDate
 							}
 						},
 						_metadata: {
 							isFetching: false,
 							hasError: false,
 
-							fetchedAt: fetchedDate
+							fetchedAt: fetchedAtDate
 						}
 					}
 				}
@@ -668,9 +647,7 @@ describe('fetchReducer', () => {
 		})
 
 		test('should remove nested collection key, if incoming is a collection and key is not included', () => {
-			const fetchedDate = new Date()
-
-			let state = {
+			let state: any = {
 				groups: {
 					2: {
 						child: {
@@ -679,14 +656,14 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedDate
+								fetchedAt: fetchedAtDate
 							}
 						}
 					}
 				}
 			}
 			state = fetchReducer(state, {
-				type: actions.FETCH_RESULT_RECEIVED,
+				type: NET_ACTION.FETCH_RESULT_RECEIVED,
 				modelName: 'groups.1.child',
 				data: { id: 1, foo: false }
 			})
@@ -699,7 +676,7 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedDate
+								fetchedAt: fetchedAtDate
 							}
 						}
 					},
@@ -710,14 +687,14 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedDate
+								fetchedAt: fetchedAtDate
 							}
 						}
 					}
 				}
 			})
 			state = fetchReducer(state, {
-				type: actions.FETCH_RESULT_RECEIVED,
+				type: NET_ACTION.FETCH_RESULT_RECEIVED,
 				modelName: 'groups',
 				data: { 2: { id: 2, name: 'Group 2' } }
 			})
@@ -732,27 +709,24 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: false,
 								hasError: false,
-								fetchedAt: fetchedDate
+								fetchedAt: fetchedAtDate
 							}
 						}
 					},
 					_metadata: {
 						isFetching: false,
 						hasError: false,
-						fetchedAt: fetchedDate
+						fetchedAt: fetchedAtDate
 					}
 				}
 			})
 		})
 
 		test('handle string response', () => {
-			const fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
 			const state = fetchReducer(
 				{},
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'class',
 					data: 'value'
 				}
@@ -770,10 +744,7 @@ describe('fetchReducer', () => {
 		})
 
 		test('any level preserve children', () => {
-			const fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
-			let state = fetchReducer(
+			const state = fetchReducer(
 				{
 					user: {
 						testChildren: {
@@ -793,7 +764,7 @@ describe('fetchReducer', () => {
 					}
 				},
 				{
-					type: actions.FETCH_RESULT_RECEIVED,
+					type: NET_ACTION.FETCH_RESULT_RECEIVED,
 					modelName: 'user.testChildren',
 					data: {
 						key: 'new value'
@@ -825,7 +796,7 @@ describe('fetchReducer', () => {
 		test('single level with fetch error data', () => {
 			const state = fetchReducer(
 				{},
-				{ type: actions.FETCH_FAILED, modelName: 'test', errorData: 'server fire' }
+				{ type: NET_ACTION.FETCH_FAILED, modelName: 'test', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				test: {
@@ -839,7 +810,7 @@ describe('fetchReducer', () => {
 		})
 
 		test('single level no fetch error data', () => {
-			const state = fetchReducer({}, { type: actions.FETCH_FAILED, modelName: 'test' })
+			const state = fetchReducer({}, { type: NET_ACTION.FETCH_FAILED, modelName: 'test' })
 			expect(state).toEqual({
 				test: {
 					_metadata: {
@@ -854,7 +825,7 @@ describe('fetchReducer', () => {
 		test('nested level', () => {
 			const state = fetchReducer(
 				{},
-				{ type: actions.FETCH_FAILED, modelName: 'user.test', errorData: 'server fire' }
+				{ type: NET_ACTION.FETCH_FAILED, modelName: 'user.test', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				user: {
@@ -872,7 +843,7 @@ describe('fetchReducer', () => {
 		test('nested level merge state', () => {
 			const state = fetchReducer(
 				{ foo: 'bar' },
-				{ type: actions.FETCH_FAILED, modelName: 'user.test', errorData: 'server fire' }
+				{ type: NET_ACTION.FETCH_FAILED, modelName: 'user.test', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				foo: 'bar',
@@ -891,7 +862,7 @@ describe('fetchReducer', () => {
 		test('nested level replace state', () => {
 			const state = fetchReducer(
 				{ user: { foo: 'bar' } },
-				{ type: actions.FETCH_FAILED, modelName: 'user.test', errorData: 'server fire' }
+				{ type: NET_ACTION.FETCH_FAILED, modelName: 'user.test', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				user: {
@@ -908,9 +879,9 @@ describe('fetchReducer', () => {
 		})
 
 		test('collection nested level replace state', () => {
-			const fetchedAt = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAt)
+			const fetchedAtDate = new Date()
+			MockDate.set(fetchedAtDate)
+
 			const state = fetchReducer(
 				{
 					groups: {
@@ -920,12 +891,12 @@ describe('fetchReducer', () => {
 							_metadata: {
 								isFetching: true,
 								hasError: false,
-								fetchedAt
+								fetchedAt: fetchedAtDate
 							}
 						}
 					}
 				},
-				{ type: actions.FETCH_FAILED, modelName: 'groups.1', errorData: 'server fire' }
+				{ type: NET_ACTION.FETCH_FAILED, modelName: 'groups.1', errorData: 'server fire' }
 			)
 			expect(state).toEqual({
 				groups: {
@@ -936,7 +907,7 @@ describe('fetchReducer', () => {
 							isFetching: false,
 							hasError: true,
 							lastFetchError: 'server fire',
-							fetchedAt
+							fetchedAt: fetchedAtDate
 						}
 					}
 				}
@@ -948,7 +919,7 @@ describe('fetchReducer', () => {
 		test('remove key', () => {
 			const state = fetchReducer(
 				{ test: { foo: 'bar' } },
-				{ type: actions.KEY_REMOVAL_REQUESTED, modelName: 'test' }
+				{ type: NET_ACTION.KEY_REMOVAL_REQUESTED, modelName: 'test' }
 			)
 			expect(state).toEqual({})
 		})
@@ -956,7 +927,7 @@ describe('fetchReducer', () => {
 		test('remove key nested', () => {
 			const state = fetchReducer(
 				{ test: { foo: 'bar' }, test2: { baz: 'bat' } },
-				{ type: actions.KEY_REMOVAL_REQUESTED, modelName: 'test' }
+				{ type: NET_ACTION.KEY_REMOVAL_REQUESTED, modelName: 'test' }
 			)
 			expect(state).toEqual({ test2: { baz: 'bat' } })
 		})
@@ -964,7 +935,7 @@ describe('fetchReducer', () => {
 		test('remove key collection nested', () => {
 			const state = fetchReducer(
 				{ groups: { 1: { id: 1, name: 'group name' } } },
-				{ type: actions.KEY_REMOVAL_REQUESTED, modelName: 'groups.1' }
+				{ type: NET_ACTION.KEY_REMOVAL_REQUESTED, modelName: 'groups.1' }
 			)
 			expect(state).toEqual({ groups: {} })
 		})
@@ -974,7 +945,7 @@ describe('fetchReducer', () => {
 		test('default flow', () => {
 			const state = {}
 
-			const state2 = fetchReducer(state, { type: actions.FETCH_REQUESTED, modelName: 'test' })
+			const state2 = fetchReducer(state, { type: NET_ACTION.FETCH_REQUESTED, modelName: 'test' })
 			expect(state2).toEqual({
 				test: {
 					_metadata: {
@@ -986,13 +957,12 @@ describe('fetchReducer', () => {
 			})
 
 			const state3 = fetchReducer(state2, {
-				type: actions.FETCH_RESULT_RECEIVED,
+				type: NET_ACTION.FETCH_RESULT_RECEIVED,
 				modelName: 'test',
 				data: { foo: 'bar' }
 			})
 			let fetchedAtDate = new Date()
-			const _Date = Date
-			global.Date = jest.fn(() => fetchedAtDate)
+			MockDate.set(fetchedAtDate)
 			expect(state3).toEqual({
 				test: {
 					_metadata: {
@@ -1006,7 +976,7 @@ describe('fetchReducer', () => {
 
 			fetchedAtDate = new Date()
 			const state4 = fetchReducer(state3, {
-				type: actions.FETCH_RESULT_RECEIVED,
+				type: NET_ACTION.FETCH_RESULT_RECEIVED,
 				modelName: 'test',
 				data: { baz: 'quux', bleb: 'fleb' }
 			})
@@ -1021,19 +991,20 @@ describe('fetchReducer', () => {
 					bleb: 'fleb'
 				}
 			})
-
-			global.Date = _Date
 		})
 	})
 
 	describe('default action', () => {
 		test("don't do nada", () => {
-			const state = fetchReducer({ test: { foo: 'bar' } }, { type: 'FOOBAR', modelName: 'test' })
+			const state = fetchReducer({ test: { foo: 'bar' } }, { type: NET_ACTION.DATA_REQUESTED, modelName: 'test' })
 			expect(state).toEqual({ test: { foo: 'bar' } })
 		})
 
 		test('no state parameter passed', () => {
-			const state = fetchReducer(undefined, { type: actions.FETCH_REQUESTED, modelName: 'test' })
+			const state = fetchReducer(undefined, {
+				type: NET_ACTION.FETCH_REQUESTED,
+				modelName: 'test'
+			})
 			expect(state).toEqual({
 				test: {
 					_metadata: {

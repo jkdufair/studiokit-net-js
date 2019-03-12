@@ -1,13 +1,14 @@
-import {
-	setApiRoot,
-	getApiRoot,
-	doFetch,
-	__RewireAPI__ as FetchServiceRewireAPI
-} from '../src/services/fetchService'
-
-const constructPath = FetchServiceRewireAPI.__get__('constructPath')
+import { constructPath, doFetch, getApiRoot, setApiRoot } from './fetchService'
 
 describe('constructPath', () => {
+	test('should require config.path', () => {
+		expect(() => {
+			constructPath({
+				path: undefined
+			})
+		}).toThrow(/'config.path' is required for fetchService/)
+	})
+
 	test('Should not add a question mark to a path without query params', () => {
 		const path = constructPath({ path: 'http://abc.xyz/api/foo' })
 		expect(path).toEqual('http://abc.xyz/api/foo')
@@ -55,26 +56,13 @@ describe('constructPath', () => {
 })
 
 describe('doFetch', () => {
-	let _fetch
-	beforeAll(() => {
-		_fetch = global.fetch
-		global.fetch = jest.fn(() => {})
-	})
-	afterAll(() => {
-		global.fetch = _fetch
-	})
 	test('Require config.path', () => {
 		expect(() => {
-			const gen = doFetch()
+			const gen = doFetch({
+				path: ''
+			})
 			gen.next()
-		}).toThrow(/Cannot read property 'path' of undefined/)
-	})
-
-	test('Require config.path 2', () => {
-		expect(() => {
-			const gen = doFetch({})
-			gen.next()
-		}).toThrow(/'config.path' is required/)
+		}).toThrow(/'config.path' is required for fetchService/)
 	})
 
 	test('Basic GET', () => {
@@ -106,7 +94,10 @@ describe('doFetch', () => {
 	})
 
 	test('Basic GET with contentType', () => {
-		const gen = doFetch({ path: 'http://www.google.com', contentType: 'text/html; charset=utf-8' })
+		const gen = doFetch({
+			path: 'http://www.google.com',
+			contentType: 'text/html; charset=utf-8'
+		})
 		const response = gen.next()
 		expect(response.value.payload.args).toEqual([
 			'http://www.google.com',
@@ -231,7 +222,7 @@ describe('doFetch', () => {
 		const gen = doFetch({ path: 'http://www.google.com' })
 		const callFetchEffect = gen.next()
 		const sagaDone = gen.next()
-		expect(sagaDone.value).toEqual()
+		expect(sagaDone.value).toEqual(undefined)
 		expect(sagaDone.done).toEqual(true)
 	})
 
@@ -246,7 +237,9 @@ describe('doFetch', () => {
 			json: () => ({ message: 'Bad Request: reasons' })
 		}
 		const callResponseJsonEffect = gen.next(response)
-		expect(callResponseJsonEffect.value.payload.fn()).toEqual({ message: 'Bad Request: reasons' })
+		expect(callResponseJsonEffect.value.payload.fn()).toEqual({
+			message: 'Bad Request: reasons'
+		})
 		const sagaDone = gen.next(response.json())
 		expect(sagaDone.value).toEqual({
 			ok: false,
@@ -286,7 +279,7 @@ describe('doFetch', () => {
 			data: putBody
 		})
 		const sagaDone = gen.next()
-		expect(sagaDone.value).toEqual()
+		expect(sagaDone.value).toEqual(undefined)
 		expect(sagaDone.done).toEqual(true)
 	})
 
@@ -323,7 +316,7 @@ describe('doFetch', () => {
 			data: undefined
 		})
 		const sagaDone = gen.next()
-		expect(sagaDone.value).toEqual()
+		expect(sagaDone.value).toEqual(undefined)
 		expect(sagaDone.done).toEqual(true)
 	})
 
@@ -351,7 +344,7 @@ describe('doFetch', () => {
 			data: undefined
 		})
 		const sagaDone = gen.next()
-		expect(sagaDone.value).toEqual()
+		expect(sagaDone.value).toEqual(undefined)
 		expect(sagaDone.done).toEqual(true)
 	})
 })
