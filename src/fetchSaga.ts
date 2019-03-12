@@ -12,6 +12,7 @@ import {
 	FetchAction,
 	FetchError,
 	LoggerFunction,
+	OAuthTokenResponse,
 	TokenAccessFunction
 } from './types'
 
@@ -292,7 +293,7 @@ export function* fetchData(action: FetchAction) {
 			})
 		)
 		try {
-			const oauthToken = yield call(tokenAccessFunction, action.modelName)
+			const oauthToken: OAuthTokenResponse = yield call(tokenAccessFunction, action.modelName)
 			if (oauthToken && oauthToken.access_token) {
 				fetchConfig.headers.Authorization = `Bearer ${oauthToken.access_token}`
 			}

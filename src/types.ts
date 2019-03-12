@@ -119,7 +119,7 @@ export interface FetchAction extends Action<NET_ACTION> {
 
 export type LoggerFunction = (message?: any) => void
 
-export type OAuthTokenResponse = OAuthToken | null | undefined
+export type OAuthTokenResponse = OAuthToken | null
 
 export type TokenAccessFunction = (action: any) => IterableIterator<OAuthTokenResponse | CallEffect>
 
