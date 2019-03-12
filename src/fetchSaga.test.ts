@@ -14,7 +14,7 @@ import fetchSaga, {
 	takeMatchesTerminationAction
 } from './fetchSaga'
 import { doFetch } from './fetchService'
-import { OAuthToken } from './types'
+import { OAuthToken, OAuthTokenResponse, TokenAccessFunction } from './types'
 
 let consoleOutput: any
 const consoleDebug = console.debug
@@ -29,16 +29,18 @@ afterAll(() => {
 	console.debug = consoleDebug
 })
 
-const getOauthToken = (): OAuthToken => {
-	return {
-		access_token: 'some-access-token',
-		refresh_token: 'some-refresh-token',
-		client_id: 'web',
-		token_type: 'Bearer',
-		expires_in: 3600,
-		'.expires': '2019-01-02',
-		'.issued': '2019-01-01'
-	}
+const oauthToken: OAuthToken = {
+	access_token: 'some-access-token',
+	refresh_token: 'some-refresh-token',
+	client_id: 'web',
+	token_type: 'Bearer',
+	expires_in: 3600,
+	'.expires': '2019-01-02',
+	'.issued': '2019-01-01'
+}
+
+const getOAuthToken: TokenAccessFunction = function*() {
+	return oauthToken
 }
 
 describe('fetchSaga', () => {
@@ -453,7 +455,7 @@ describe('fetchData', () => {
 				}
 			},
 			'http://google.com',
-			getOauthToken, // this won't get called directly
+			getOAuthToken, // this won't get called directly
 			errorMessage => {
 				errorOutput = errorMessage
 			}
@@ -487,7 +489,7 @@ describe('fetchData', () => {
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://www.google.com',
@@ -505,7 +507,7 @@ describe('fetchData', () => {
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://news.ycombinator.com',
@@ -525,7 +527,7 @@ describe('fetchData', () => {
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://news.ycombinator.com',
@@ -547,7 +549,7 @@ describe('fetchData', () => {
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://news.ycombinator.com',
@@ -565,7 +567,7 @@ describe('fetchData', () => {
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://news.ycombinator.com',
@@ -584,7 +586,7 @@ describe('fetchData', () => {
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://news.ycombinator.com',
@@ -600,7 +602,7 @@ describe('fetchData', () => {
 			const selectEffect = gen.next()
 			const putFetchRequestEffect = gen.next({ testServer: 'baz' })
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://baz',
@@ -650,7 +652,7 @@ describe('fetchData', () => {
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://www.google.com/1',
@@ -716,7 +718,7 @@ describe('fetchData', () => {
 			const selectEffect = gen.next()
 			const putFetchRequestEffect = gen.next({ testServer: 'baz' })
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://baz/1',
@@ -733,7 +735,7 @@ describe('fetchData', () => {
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: '/api/topLevelEntitiesNoPath',
@@ -751,7 +753,7 @@ describe('fetchData', () => {
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: '/api/topLevelEntitiesNoPath/1',
@@ -769,7 +771,7 @@ describe('fetchData', () => {
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: '/api/topLevelEntitiesNoPath/1/secondLevelEntities',
@@ -787,7 +789,7 @@ describe('fetchData', () => {
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: '/api/topLevelEntitiesNoPath/1/entityAction',
@@ -806,7 +808,7 @@ describe('fetchData', () => {
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: '/api/topLevelEntitiesNoPath/1/secondLevelEntities/999/entityAction',
@@ -849,7 +851,7 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'test', type: NET_ACTION.DATA_REQUESTED })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			expect(fetchEffect.value).toEqual(
 				call(doFetch, {
 					path: 'http://www.google.com',
@@ -915,7 +917,7 @@ describe('fetchData', () => {
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			const resultReceivedEffect = gen.next({
 				ok: true,
 				status: 200,
@@ -966,7 +968,7 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'test', type: NET_ACTION.DATA_REQUESTED })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			const fetchTryFailedEffect = gen.next({ title: 'Error' })
 			const putTryFailedEffect = gen.next()
 			const delayAndPutAgainEffect = gen.next()
@@ -979,7 +981,7 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'test', type: NET_ACTION.DATA_REQUESTED })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			const fetchTryFailedEffect = gen.next({ code: 500 })
 			const putTryFailedEffect = gen.next()
 			const delayAndPutAgainEffect = gen.next()
@@ -993,7 +995,7 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			for (let i = 0; i <= 3; i++) {
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				const fetchTryFailedEffect = gen.next({
 					ok: false,
 					status: 500,
@@ -1029,7 +1031,7 @@ describe('fetchData', () => {
 			const putFetchRequestEffect = gen.next()
 			for (let i = 0; i <= 3; i++) {
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				const fetchTryFailedEffect = gen.next({
 					ok: false,
 					status: 500,
@@ -1065,7 +1067,7 @@ describe('fetchData', () => {
 			const gen = fetchData({ modelName: 'test', type: NET_ACTION.DATA_REQUESTED })
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			const fetchTryFailedEffect = gen.next({
 				ok: false,
 				status: 401,
@@ -1085,7 +1087,7 @@ describe('fetchData', () => {
 			})
 			const putFetchRequestEffect = gen.next()
 			const tokenAccessCall = gen.next()
-			const fetchEffect = gen.next(getOauthToken())
+			const fetchEffect = gen.next(oauthToken)
 			const throwFetchErrorEffect = !!gen.throw && gen.throw('some other error')
 			const putTryFailedEffect = gen.next()
 			const putErrorEffect = gen.next()
@@ -1199,7 +1201,7 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				expect(fetchEffect.value).toEqual(
 					call(doFetch, {
 						path: 'http://www.google.com/entities/999',
@@ -1247,7 +1249,7 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				expect(fetchEffect.value).toEqual(
 					call(doFetch, {
 						path: 'http://www.google.com/entities',
@@ -1343,7 +1345,7 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				expect(fetchEffect.value).toEqual(
 					call(doFetch, {
 						path: 'http://www.google.com/entities/999',
@@ -1393,7 +1395,7 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				expect(fetchEffect.value).toEqual(
 					call(doFetch, {
 						path: 'http://www.google.com/topLevelEntities/1/entityAction',
@@ -1540,7 +1542,7 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				expect(fetchEffect.value).toEqual(
 					call(doFetch, {
 						path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999',
@@ -1589,7 +1591,7 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				expect(fetchEffect.value).toEqual(
 					call(doFetch, {
 						path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities',
@@ -1688,7 +1690,7 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				expect(fetchEffect.value).toEqual(
 					call(doFetch, {
 						path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999',
@@ -1738,7 +1740,7 @@ describe('fetchData', () => {
 				})
 				const putFetchRequestEffect = gen.next()
 				const tokenAccessCall = gen.next()
-				const fetchEffect = gen.next(getOauthToken())
+				const fetchEffect = gen.next(oauthToken)
 				expect(fetchEffect.value).toEqual(
 					call(doFetch, {
 						path: 'http://www.google.com/topLevelEntities/1/secondLevelEntities/999/entityAction',
