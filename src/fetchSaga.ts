@@ -4,15 +4,16 @@ import { call, cancel, cancelled, delay, fork, put, select, take, takeEvery, tak
 import uuid from 'uuid'
 import { createAction, NET_ACTION } from './actions'
 import { doFetch, setApiRoot } from './fetchService'
-import { EndpointConfig, EndpointMapping, EndpointMappings, FetchAction, FetchError, OAuthToken } from './types'
-
-//#region Types
-
-type LoggerFunction = (message: any) => void
-type TokenAccessFunction = (action: any) => OAuthToken | undefined
-type ErrorFunction = (error: string) => void
-
-//#endregion Types
+import {
+	EndpointConfig,
+	EndpointMapping,
+	EndpointMappings,
+	ErrorFunction,
+	FetchAction,
+	FetchError,
+	LoggerFunction,
+	TokenAccessFunction
+} from './types'
 
 //#region Helpers
 
@@ -30,7 +31,7 @@ export const takeMatchesTerminationAction = (action: any) => (incomingAction: an
 
 /* istanbul ignore next */
 export const defaultTokenAccessFunction: TokenAccessFunction = () => {
-	return undefined
+	return null
 }
 
 /* istanbul ignore next */
@@ -43,7 +44,7 @@ export const defaultErrorFunction: ErrorFunction = () => {
  *
  * @param {string} message - The message to log
  */
-const defaultLogger: LoggerFunction = (message: string) => {
+const defaultLogger: LoggerFunction = (message?: any) => {
 	console.debug(message)
 }
 

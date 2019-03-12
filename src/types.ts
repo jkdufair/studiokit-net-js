@@ -1,5 +1,6 @@
 import { Dictionary } from 'lodash'
 import { Action } from 'redux'
+import { CallEffect } from 'redux-saga/effects'
 import { NET_ACTION } from './actions'
 
 /**
@@ -115,3 +116,13 @@ export interface FetchAction extends Action<NET_ACTION> {
 	/** The error data returned from a failed request. */
 	errorData?: any
 }
+
+export type LoggerFunction = (message?: any) => void
+
+export type OAuthTokenResponse = OAuthToken | null | undefined
+
+export type TokenAccessFunction = (
+	action: any
+) => OAuthTokenResponse | IterableIterator<OAuthTokenResponse | CallEffect>
+
+export type ErrorFunction = (error: string) => void
