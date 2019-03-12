@@ -43,7 +43,7 @@ export const defaultErrorFunction: ErrorFunction = () => {
 /**
  * A default logger function that logs to the console. Used if no other logger is provided
  *
- * @param {string} message - The message to log
+ * @param message The message to log
  */
 const defaultLogger: LoggerFunction = (message?: any) => {
 	console.debug(message)
@@ -64,9 +64,9 @@ let errorFunction: ErrorFunction
  * Prepare fetchConfig to pass to fetchService. Also set up state
  * to handle response correctly.
  *
- * @param {EndpointMapping} endpointMapping The EndpointMapping selected from the EndpointMappings object
- * @param {FetchAction} action The action dispatched by the client
- * @param {EndpointMappings} endpointMappingsParam The EndpointMappings object, passed in for testability
+ * @param endpointMapping The EndpointMapping selected from the EndpointMappings object
+ * @param action The action dispatched by the client
+ * @param endpointMappingsParam The EndpointMappings object, passed in for testability
  */
 export function prepareFetch(
 	endpointMapping: EndpointMapping,
@@ -228,7 +228,7 @@ export function prepareFetch(
  * Construct a request based on the provided action, make a request with a configurable retry,
  * and handle errors, logging and dispatching all steps.
  *
- * @param {FetchAction} action An action with the request configuration
+ * @param action An action with the request configuration
  */
 export function* fetchData(action: FetchAction) {
 	// Validate
@@ -405,7 +405,7 @@ export function* fetchData(action: FetchAction) {
 /**
  * Call the fetchData saga exactly one time (keeping in mind fetchData has retries by default)
  *
- * @param {FetchAction} action An action with the request configuration
+ * @param action An action with the request configuration
  */
 export function* fetchOnce(action: FetchAction) {
 	yield call(fetchData, action)
@@ -415,7 +415,7 @@ export function* fetchOnce(action: FetchAction) {
  * The loop saga that makes the request every {action.period} milliseconds until
  * cancelled
  *
- * @param {FetchAction} action An action with the request configuration
+ * @param action An action with the request configuration
  */
 export function* fetchDataLoop(action: FetchAction) {
 	if (_.isNil(action.period)) {
@@ -445,7 +445,7 @@ export function* fetchDataLoop(action: FetchAction) {
  * Call the fetchData saga every {action.period} milliseconds. This saga requires the 'period' and 'taskId' properties
  * on the action parameter.
  *
- * @param {FetchAction} action An action with the request configuration
+ * @param action An action with the request configuration
  */
 export function* fetchDataRecurring(action: FetchAction) {
 	if (!action || !action.period) {
@@ -486,12 +486,12 @@ export function* fetchDataRecurring(action: FetchAction) {
  * `{ type: actions.DATA_REQUESTED, { modelName: 'groupOfModels.leelaModel' } }`
  *
  * @export
- * @param {EndpointMappings} endpointMappingsParam A mapping of API endpoints available in the application
- * @param {string | undefined} apiRootParam A url to which partial URLs are appended (i.e.) 'https://myapp.com'
- * @param {TokenAccessFunction} [tokenAccessFunctionParam=defaultTokenAccessFunction] function that returns
+ * @param endpointMappingsParam A mapping of API endpoints available in the application
+ * @param apiRootParam A url to which partial URLs are appended (i.e.) 'https://myapp.com'
+ * @param tokenAccessFunctionParam function that returns
  * an optional OAuth token
- * @param {ErrorFunction} [errorFunctionParam=defaultErrorFunction] A function to perform on errors
- * @param {LoggerFunction} [loggerParam=defaultLogger] A function that accepts a string and logs it real good
+ * @param errorFunctionParam A function to perform on errors
+ * @param loggerParam A function that accepts a string and logs it real good
  */
 export default function* fetchSaga(
 	endpointMappingsParam: EndpointMappings,

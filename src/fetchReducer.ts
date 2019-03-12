@@ -7,8 +7,8 @@ import { FetchAction, Metadata } from './types'
  * Given the state and a path into that state object, return the prop that
  * is named "_metadata"
  *
- * @param {object} state - The redux state object
- * @param {Array<string>} path - An array of keys that represent the path to the entity in question
+ * @param state The redux state object
+ * @param path An array of keys that represent the path to the entity in question
  */
 export function getMetadata(state: object, path: string[]): Metadata {
 	return _.merge({}, _.get(state, path.concat('_metadata')))
@@ -16,7 +16,7 @@ export function getMetadata(state: object, path: string[]): Metadata {
 
 /**
  * Get whether or not an object is a "collection" (id key-value dictionary).
- * @param {*} obj
+ * @param obj
  * @returns A boolean
  */
 export function isCollection(obj: any) {
@@ -41,8 +41,8 @@ export function isCollection(obj: any) {
  * a) remove if `current` is a "collection" and item key is not in `incoming`
  * b) recurse if `incoming` has a value
  * c) or preserve existing value
- * @param {*} current
- * @param {*} incoming
+ * @param current
+ * @param incoming
  */
 export function mergeRelations(current: Dictionary<any>, incoming?: Dictionary<any>) {
 	return Object.keys(current).reduce((prev: Dictionary<any>, k) => {
@@ -75,9 +75,9 @@ export function mergeRelations(current: Dictionary<any>, incoming?: Dictionary<a
  * as the key and the entire object used as the value
  *
  * @export
- * @param {object} [state={}] - The state of the models. Initially empty
- * @param {Action} action - The action upon which we dispatch
- * @returns
+ * @param state The state of the models. Initially empty
+ * @param action The action upon which we dispatch
+ * @returns The updated state
  */
 export default function fetchReducer(state: object = {}, action: FetchAction) {
 	if (!action.modelName) {

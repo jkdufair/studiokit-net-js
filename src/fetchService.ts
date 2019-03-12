@@ -8,7 +8,7 @@ let apiRoot: string | undefined
 /**
  * Add query params to path. Prepend with apiRoot if necessary
  *
- * @param {FetchConfig} config - The fetch configuration containing the path and query params
+ * @param config The fetch configuration containing the path and query params
  * @returns A string with query params populated and prepended
  */
 export function constructPath(config: FetchConfig) {
@@ -36,7 +36,7 @@ export function constructPath(config: FetchConfig) {
  * A function to receieve and store the apiRoot for prepending to subsequent partial URLs in paths
  *
  * @export
- * @param {string} uri - The uri to save and prepend later
+ * @param uri The uri to save and prepend later
  */
 export function setApiRoot(uri: string | undefined) {
 	apiRoot = uri
@@ -55,8 +55,8 @@ export function getApiRoot() {
  * (https://stackoverflow.com/questions/39280438/fetch-missing-boundary-in-multipart-form-data-post).
  *
  * @export
- * @param {FetchConfig} config - The configuration used to construct a fetch request
- * @returns {Object?} - The response, parsed as JSON
+ * @param config The configuration used to construct a fetch request
+ * @returns The response, parsed as JSON
  */
 // TODO: provide logging injection
 export function* doFetch(config: FetchConfig): SagaIterator {

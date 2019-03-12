@@ -14,7 +14,7 @@ import fetchSaga, {
 	takeMatchesTerminationAction
 } from './fetchSaga'
 import { doFetch } from './fetchService'
-import { OAuthToken, OAuthTokenResponse, TokenAccessFunction } from './types'
+import { OAuthToken, TokenAccessFunction } from './types'
 
 let consoleOutput: any
 const consoleDebug = console.debug
