@@ -1,7 +1,7 @@
 import _, { Dictionary } from 'lodash'
 import _fp from 'lodash/fp'
 import { NET_ACTION } from './actions'
-import { FetchAction, Metadata } from './types'
+import { FetchAction, Metadata, Model } from './types'
 
 /**
  * Given the state and a path into that state object, return the prop that
@@ -85,7 +85,7 @@ export default function fetchReducer(state: object = {}, action: FetchAction) {
 	}
 	const path: string[] = action.modelName.split('.')
 	// the object value at the specified path
-	let valueAtPath = _.merge({}, _.get(state, path))
+	let valueAtPath: Model = _.merge({}, _.get(state, path))
 	const metadata = getMetadata(state, path)
 
 	switch (action.type) {
