@@ -1,6 +1,6 @@
 {
 	"name": "studiokit-net-js",
-	"version": "3.0.2",
+	"version": "3.0.3",
 	"scripts": {
 		"tslint-check": "tslint-config-prettier-check ./tslint.json",
 		"lint:core": "tslint -c tslint.json -p tsconfig.json",

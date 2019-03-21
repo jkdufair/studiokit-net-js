@@ -35,19 +35,24 @@ export interface Metadata {
 }
 
 /**
- * Represents an API response that will be stored in redux.
+ * Represents an API request/response that is stored in redux.
  */
 export interface Model {
+	/** Metadata about the most recent API request, defined once a request starts. */
 	_metadata?: Metadata
+	/** The id of the model, defined after a successful request, if available. */
+	id?: string | number
+	/** A unique identifier used for action dispatchers to correlate responses to requests. */
 	guid?: string
 }
 
 /**
- * Represents a collection of API responses that will be stored in redux.
+ * Represents a collection API request/response that is stored in redux.
  *
  * @template T enforce a type on all properties that are defined and not `Metadata`. Defaults to `Model`.
  */
 export interface ModelCollection<T extends Model = Model> extends Dictionary<T | Metadata | undefined | null> {
+	/** Metadata about the most recent collection API request, defined once a request starts. */
 	_metadata?: Metadata
 }
 
