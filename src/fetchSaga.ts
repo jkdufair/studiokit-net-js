@@ -12,6 +12,7 @@ import {
 	FetchAction,
 	FetchError,
 	LoggerFunction,
+	Metadata,
 	OAuthTokenResponse,
 	TokenAccessFunction
 } from './types'
@@ -316,12 +317,13 @@ export function* fetchData(action: FetchAction) {
 						// set item metadata
 						data = Object.keys(fetchResult.data).reduce((out: Dictionary<any>, key) => {
 							const item = fetchResult.data[key]
+							const metadata: Metadata = {
+								isFetching: false,
+								hasError: false,
+								fetchedAt
+							}
 							out[item.id] = _.merge({}, item, {
-								_metadata: {
-									isFetching: false,
-									hasError: false,
-									fetchedAt
-								}
+								_metadata: metadata
 							})
 							return out
 						}, {})
