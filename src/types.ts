@@ -36,10 +36,18 @@ export interface Metadata {
 
 /**
  * Represents an API response that will be stored in redux.
- *
- * @template T enforce a type on all properties that are defined and not `Metadata`. Default is `any`.
  */
-export interface Model<T = any> extends Dictionary<T | Metadata | undefined | null> {
+export interface Model {
+	_metadata?: Metadata
+	guid?: string
+}
+
+/**
+ * Represents a collection of API responses that will be stored in redux.
+ *
+ * @template T enforce a type on all properties that are defined and not `Metadata`. Defaults to `Model`.
+ */
+export interface ModelCollection<T extends Model = Model> extends Dictionary<T | Metadata | undefined | null> {
 	_metadata?: Metadata
 }
 
