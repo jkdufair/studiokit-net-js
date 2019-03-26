@@ -56,6 +56,11 @@ export interface ModelCollection<T extends Model = Model> extends Dictionary<T |
 	_metadata?: Metadata
 }
 
+/**
+ * Defines the base object in redux at `state.models`.
+ */
+export interface ModelsState extends Dictionary<Model | ModelCollection | undefined> {}
+
 type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS'
 
 /**
